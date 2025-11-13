@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>QR-Scanner v1.1 PRO (ROCKWOOL)</title>
+<title>QR-Scanner v1.2 PRO (ROCKWOOL)</title>
+
 <style>
   :root{--bg:#f9fafb;--card:#fff;--muted:#6b7280;--accent:#111827;}
   body{margin:0;font-family:Arial,monospace;background:var(--bg);color:var(--accent);padding:16px;}
@@ -13,38 +14,100 @@
   header img{width:200px;height:auto;display:block;margin:8px auto;}
   h1{margin:4px 0;font-size:20px;}
   .muted{color:var(--muted);font-size:13px;margin-bottom:8px;text-align:center;}
-  #scannerArea{display:flex;flex-direction:column;align-items:center;gap:10px;}
-  .preview-frame{position:relative;width:92%;max-width:520px;height:360px;border-radius:12px;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center;}
-  video#video{width:100%;height:100%;object-fit:cover;} /* FIX: ikke spejlvendt længere */
-  .overlay-rect{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:72%;height:72%;border:6px solid rgba(255,255,255,0.95);border-radius:8px;opacity:0.95;background:rgba(255,255,255,0.02);}
-  .controls{display:flex;gap:8px;justify-content:center;margin-top:8px;}
-  button{padding:10px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:700;font-size:14px;}
+
+  /* Kamera preview */
+  .preview-frame{
+    position:relative;
+    width:92%;
+    max-width:520px;
+    height:360px;
+    border-radius:12px;
+    overflow:hidden;
+    background:#000;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  /* FIX: kamera IKKE spejlvendt */
+  video#video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    transform: none !important;
+    -webkit-transform: none !important;
+  }
+
+  .overlay-rect{
+    position:absolute;
+    left:50%;top:50%;
+    transform:translate(-50%,-50%);
+    width:72%;height:72%;
+    border:6px solid rgba(255,255,255,0.95);
+    border-radius:8px;
+    opacity:0.95;
+    background:rgba(255,255,255,0.02);
+  }
+
+  .controls{
+    display:flex;gap:8px;
+    justify-content:center;
+    margin-top:8px;
+  }
+
+  button{
+    padding:10px 14px;
+    border-radius:10px;
+    border:0;cursor:pointer;
+    font-weight:700;font-size:14px;
+  }
   .btn-primary{background:var(--accent);color:#fff;}
   .btn-ghost{background:#eef2ff;color:var(--accent);}
-  #resultCard{margin-top:10px;padding:10px;border-radius:8px;background:#fff;border:1px solid #e6e9ef;min-height:64px;}
+
+  #resultCard{
+    margin-top:10px;padding:10px;
+    border-radius:8px;background:#fff;
+    border:1px solid #e6e9ef;min-height:64px;
+  }
+
   .field{margin:6px 0;font-size:14px;}
   .label{font-weight:700;margin-right:6px;display:inline-block;width:120px;color:#111827;}
   .kemi{color:#b91c1c;font-weight:700;}
+
   .note{font-size:13px;color:var(--muted);text-align:center;margin-top:8px;}
   footer{text-align:center;color:var(--muted);font-size:12px;margin-top:10px;}
+
   .sample{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:12px;}
-  img.sampleQR{width:140px;height:140px;border-radius:8px;border:1px solid #e6e9ef;background:#fff;padding:6px;}
-  pre#raw{white-space:pre-wrap;background:#fafafa;padding:8px;border-radius:6px;border:1px solid #eee;font-size:12px;margin-top:10px;}
+  img.sampleQR{
+    width:140px;height:140px;
+    border-radius:8px;border:1px solid #e6e9ef;
+    background:#fff;padding:6px;
+  }
+
+  pre#raw{
+    white-space:pre-wrap;
+    background:#fafafa;
+    padding:8px;border-radius:6px;
+    border:1px solid #eee;font-size:12px;
+    margin-top:10px;
+  }
 </style>
 </head>
+
 <body>
 <div class="wrap">
   <div class="card">
+
     <header>
       <img src="https://upload.wikimedia.org/wikipedia/commons/d/db/ROCKWOOL_logo.svg" alt="ROCKWOOL logo">
-      <h1>QR-Scanner v1.1 PRO (ROCKWOOL)</h1>
-      <div class="muted">Tryk <strong>NY</strong> for at starte kameraet. Placer QR inden for rammen.</div>
+      <h1>QR-Scanner v1.2 PRO (ROCKWOOL)</h1>
+      <div class="muted">Tryk <strong>NY</strong> for at starte kameraet. Placer QR i rammen.</div>
     </header>
 
     <div id="scannerArea">
-      <div class="preview-frame" id="previewFrame">
+      <div class="preview-frame">
         <video id="video" autoplay muted playsinline></video>
-        <div class="overlay-rect" aria-hidden="true"></div>
+        <div class="overlay-rect"></div>
       </div>
 
       <div class="controls">
@@ -53,7 +116,7 @@
         <button id="btnCopy" class="btn-ghost">KOPIER</button>
       </div>
 
-      <div id="resultCard" aria-live="polite">
+      <div id="resultCard">
         <div id="noData" class="muted">Ingen data scannet endnu.</div>
 
         <div id="parsed" style="display:none;">
@@ -69,7 +132,6 @@
           <div class="field"><span class="label">Kemi (UN)</span><span id="fKemi" class="kemi"></span></div>
         </div>
 
-        <!-- Rå data kun én gang -->
         <pre id="raw" style="display:none;"></pre>
       </div>
 
@@ -77,69 +139,90 @@
         <div style="text-align:center;">
           <div class="muted">Prøve-QR</div>
           <img id="sampleQR" class="sampleQR"
-          src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=Område%3A%20LagerA%0AVarenummer%3A%2012345%0AMateriale%3A%20Stål%0AAntal%3A%2010%20PL%0AMål%3A%20L%3A200%20B%3A100%20T%3A10%20mm%0AV%3A%2012%20kg%0AMeter%3A%2010%0AAreal%3A%203%20m²%0AAnden%20info%3A%20Test%0ALagerplads%3A%20Reol%3A1%20Hylde%3A2%20Plads%3A3%0AKemi%3A%20UN1209">
+            src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=Område%3A%20LagerA%0AVarenummer%3A%2012345%0AMateriale%3A%20Stål%0AAntal%3A%2010%20PL%0AMål%3A%20L%3A200%20B%3A100%20T%3A10%20mm%0AV%3A%2012%20kg%0AMeter%3A%2010%0AAreal%3A%203%20m²%0AAnden%20info%3A%20Test%0ALagerplads%3A%20Reol%3A1%20Hylde%3A2%20Plads%3A3%0AKemi%3A%20UN1209">
         </div>
       </div>
 
-      <div class="note">Når du er klar: tryk <strong>NY</strong> og hold QR-koden i rammen.</div>
+      <div class="note">Tryk <strong>NY</strong> og hold QR-koden i rammen.</div>
+
     </div>
 
-    <footer class="version">Version 1.1 PRO (ROCKWOOL)</footer>
+    <footer>Version 1.2 PRO (ROCKWOOL)</footer>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
 <script>
-let video=document.getElementById('video');
-let canvas=document.createElement('canvas');
-let ctx=canvas.getContext('2d');
+let video=document.getElementById("video");
+let canvas=document.createElement("canvas");
+let ctx=canvas.getContext("2d");
 let stream=null, scanning=false, rafId=null;
 
-// Felter
-const btnStart=document.getElementById('btnStart');
-const btnStop=document.getElementById('btnStop');
-const btnCopy=document.getElementById('btnCopy');
-const noData=document.getElementById('noData');
-const parsed=document.getElementById('parsed');
-const raw=document.getElementById('raw');
+// Felter:
+const btnStart=document.getElementById("btnStart");
+const btnStop=document.getElementById("btnStop");
+const btnCopy=document.getElementById("btnCopy");
+const noData=document.getElementById("noData");
+const parsed=document.getElementById("parsed");
+const raw=document.getElementById("raw");
 
-const fOmr=document.getElementById('fOmr');
-const fVnr=document.getElementById('fVnr');
-const fMat=document.getElementById('fMat');
-const fAnt=document.getElementById('fAnt');
-const fMal=document.getElementById('fMal');
-const fVgt=document.getElementById('fVgt');
-const fM=document.getElementById('fM');
-const fInfo=document.getElementById('fInfo');
-const fLager=document.getElementById('fLager');
-const fKemi=document.getElementById('fKemi');
+const fOmr=document.getElementById("fOmr");
+const fVnr=document.getElementById("fVnr");
+const fMat=document.getElementById("fMat");
+const fAnt=document.getElementById("fAnt");
+const fMal=document.getElementById("fMal");
+const fVgt=document.getElementById("fVgt");
+const fM=document.getElementById("fM");
+const fInfo=document.getElementById("fInfo");
+const fLager=document.getElementById("fLager");
+const fKemi=document.getElementById("fKemi");
 
-// Parse QR-data
+// Parser funktionen
 function parseAndDisplay(text){
   raw.style.display="block";
   raw.textContent=text;
 
-  // nulstil felter
-  fOmr.textContent=fVnr.textContent=fMat.textContent=fAnt.textContent='';
-  fMal.textContent=fVgt.textContent=fM.textContent=fInfo.textContent='';
-  fLager.textContent=fKemi.textContent='';
+  // Reset
+  fOmr.textContent=fVnr.textContent=fMat.textContent=fAnt.textContent="";
+  fMal.textContent=fVgt.textContent=fM.textContent=fInfo.textContent="";
+  fLager.textContent=fKemi.textContent="";
 
   const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+
   lines.forEach(line=>{
     const lower=line.toLowerCase();
 
-    if(lower.startsWith("område")) fOmr.textContent=line.split(":")[1]?.trim();
-    else if(lower.startsWith("varenummer")) fVnr.textContent=line.split(":")[1]?.trim();
-    else if(lower.startsWith("materiale")) fMat.textContent=line.split(":")[1]?.trim();
-    else if(lower.startsWith("antal")) fAnt.textContent=line.split(":")[1]?.trim();
-    else if(lower.startsWith("mål")) fMal.textContent=line.split(":")[1]?.trim();
-    else if(lower.startsWith("vægt") || lower.startsWith("v:")) fVgt.textContent=line.split(":")[1]?.trim();
-    else if(lower.startsWith("meter") || lower.includes("m²")) fM.textContent=line.split(":")[1]?.trim();
-    else if(lower.startsWith("anden")) fInfo.textContent=line.split(":")[1]?.trim();
-    else if(lower.startsWith("lagerplads")) fLager.textContent=line.split(":")[1]?.trim();
-    else if(lower.startsWith("kemi") || lower.startsWith("un")) {
-      let v = line.split(":")[1]?.trim() || "";
-      v = v.replace(/^un/i,"");
+    if(lower.startsWith("område"))
+      fOmr.textContent=line.split(":")[1]?.trim();
+
+    else if(lower.startsWith("varenummer"))
+      fVnr.textContent=line.split(":")[1]?.trim();
+
+    else if(lower.startsWith("materiale"))
+      fMat.textContent=line.split(":")[1]?.trim();
+
+    else if(lower.startsWith("antal"))
+      fAnt.textContent=line.split(":")[1]?.trim();
+
+    else if(lower.startsWith("mål"))
+      fMal.textContent=line.split(":")[1]?.trim();
+
+    else if(lower.startsWith("vægt") || lower.startsWith("v:"))
+      fVgt.textContent=line.split(":")[1]?.trim();
+
+    else if(lower.startsWith("meter") || lower.includes("m²"))
+      fM.textContent=line.split(":")[1]?.trim();
+
+    else if(lower.startsWith("anden"))
+      fInfo.textContent=line.split(":")[1]?.trim();
+
+    else if(lower.startsWith("lagerplads"))
+      fLager.textContent=line.split(":")[1]?.trim();
+
+    else if(lower.startsWith("kemi") || lower.startsWith("un")){
+      let v=line.split(":")[1]?.trim() ?? "";
+      v=v.replace(/^un/i,"");
       fKemi.textContent="UN"+v;
     }
   });
@@ -194,38 +277,36 @@ function tick(){
 }
 
 // Knapper
-btnStart.addEventListener('click',()=>{if(!scanning)startCamera();});
-btnStop.addEventListener('click',stopCamera);
-btnCopy.addEventListener('click',async()=>{
-  if(!raw.textContent.trim()) return alert("Ingen data at kopiere");
+btnStart.addEventListener("click",()=>{if(!scanning) startCamera();});
+btnStop.addEventListener("click",stopCamera);
+btnCopy.addEventListener("click",async()=>{
+  if(!raw.textContent.trim())
+    return alert("Ingen data at kopiere");
   await navigator.clipboard.writeText(raw.textContent);
   alert("Data kopieret ✔");
 });
 
-// Test-QR klik
-document.getElementById('sampleQR').addEventListener('click',async e=>{
-  const img=e.target;
-  const tmp=document.createElement('canvas');
-  const c=tmp.getContext('2d');
+// Test QR
+document.getElementById("sampleQR")
+  .addEventListener("click",async e=>{
+    const img=e.target;
+    const tmp=document.createElement("canvas");
+    const c=tmp.getContext("2d");
 
-  await new Promise(res=>{if(img.complete)res(); else img.onload=res;});
-  tmp.width=img.naturalWidth; tmp.height=img.naturalHeight;
-  c.drawImage(img,0,0);
+    await new Promise(res=>{if(img.complete)res(); else img.onload=res;});
+    tmp.width=img.naturalWidth;
+    tmp.height=img.naturalHeight;
+    c.drawImage(img,0,0);
 
-  const d=c.getImageData(0,0,tmp.width,tmp.height);
-  const code=jsQR(d.data,d.width,d.height,{inversionAttempts:"attemptBoth"});
-  if(code) parseAndDisplay(code.data);
-  else alert("Kunne ikke læse prøve-QR");
+    const d=c.getImageData(0,0,tmp.width,tmp.height);
+    const code=jsQR(d.data,d.width,d.height,{inversionAttempts:"attemptBoth"});
+    if(code) parseAndDisplay(code.data);
+    else alert("Kunne ikke læse prøve-QR");
 });
 
-// Stop kamera hvis siden forlades
+// Stop kamera ved navigation
 window.addEventListener("beforeunload",stopCamera);
 </script>
-</body>
-</html>
 
-});
-
-</script>
 </body>
 </html>
