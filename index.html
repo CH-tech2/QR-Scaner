@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html lang="da">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>QR-Scanner v1.2 PRO (ROCKWOOL)</title>
-
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>QR-Scanner v1.3 PRO (ROCKWOOL)</title>
 <style>
-  :root{--bg:#f9fafb;--card:#fff;--muted:#6b7280;--accent:#111827;}
+  :root{--bg:#f9fafb;--card:#fff;--muted:#6b7280;--accent:#111827;--danger:#b91c1c;}
   body{margin:0;font-family:Arial,monospace;background:var(--bg);color:var(--accent);padding:16px;}
   .wrap{max-width:980px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:14px;}
   .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.06);}
@@ -15,99 +14,58 @@
   h1{margin:4px 0;font-size:20px;}
   .muted{color:var(--muted);font-size:13px;margin-bottom:8px;text-align:center;}
 
-  /* Kamera preview */
-  .preview-frame{
-    position:relative;
-    width:92%;
-    max-width:520px;
-    height:360px;
-    border-radius:12px;
-    overflow:hidden;
-    background:#000;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
+  /* Preview */
+  .preview-frame{position:relative;width:92%;max-width:520px;height:360px;border-radius:12px;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center;margin:0 auto;}
+  video#video{width:100%;height:100%;object-fit:cover;transform:none !important;-webkit-transform:none !important;}
+  .overlay-rect{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:72%;height:72%;border:6px solid rgba(255,255,255,0.95);border-radius:8px;background:rgba(255,255,255,0.02);}
 
-  /* FIX: kamera IKKE spejlvendt */
-  video#video{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    transform: none !important;
-    -webkit-transform: none !important;
-  }
-
-  .overlay-rect{
-    position:absolute;
-    left:50%;top:50%;
-    transform:translate(-50%,-50%);
-    width:72%;height:72%;
-    border:6px solid rgba(255,255,255,0.95);
-    border-radius:8px;
-    opacity:0.95;
-    background:rgba(255,255,255,0.02);
-  }
-
-  .controls{
-    display:flex;gap:8px;
-    justify-content:center;
-    margin-top:8px;
-  }
-
-  button{
-    padding:10px 14px;
-    border-radius:10px;
-    border:0;cursor:pointer;
-    font-weight:700;font-size:14px;
-  }
+  .controls{display:flex;gap:8px;justify-content:center;margin-top:12px;}
+  button{padding:10px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:700;font-size:14px;}
   .btn-primary{background:var(--accent);color:#fff;}
   .btn-ghost{background:#eef2ff;color:var(--accent);}
 
-  #resultCard{
-    margin-top:10px;padding:10px;
-    border-radius:8px;background:#fff;
-    border:1px solid #e6e9ef;min-height:64px;
-  }
+  /* Result card */
+  #resultCard{margin-top:10px;padding:12px;border-radius:8px;background:#fff;border:1px solid #e6e9ef;min-height:80px;}
+  .data-line{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #f3f4f6;}
+  .data-line:last-child{border-bottom:0;}
+  .label{width:140px;font-weight:700;font-family:monospace;}
+  .value{font-family:monospace;white-space:pre-wrap;}
+  .value.kemi{color:var(--danger);font-weight:700;}
+  .no-data{color:var(--muted);font-style:italic;}
 
-  .field{margin:6px 0;font-size:14px;}
-  .label{font-weight:700;margin-right:6px;display:inline-block;width:120px;color:#111827;}
-  .kemi{color:#b91c1c;font-weight:700;}
-
+  .actions{display:flex;gap:8px;justify-content:center;margin-top:10px;}
   .note{font-size:13px;color:var(--muted);text-align:center;margin-top:8px;}
   footer{text-align:center;color:var(--muted);font-size:12px;margin-top:10px;}
 
+  /* sample QR */
   .sample{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:12px;}
-  img.sampleQR{
-    width:140px;height:140px;
-    border-radius:8px;border:1px solid #e6e9ef;
-    background:#fff;padding:6px;
-  }
+  img.sampleQR{width:140px;height:140px;border-radius:8px;border:1px solid #e6e9ef;background:#fff;padding:6px;cursor:pointer;}
 
-  pre#raw{
-    white-space:pre-wrap;
-    background:#fafafa;
-    padding:8px;border-radius:6px;
-    border:1px solid #eee;font-size:12px;
-    margin-top:10px;
+  /* raw block toggle */
+  .raw-toggle{display:flex;justify-content:center;margin-top:8px;}
+  .raw-block{margin-top:10px;background:#fafafa;padding:8px;border-radius:6px;border:1px solid #eee;font-family:monospace;font-size:13px;white-space:pre-wrap;display:none;}
+
+  @media (max-width:600px){
+    .label{width:110px;}
+    header img{width:160px;}
+    .preview-frame{height:320px;}
   }
 </style>
 </head>
-
 <body>
 <div class="wrap">
   <div class="card">
-
     <header>
+      <!-- Logo (external link here to keep file size small; you can replace with data-uri if needed) -->
       <img src="https://upload.wikimedia.org/wikipedia/commons/d/db/ROCKWOOL_logo.svg" alt="ROCKWOOL logo">
-      <h1>QR-Scanner v1.2 PRO (ROCKWOOL)</h1>
-      <div class="muted">Tryk <strong>NY</strong> for at starte kameraet. Placer QR i rammen.</div>
+      <h1>QR-Scanner v1.3 PRO (ROCKWOOL)</h1>
+      <div class="muted">Tryk <strong>NY</strong> for at starte kameraet. Placer QR inden for rammen.</div>
     </header>
 
     <div id="scannerArea">
-      <div class="preview-frame">
+      <div class="preview-frame" id="previewFrame">
         <video id="video" autoplay muted playsinline></video>
-        <div class="overlay-rect"></div>
+        <div class="overlay-rect" aria-hidden="true"></div>
       </div>
 
       <div class="controls">
@@ -116,197 +74,290 @@
         <button id="btnCopy" class="btn-ghost">KOPIER</button>
       </div>
 
-      <div id="resultCard">
-        <div id="noData" class="muted">Ingen data scannet endnu.</div>
+      <div id="resultCard" aria-live="polite">
+        <div id="noData" class="no-data">Ingen data scannet endnu.</div>
 
-        <div id="parsed" style="display:none;">
-          <div class="field"><span class="label">Område</span><span id="fOmr"></span></div>
-          <div class="field"><span class="label">Varenummer</span><span id="fVnr"></span></div>
-          <div class="field"><span class="label">Materiale</span><span id="fMat"></span></div>
-          <div class="field"><span class="label">Antal</span><span id="fAnt"></span></div>
-          <div class="field"><span class="label">Mål (L,B,T)</span><span id="fMal"></span></div>
-          <div class="field"><span class="label">Vægt</span><span id="fVgt"></span></div>
-          <div class="field"><span class="label">Meter / m²</span><span id="fM"></span></div>
-          <div class="field"><span class="label">Anden info</span><span id="fInfo"></span></div>
-          <div class="field"><span class="label">Lagerplads</span><span id="fLager"></span></div>
-          <div class="field"><span class="label">Kemi (UN)</span><span id="fKemi" class="kemi"></span></div>
+        <!-- Structured data container (populated in same order as QR lines) -->
+        <div id="structured" style="display:none;"></div>
+
+        <!-- raw data toggled (hidden by default to avoid duplicates) -->
+        <div class="raw-toggle">
+          <button id="btnToggleRaw" class="btn-ghost">Vis rå data</button>
         </div>
-
-        <pre id="raw" style="display:none;"></pre>
+        <div id="rawBlock" class="raw-block" aria-hidden="true"></div>
       </div>
 
       <div class="sample">
         <div style="text-align:center;">
-          <div class="muted">Prøve-QR</div>
+          <div class="muted">Prøve-QR (tryk for at bruge som input)</div>
           <img id="sampleQR" class="sampleQR"
-            src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=Område%3A%20LagerA%0AVarenummer%3A%2012345%0AMateriale%3A%20Stål%0AAntal%3A%2010%20PL%0AMål%3A%20L%3A200%20B%3A100%20T%3A10%20mm%0AV%3A%2012%20kg%0AMeter%3A%2010%0AAreal%3A%203%20m²%0AAnden%20info%3A%20Test%0ALagerplads%3A%20Reol%3A1%20Hylde%3A2%20Plads%3A3%0AKemi%3A%20UN1209">
+            src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=Område%3A%20LagerA%0AVarenummer%3A%2012345%0AMateriale%3A%20Stål%0AAntal%3A%2010%20PL%0AMål%3A%20L%3A200%20B%3A100%20T%3A10%20mm%0AV%3A%2012%20kg%0AMeter%3A%2010%0AAreal%3A%203%20m%C2%B2%0AAnden%20info%3A%20Test%0ALagerplads%3A%20Reol%3A1%20Hylde%3A2%20Plads%3A3%0AKemi%3A%20UN1209"
+            alt="Prøve QR">
         </div>
       </div>
 
-      <div class="note">Tryk <strong>NY</strong> og hold QR-koden i rammen.</div>
-
+      <div class="note">Når du er klar: tryk <strong>NY</strong>, giv tilladelse til kameraet, og hold QR-koden i rammen.</div>
     </div>
 
-    <footer>Version 1.2 PRO (ROCKWOOL)</footer>
+    <footer>Version 1.3 PRO (ROCKWOOL)</footer>
   </div>
 </div>
 
+<!-- jsQR -->
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-
 <script>
-let video=document.getElementById("video");
-let canvas=document.createElement("canvas");
-let ctx=canvas.getContext("2d");
-let stream=null, scanning=false, rafId=null;
+/* --- Elements --- */
+const video = document.getElementById('video');
+const structured = document.getElementById('structured');
+const rawBlock = document.getElementById('rawBlock');
+const noData = document.getElementById('noData');
+const btnStart = document.getElementById('btnStart');
+const btnStop  = document.getElementById('btnStop');
+const btnCopy  = document.getElementById('btnCopy');
+const btnToggleRaw = document.getElementById('btnToggleRaw');
+const sampleQR = document.getElementById('sampleQR');
 
-// Felter:
-const btnStart=document.getElementById("btnStart");
-const btnStop=document.getElementById("btnStop");
-const btnCopy=document.getElementById("btnCopy");
-const noData=document.getElementById("noData");
-const parsed=document.getElementById("parsed");
-const raw=document.getElementById("raw");
+let canvas = document.createElement('canvas');
+let ctx = canvas.getContext('2d');
+let stream = null;
+let scanning = false;
+let rafId = null;
 
-const fOmr=document.getElementById("fOmr");
-const fVnr=document.getElementById("fVnr");
-const fMat=document.getElementById("fMat");
-const fAnt=document.getElementById("fAnt");
-const fMal=document.getElementById("fMal");
-const fVgt=document.getElementById("fVgt");
-const fM=document.getElementById("fM");
-const fInfo=document.getElementById("fInfo");
-const fLager=document.getElementById("fLager");
-const fKemi=document.getElementById("fKemi");
+/* --- Helper: sanitize and trim --- */
+function safe(v){ return (v||'').toString().trim(); }
 
-// Parser funktionen
-function parseAndDisplay(text){
-  raw.style.display="block";
-  raw.textContent=text;
-
-  // Reset
-  fOmr.textContent=fVnr.textContent=fMat.textContent=fAnt.textContent="";
-  fMal.textContent=fVgt.textContent=fM.textContent=fInfo.textContent="";
-  fLager.textContent=fKemi.textContent="";
-
-  const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+/* --- Parse logic: produce an ordered list of {label, value, rawLabel} in the same order as lines --- */
+function parseLinesToEntries(text){
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const entries = [];
 
   lines.forEach(line=>{
-    const lower=line.toLowerCase();
+    const lower = line.toLowerCase();
 
-    if(lower.startsWith("område"))
-      fOmr.textContent=line.split(":")[1]?.trim();
-
-    else if(lower.startsWith("varenummer"))
-      fVnr.textContent=line.split(":")[1]?.trim();
-
-    else if(lower.startsWith("materiale"))
-      fMat.textContent=line.split(":")[1]?.trim();
-
-    else if(lower.startsWith("antal"))
-      fAnt.textContent=line.split(":")[1]?.trim();
-
-    else if(lower.startsWith("mål"))
-      fMal.textContent=line.split(":")[1]?.trim();
-
-    else if(lower.startsWith("vægt") || lower.startsWith("v:"))
-      fVgt.textContent=line.split(":")[1]?.trim();
-
-    else if(lower.startsWith("meter") || lower.includes("m²"))
-      fM.textContent=line.split(":")[1]?.trim();
-
-    else if(lower.startsWith("anden"))
-      fInfo.textContent=line.split(":")[1]?.trim();
-
-    else if(lower.startsWith("lagerplads"))
-      fLager.textContent=line.split(":")[1]?.trim();
-
-    else if(lower.startsWith("kemi") || lower.startsWith("un")){
-      let v=line.split(":")[1]?.trim() ?? "";
-      v=v.replace(/^un/i,"");
-      fKemi.textContent="UN"+v;
+    // detect UN / Kemi quickly (also allow lines like "UN1209" or "Kemi: UN1209")
+    const unMatch = line.match(/(un\s*\d{1,6})/i) || line.match(/^(\s*un\d{1,6})/i);
+    if(unMatch){
+      entries.push({ label: 'Kemi', value: unMatch[0].toUpperCase().replace(/\s+/,'').replace(/^UN/i,'UN'), raw: line });
+      return;
     }
+
+    // common field patterns - preserve original label capitalization when possible
+    if(/^omrade:|^område:|^omrade\s*:/i.test(line)){
+      entries.push({ label: 'Område', value: safe(line.split(':').slice(1).join(':')), raw: line });
+      return;
+    }
+    if(/^varenummer:|^varenr:|^vnr:/i.test(line)){
+      entries.push({ label: 'Varenummer', value: safe(line.split(':').slice(1).join(':')), raw: line });
+      return;
+    }
+    if(/^materiale:|^mat:/i.test(line)){
+      entries.push({ label: 'Materiale', value: safe(line.split(':').slice(1).join(':')), raw: line });
+      return;
+    }
+    if(/^antal:|^antal\s*/i.test(line) || /\bantal\b/i.test(line) ){
+      entries.push({ label: 'Antal', value: safe(line.split(':').slice(1).join(':')) || safe(line.replace(/^antal[:\s]*/i,'')), raw: line });
+      return;
+    }
+    if(/^mål:|^maal:/i.test(line) || /^m[aå]l\s*:/i.test(line)){
+      entries.push({ label: 'Mål', value: safe(line.split(':').slice(1).join(':')), raw: line });
+      return;
+    }
+    // Længde, Bredde, Tykkelse in their own lines possibly
+    if(/^længde:|^laengde:|^l:/i.test(line) && /mm/i.test(line)){
+      entries.push({ label: 'Længde', value: safe(line.split(':').slice(1).join(':')), raw: line });
+      return;
+    }
+    if(/^bredde:|^b:/i.test(line) && /mm/i.test(line)){
+      entries.push({ label: 'Bredde', value: safe(line.split(':').slice(1).join(':')), raw: line });
+      return;
+    }
+    if(/^tykkelse:|^t:/i.test(line) && /mm/i.test(line)){
+      entries.push({ label: 'Tykkelse', value: safe(line.split(':').slice(1).join(':')), raw: line });
+      return;
+    }
+    if(/^v[aæ]gt:|^v:/i.test(line) || /\bkg\b/i.test(line)){
+      entries.push({ label: 'Vægt', value: safe(line.split(':').slice(1).join(':')), raw: line });
+      return;
+    }
+    if(/^meter:|^m:|længde i meter:/i.test(line) || /\b m\b/i.test(line) ){
+      entries.push({ label: 'Meter', value: safe(line.split(':').slice(1).join(':')), raw: line });
+      return;
+    }
+    if(/^areal:|m²|m2/i.test(line)){
+      entries.push({ label: 'Areal', value: safe(line.split(':').slice(1).join(':')), raw: line });
+      return;
+    }
+    if(/^anden info:|^andet:/i.test(line)){
+      entries.push({ label: 'Anden info', value: safe(line.split(':').slice(1).join(':')), raw: line });
+      return;
+    }
+    if(/^lagerplads:|^lager plads:|^lager:/i.test(line) || /reol:/i.test(line) ){
+      entries.push({ label: 'Lagerplads', value: safe(line.split(':').slice(1).join(':')), raw: line });
+      return;
+    }
+
+    // fallback: if line looks like "Key: Value" keep Key as label
+    if(line.includes(':')){
+      const parts = line.split(':');
+      const lbl = safe(parts[0]);
+      const val = safe(parts.slice(1).join(':'));
+      entries.push({ label: lbl.charAt(0).toUpperCase()+lbl.slice(1), value: val, raw: line });
+      return;
+    }
+
+    // last fallback: put whole line as "Tekst"
+    entries.push({ label: 'Tekst', value: line, raw: line });
   });
 
-  noData.style.display="none";
-  parsed.style.display="block";
+  return entries;
 }
 
-// Kamera start
+/* --- Render parsed entries in structured view (monospaced) --- */
+function renderStructured(entries){
+  structured.innerHTML = '';
+  if(!entries.length){
+    noData.style.display = '';
+    structured.style.display = 'none';
+    rawBlock.style.display = 'none';
+    btnToggleRaw.textContent = 'Vis rå data';
+    return;
+  }
+  noData.style.display = 'none';
+  structured.style.display = 'block';
+
+  // create DOM lines in the same order we received entries (no duplicates)
+  entries.forEach(e=>{
+    // skip empty values
+    if(!safe(e.value)) return;
+    const line = document.createElement('div');
+    line.className = 'data-line';
+    const lbl = document.createElement('div');
+    lbl.className = 'label';
+    lbl.textContent = e.label + ':';
+    const val = document.createElement('div');
+    val.className = 'value';
+    // Kemi (UN) in red
+    if(e.label.toLowerCase().startsWith('kemi') || /^un/i.test(e.value)){
+      val.className = 'value kemi';
+      // ensure value displays as UNxxxx
+      const normalized = (e.value||'').toString().toUpperCase().replace(/^UN/i,'UN');
+      val.textContent = normalized;
+    } else {
+      val.textContent = e.value;
+    }
+    line.appendChild(lbl);
+    line.appendChild(val);
+    structured.appendChild(line);
+  });
+
+  // raw block updates but remains hidden until toggled
+  rawBlock.textContent = entries.map(x=>x.raw).join('\\n');
+  rawBlock.style.display = 'none';
+  btnToggleRaw.textContent = 'Vis rå data';
+  rawBlock.setAttribute('aria-hidden','true');
+}
+
+/* --- Camera + scanning --- */
 async function startCamera(){
   try{
-    stream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:"environment"},
-      audio:false
-    });
-    video.srcObject=stream;
-    scanning=true;
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    video.srcObject = stream;
+    scanning = true;
     tick();
-  }catch(e){
-    alert("Kameraadgang mislykkedes: "+e.message);
+  } catch(err){
+    alert('Fejl ved adgang til kamera: ' + (err && err.message ? err.message : err));
   }
 }
 
-// Kamera stop
 function stopCamera(){
-  scanning=false;
+  scanning = false;
   if(rafId) cancelAnimationFrame(rafId);
   if(stream){
     stream.getTracks().forEach(t=>t.stop());
-    stream=null;
+    stream = null;
   }
-  video.srcObject=null;
+  video.srcObject = null;
 }
 
 function tick(){
   if(!scanning) return;
-
-  if(video.readyState===video.HAVE_ENOUGH_DATA){
-    canvas.width=video.videoWidth;
-    canvas.height=video.videoHeight;
-    ctx.drawImage(video,0,0,canvas.width,canvas.height);
-
-    const img=ctx.getImageData(0,0,canvas.width,canvas.height);
-    const code=jsQR(img.data,img.width,img.height,{inversionAttempts:"attemptBoth"});
-
-    if(code){
-      parseAndDisplay(code.data);
+  if(video.readyState === video.HAVE_ENOUGH_DATA){
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+    if(code && code.data){
+      const entries = parseLinesToEntries(code.data);
+      renderStructured(entries);
+      // stop camera after successful scan (user can press NY again)
       stopCamera();
     }
   }
-  rafId=requestAnimationFrame(tick);
+  rafId = requestAnimationFrame(tick);
 }
 
-// Knapper
-btnStart.addEventListener("click",()=>{if(!scanning) startCamera();});
-btnStop.addEventListener("click",stopCamera);
-btnCopy.addEventListener("click",async()=>{
-  if(!raw.textContent.trim())
-    return alert("Ingen data at kopiere");
-  await navigator.clipboard.writeText(raw.textContent);
-  alert("Data kopieret ✔");
+/* --- Buttons --- */
+btnStart.addEventListener('click', ()=>{ if(!scanning) startCamera(); });
+btnStop.addEventListener('click', ()=>{ stopCamera(); });
+btnCopy.addEventListener('click', async ()=>{
+  // copy structured view if present, else raw
+  let textToCopy = '';
+  if(structured.style.display !== 'none' && structured.childElementCount>0){
+    // build text from structured displayed lines in order
+    const lines = [];
+    structured.querySelectorAll('.data-line').forEach(dl=>{
+      const lbl = dl.querySelector('.label')?.textContent || '';
+      const val = dl.querySelector('.value')?.textContent || '';
+      lines.push((lbl + ' ' + val).trim());
+    });
+    textToCopy = lines.join('\\n');
+  } else {
+    textToCopy = rawBlock.textContent || '';
+  }
+
+  if(!textToCopy) return alert('Ingen data at kopiere.');
+  try{
+    await navigator.clipboard.writeText(textToCopy);
+    alert('Data kopieret til udklipsholder.');
+  } catch(e){
+    alert('Kopi mislykkedes: ' + (e && e.message ? e.message : e));
+  }
 });
 
-// Test QR
-document.getElementById("sampleQR")
-  .addEventListener("click",async e=>{
-    const img=e.target;
-    const tmp=document.createElement("canvas");
-    const c=tmp.getContext("2d");
-
-    await new Promise(res=>{if(img.complete)res(); else img.onload=res;});
-    tmp.width=img.naturalWidth;
-    tmp.height=img.naturalHeight;
-    c.drawImage(img,0,0);
-
-    const d=c.getImageData(0,0,tmp.width,tmp.height);
-    const code=jsQR(d.data,d.width,d.height,{inversionAttempts:"attemptBoth"});
-    if(code) parseAndDisplay(code.data);
-    else alert("Kunne ikke læse prøve-QR");
+/* toggle raw */
+btnToggleRaw.addEventListener('click', ()=>{
+  if(rawBlock.style.display === 'none' || rawBlock.getAttribute('aria-hidden') === 'true'){
+    rawBlock.style.display = 'block';
+    rawBlock.setAttribute('aria-hidden','false');
+    btnToggleRaw.textContent = 'Skjul rå data';
+  } else {
+    rawBlock.style.display = 'none';
+    rawBlock.setAttribute('aria-hidden','true');
+    btnToggleRaw.textContent = 'Vis rå data';
+  }
 });
 
-// Stop kamera ved navigation
-window.addEventListener("beforeunload",stopCamera);
+/* sample QR: decode and render */
+sampleQR.addEventListener('click', async (e)=>{
+  const img = e.target;
+  const tmp = document.createElement('canvas');
+  const tctx = tmp.getContext('2d');
+  await new Promise(res => { if(img.complete) res(); else img.onload = res; });
+  tmp.width = img.naturalWidth; tmp.height = img.naturalHeight;
+  tctx.drawImage(img, 0, 0);
+  const data = tctx.getImageData(0,0,tmp.width,tmp.height);
+  const code = jsQR(data.data, data.width, data.height, { inversionAttempts: 'attemptBoth' });
+  if(code && code.data){
+    const entries = parseLinesToEntries(code.data);
+    renderStructured(entries);
+  } else {
+    alert('Kunne ikke læse prøve-QR.');
+  }
+});
+
+/* Stop camera if user navigates away */
+window.addEventListener('beforeunload', stopCamera);
 </script>
-
 </body>
 </html>
