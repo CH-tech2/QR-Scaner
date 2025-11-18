@@ -1,282 +1,85 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="da">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>QR-Scanner v1.5 FIX (ROCKWOOL)</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>QR Scanner + Tabelvisning (v1.5 PRO)</title>
 <style>
-  :root{--bg:#f9fafb;--card:#fff;--muted:#6b7280;--accent:#111827;--danger:#b91c1c;}
-  body{margin:0;font-family:Arial,monospace;background:var(--bg);color:var(--accent);padding:16px;}
-  .wrap{max-width:980px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:14px;}
-  .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.06);}
-  header{text-align:center;margin-bottom:6px;}
-  header img{width:200px;height:auto;display:block;margin:8px auto;}
-  h1{margin:4px 0;font-size:20px;}
-  .muted{color:var(--muted);font-size:13px;margin-bottom:8px;text-align:center;}
-
-  /* Preview */
-  .preview-frame{position:relative;width:92%;max-width:520px;height:360px;border-radius:12px;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center;margin:0 auto;}
-  video#video{width:100%;height:100%;object-fit:cover;transform:none !important;-webkit-transform:none !important;}
-  .overlay-rect{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:72%;height:72%;border:6px solid rgba(255,255,255,0.95);border-radius:8px;background:rgba(255,255,255,0.02);}
-
-  /* Controls: large, handskevenlige but keep layout simple */
-  .controls{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
-  .btn{padding:0 18px;border-radius:12px;border:0;cursor:pointer;font-weight:800;font-size:15px;min-width:140px;height:48px;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(2,6,23,0.08);}
-  .btn-start{background:#111827;color:#fff;}
-  .btn-ny{background:#111827;color:#fff;}
-  .btn-copy{background:#eef2ff;color:var(--accent);}
-  .btn-afslut{background:#fff;color:var(--accent);border:1px solid #e6e9ef;}
-
-  /* status line (SCANNING...) kept visually like buttons but not clickable */
-  .status-line{min-width:140px;height:48px;display:flex;align-items:center;justify-content:center;font-weight:800;background:#fff;border-radius:12px;box-shadow:0 2px 6px rgba(2,6,23,0.04);}
-
-  /* Result area - EXACTLY like v1.4: raw pre, monospaced */
-  #resultCard{margin-top:12px;padding:12px;border-radius:8px;background:#fff;border:1px solid #e6e9ef;min-height:120px;}
-  .no-data{color:var(--muted);font-style:italic;}
-  .raw-block{background:#fafafa;padding:12px;border-radius:8px;border:1px solid #eee;font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.35;color:var(--accent);}
-  .raw-block .un{ color: var(--danger); font-weight:700; }
-
-  .note{font-size:13px;color:var(--muted);text-align:center;margin-top:8px;}
-  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:10px;}
-
-  .sample{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:12px;}
-  img.sampleQR{width:140px;height:140px;border-radius:8px;border:1px solid #e6e9ef;background:#fff;padding:6px;cursor:pointer;}
-
-  @media (max-width:600px){
-    header img{width:160px;}
-    .preview-frame{height:320px;}
-    .btn{min-width:120px;height:44px;}
-    .status-line{min-width:120px;height:44px;}
+  :root{
+    --bg: #f9fafb;
+    --text: #111827;
+    --muted: #6b7280;
+    --un-color: #b91c1c;
+    --card-bg: #ffffff;
+    --card-border: #e6e8eb;
+    --mono-size: 15px;
   }
+  body{font-family: Arial, monospace;background:var(--bg);color:var(--text);margin:20px;}
+  .container{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;}
+  .card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:10px;padding:16px;}
+  .raw-box{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;min-height:160px;white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:var(--mono-size);}
+  .raw-box .un{color:var(--un-color);font-weight:700;}
+  table.qr-table{width:100%;border-collapse:collapse;font-family:Arial,monospace;font-size:14px;margin-top:12px;}
+  table.qr-table tr{border-bottom:1px solid #e5e7eb;}
+  table.qr-table td{padding:8px 6px;vertical-align:top;}
+  table.qr-table td:first-child{font-weight:700;width:180px;}
+  .btn-row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;}
+  .btn{width:140px;height:48px;border-radius:8px;border:0;cursor:pointer;font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;background:#111827;color:#fff;}
+  .btn.ghost{background:#fff;color:#111827;border:1px solid #d1d5db;}
+  .btn:disabled{opacity:0.45;}
+  @media(max-width:900px){.container{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="container">
   <div class="card">
-    <header>
-      <img src="https://upload.wikimedia.org/wikipedia/commons/d/db/ROCKWOOL_logo.svg" alt="ROCKWOOL logo">
-      <h1>QR-Scanner v1.5 FIX (ROCKWOOL)</h1>
-      <div class="muted">Tryk <strong>START SCANNING</strong> for at aktivere kameraet.</div>
-    </header>
-
-    <div id="scannerArea">
-      <div class="preview-frame">
-        <video id="video" autoplay muted playsinline></video>
-        <div class="overlay-rect" aria-hidden="true"></div>
-      </div>
-
-      <!-- Controls: initial shows only START -->
-      <div class="controls" id="controlsArea">
-        <button id="btnStart" class="btn btn-start">START SCANNING</button>
-        <!-- hidden by default, shown during scanning -->
-        <button id="btnNy" class="btn btn-ny" style="display:none;">NY SCANNING</button>
-        <div id="statusLine" class="status-line" style="display:none;">SCANNING…</div>
-        <button id="btnCopy" class="btn btn-copy" style="display:none;" disabled>KOPIER</button>
-        <button id="btnAfslut" class="btn btn-afslut" style="display:none;">AFLUT SCANNING</button>
-      </div>
-
-      <div id="resultCard" aria-live="polite">
-        <div id="noData" class="no-data">Ingen data scannet endnu.</div>
-        <!-- RAW block exactly like v1.4 -->
-        <div id="rawBlock" class="raw-block" style="display:none;" aria-hidden="true"></div>
-      </div>
-
-      <div class="sample">
-        <div style="text-align:center;">
-          <div class="muted">Prøve-QR (tryk for at bruge som input)</div>
-          <img id="sampleQR" class="sampleQR"
-            src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=Område%3A%20Symaskine%0AVarenummer%3A%2050021365%0AMateriale%3A%20Tr%C3%A5dv%C3%A6v%20600%20mm%0AAntal%3A%204%20RULL%20p%C3%A5%20PL%0AM%C3%A5l%3A%0A%20%20Bredde%3A%20600%20mm%0AV%C3%A6gt%3A%20332%20kg%0AMeter%20%2F%20m%C2%B2%3A%20480%20m%C2%B2%0AAnden%20info%3A%0ALagerplads%3A%0A%20%20Reol%3A%2002%0A%20%20Hylde%3A%2002%0A%20%20Plads%3A%2003%0AKemi%3A%20UN1209"
-            alt="Prøve QR">
-        </div>
-      </div>
-
-      <div class="note">Når du er klar: tryk <strong>START SCANNING</strong>, giv tilladelse til kameraet, og hold QR-koden i rammen.</div>
+    <h3 style="margin:0;">Scanner</h3>
+    <div id="cameraWrap" style="margin-top:12px;background:#f3f4f6;border-radius:8px;height:260px;display:flex;align-items:center;justify-content:center;color:#9ca3af;">Kamera preview</div>
+    <div class="btn-row">
+      <button class="btn" id="startBtn" onclick="startScanning()">START SCANNING</button>
+      <button class="btn ghost" id="newBtn" onclick="newScanning()" disabled>NY SCANNING</button>
+      <span id="scanStatus" style="color:var(--muted);"></span>
     </div>
+  </div>
 
-    <footer>Version 1.5 FIX (ROCKWOOL)</footer>
+  <div class="card">
+    <h3 style="margin:0 0 10px 0;">Rådata</h3>
+    <div class="raw-box"><pre id="rawText"></pre></div>
+    <div class="btn-row">
+      <button class="btn ghost" id="copyBtn" onclick="copyRaw()" disabled>KOPIER</button>
+      <button class="btn" onclick="endScanning()">AFLUT SCANNING</button>
+    </div>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<div class="card" style="margin-top:20px;">
+  <h3 style="margin:0 0 10px 0;">Tabel-visning (fast rækkefølge)</h3>
+  <table id="qrTable" class="qr-table"></table>
+</div>
+
 <script>
-/* Elements */
-const video = document.getElementById('video');
-const btnStart = document.getElementById('btnStart');
-const btnNy = document.getElementById('btnNy');
-const btnCopy = document.getElementById('btnCopy');
-const btnAfslut = document.getElementById('btnAfslut');
-const statusLine = document.getElementById('statusLine');
-const rawBlock = document.getElementById('rawBlock');
-const noData = document.getElementById('noData');
-const sampleQR = document.getElementById('sampleQR');
+const FIELD_ORDER = [
+  "Område","Varenummer","Materiale","Antal","Mål","L","B","T","V",
+  "Meter","Areal m²","Anden info","Kemi","Reol","Hylde","Plads"
+];
 
-let canvas = document.createElement('canvas');
-let ctx = canvas.getContext('2d');
-let stream = null;
-let scanning = false;
-let rafId = null;
+function escapeHtml(str){return str.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 
-/* Helpers */
-function escapeHtml(str){ return (str||'').replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
-function highlightUNs(text){
-  return text.replace(/(un\s*\d{1,6})/gi, function(m){
-    const clean = m.toUpperCase().replace(/\s+/,'');
-    return '<span class="un">'+escapeHtml(clean)+'</span>';
-  });
-}
+function normalizeRawText(raw){return raw.split(/\r?\n/).map(l=>l.trim()).filter(l=>l!=='').join("\n");}
 
-/* UI states */
-function initialState(){
-  btnStart.style.display = '';
-  btnNy.style.display = 'none';
-  statusLine.style.display = 'none';
-  btnCopy.style.display = 'none';
-  btnAfslut.style.display = 'none';
-  btnCopy.disabled = true;
-  if(!rawBlock.textContent){
-    rawBlock.style.display = 'none';
-    noData.style.display = '';
-  } else {
-    rawBlock.style.display = '';
-    noData.style.display = 'none';
-  }
-}
-function scanningState(hasData){
-  btnStart.style.display = 'none';
-  btnNy.style.display = '';
-  statusLine.style.display = '';
-  btnAfslut.style.display = '';
-  // copy visible but disabled until data exists
-  btnCopy.style.display = '';
-  btnCopy.disabled = !hasData;
-  btnCopy.style.opacity = hasData ? '1' : '0.6';
-}
+function highlightUN(text){return text.replace(/\b(UN\d{1,6})\b/g,'<span class="un">$1</span>');}
 
-/* Render raw block (v1.4 style) */
-function renderRaw(text){
-  const safe = escapeHtml(text);
-  const highlighted = highlightUNs(safe);
-  rawBlock.innerHTML = highlighted;
-  rawBlock.style.display = '';
-  rawBlock.setAttribute('aria-hidden','false');
-  noData.style.display = 'none';
-  btnCopy.disabled = false;
-  btnCopy.style.opacity = '1';
-}
+function setRawData(raw){const n=normalizeRawText(raw||"");const pre=document.getElementById('rawText');if(!n){pre.textContent='';copyBtn.disabled=true;return;}let e=escapeHtml(n);e=highlightUN(e);pre.innerHTML=e;copyBtn.disabled=false;renderTableFromRaw(n);} 
 
-/* copy plain text */
-async function copyPlain(){
-  const txt = rawBlock.innerText || '';
-  if(!txt.trim()) return alert('Ingen data at kopiere.');
-  try{ await navigator.clipboard.writeText(txt); alert('Data kopieret til udklipsholder.'); }
-  catch(e){ alert('Kopi mislykkedes: ' + (e && e.message ? e.message : e)); }
-}
+function renderTableFromRaw(raw){const table=document.getElementById('qrTable');table.innerHTML='';if(!raw)return;const lines=raw.split(/\r?\n/).filter(l=>l.trim()!=='');const map={};lines.forEach(line=>{const p=line.split(":");if(p.length<2)return;const key=p[0].trim();const val=p.slice(1).join(":").trim();map[key]=val;});FIELD_ORDER.forEach(k=>{if(map[k]){const tr=document.createElement('tr');const valHTML=highlightUN(escapeHtml(map[k]));tr.innerHTML=`<td>${k}</td><td>${valHTML}</td>`;table.appendChild(tr);}});} 
 
-/* Camera control */
-async function startCamera(){
-  try{
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-    video.srcObject = stream;
-    scanning = true;
-    scanningState(!!rawBlock.textContent);
-    tick();
-  } catch(err){
-    alert('Fejl ved adgang til kamera: ' + (err && err.message ? err.message : err));
-    initialState();
-  }
-}
-function stopCamera(){
-  scanning = false;
-  if(rafId) cancelAnimationFrame(rafId);
-  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream = null; }
-  video.srcObject = null;
-}
+async function copyRaw(){const text=rawText.textContent;await navigator.clipboard.writeText(text);} 
 
-/* scanning loop */
-function tick(){
-  if(!scanning) return;
-  if(video.readyState === video.HAVE_ENOUGH_DATA){
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
-    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
-    if(code && code.data){
-      renderRaw(code.data);
-      // stop camera after found result
-      stopCamera();
-      // hide scanning indicator because scanning stopped (but controls visible)
-      statusLine.style.display = 'none';
-      btnNy.style.display = '';
-      btnCopy.style.display = '';
-      btnAfslut.style.display = '';
-    }
-  }
-  rafId = requestAnimationFrame(tick);
-}
+function startScanning(){startBtn.disabled=true;newBtn.disabled=true;scanStatus.textContent='SCANNING…';setTimeout(()=>{const example=`Område: Lager A\nVarenummer: 12345-RO\nMateriale: Glasuld\nAntal: 10 PL\nL: 1200\nB: 600\nT: 100\nV: 12.5 kg\nMeter: 24\nAreal m²: 7.2\nAnden info: Brug ved udendørs montage\nKemi: UN1209\nReol: 5\nHylde: B\nPlads: 12`;setRawData(example);scanStatus.textContent='';newBtn.disabled=false;},900);} 
 
-/* Button handlers */
-// START SCANNING: initial big button
-btnStart.addEventListener('click', async ()=>{
-  // hide old data until new result arrives
-  rawBlock.style.display = 'none';
-  noData.style.display = '';
-  btnCopy.disabled = true;
-  btnCopy.style.opacity = '0.6';
-  scanningState(false);
-  await startCamera();
-});
+function newScanning(){rawText.textContent='';qrTable.innerHTML='';copyBtn.disabled=true;scanStatus.textContent='SCANNING…';}
 
-// NY SCANNING: clear displayed data and restart scanning
-btnNy.addEventListener('click', ()=>{
-  rawBlock.textContent = '';
-  rawBlock.style.display = 'none';
-  noData.style.display = '';
-  btnCopy.disabled = true;
-  btnCopy.style.opacity = '0.6';
-  scanningState(false);
-  startCamera();
-});
-
-// KOPIER
-btnCopy.addEventListener('click', copyPlain);
-
-// AFLUT SCANNING: stop camera and return to initial start-state, keep data visible
-btnAfslut.addEventListener('click', ()=>{
-  stopCamera();
-  if(rawBlock.textContent){ rawBlock.style.display=''; noData.style.display='none'; } else { rawBlock.style.display='none'; noData.style.display=''; }
-  initialState();
-});
-
-/* Sample QR click to use as input (no camera) */
-sampleQR.addEventListener('click', async (e)=>{
-  const img = e.target;
-  const tmp = document.createElement('canvas');
-  const tctx = tmp.getContext('2d');
-  await new Promise(res => { if(img.complete) res(); else img.onload = res; });
-  tmp.width = img.naturalWidth; tmp.height = img.naturalHeight;
-  tctx.drawImage(img, 0, 0);
-  const data = tctx.getImageData(0,0,tmp.width,tmp.height);
-  const code = jsQR(data.data, data.width, data.height, { inversionAttempts: 'attemptBoth' });
-  if(code && code.data){
-    renderRaw(code.data);
-    // show controls as if a scan finished
-    statusLine.style.display = 'none';
-    btnStart.style.display = 'none';
-    btnNy.style.display = '';
-    btnCopy.style.display = '';
-    btnCopy.disabled = false;
-    btnCopy.style.opacity = '1';
-    btnAfslut.style.display = '';
-    noData.style.display = 'none';
-  } else alert('Kunne ikke læse prøve-QR.');
-});
-
-/* cleanup */
-window.addEventListener('beforeunload', stopCamera);
-
-/* init UI */
-initialState();
+function endScanning(){startBtn.disabled=false;newBtn.disabled=true;scanStatus.textContent='';}
 </script>
 </body>
 </html>
