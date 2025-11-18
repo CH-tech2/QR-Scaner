@@ -19,7 +19,7 @@
   .card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:10px;padding:16px;}
   .raw-box{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;min-height:160px;white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:var(--mono-size);}
   .raw-box .un{color:var(--un-color);font-weight:700;}
-  table.qr-table{width:100%;border-collapse:collapse;font-family:Arial,monospace;font-size:14px;margin-top:12px;}
+  .qr-lines div{padding:6px 4px;border-bottom:2px solid #111;} .qr-lines .un{color:#b91c1c;font-weight:700;}
   table.qr-table tr{border-bottom:1px solid #e5e7eb;}
   table.qr-table td{padding:8px 6px;vertical-align:top;}
   table.qr-table td:first-child{font-weight:700;width:180px;}
@@ -54,7 +54,7 @@
 
 <div class="card" style="margin-top:20px;">
   <h3 style="margin:0 0 10px 0;">Tabel-visning (fast rækkefølge)</h3>
-  <table id="qrTable" class="qr-table"></table>
+  <div id="qrLines" class="qr-lines"></div>
 </div>
 
 <script>
@@ -71,7 +71,9 @@ function highlightUN(text){return text.replace(/\b(UN\d{1,6})\b/g,'<span class="
 
 function setRawData(raw){const n=normalizeRawText(raw||"");const pre=document.getElementById('rawText');if(!n){pre.textContent='';copyBtn.disabled=true;return;}let e=escapeHtml(n);e=highlightUN(e);pre.innerHTML=e;copyBtn.disabled=false;renderTableFromRaw(n);} 
 
-function renderTableFromRaw(raw){const table=document.getElementById('qrTable');table.innerHTML='';if(!raw)return;const lines=raw.split(/\r?\n/).filter(l=>l.trim()!=='');const map={};lines.forEach(line=>{const p=line.split(":");if(p.length<2)return;const key=p[0].trim();const val=p.slice(1).join(":").trim();map[key]=val;});FIELD_ORDER.forEach(k=>{if(map[k]){const tr=document.createElement('tr');const valHTML=highlightUN(escapeHtml(map[k]));tr.innerHTML=`<td>${k}</td><td>${valHTML}</td>`;table.appendChild(tr);}});} 
+function renderTableFromRaw(raw){ const box=document.getElementById('qrLines'); box.innerHTML=''; if(!raw)return; const lines=raw.split(/
+?
+/).filter(l=>l.trim()!==''); lines.forEach(line=>{ const p=line.split(':'); const key=p[0]?.trim()||''; const val=p.slice(1).join(':').trim(); const div=document.createElement('div'); let txt = key ? key + ': ' + val : val; txt = highlightUN(escapeHtml(txt)); div.innerHTML = txt; box.appendChild(div); }); };lines.forEach(line=>{const p=line.split(":");if(p.length<2)return;const key=p[0].trim();const val=p.slice(1).join(":").trim();map[key]=val;});FIELD_ORDER.forEach(k=>{if(map[k]){const tr=document.createElement('tr');const valHTML=highlightUN(escapeHtml(map[k]));tr.innerHTML=`<td>${k}</td><td>${valHTML}</td>`;table.appendChild(tr);}});} 
 
 async function copyRaw(){const text=rawText.textContent;await navigator.clipboard.writeText(text);} 
 
