@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>QR Scanner v2.7</title>
+<title>QR Scanner v2.8</title>
 <style>
   :root{
     --bg: #f9fafb;
@@ -23,7 +23,6 @@
   .container{ display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
   .card{ background:#fff; border:1px solid #e6e8eb; border-radius:10px; padding:16px; }
 
-  /* Camera preview */
   #cameraWrap{
     background:#f3f4f6;
     border-radius:8px;
@@ -33,24 +32,34 @@
     justify-content:center;
     color:#9ca3af;
     overflow:hidden;
-    position:relative;
   }
-  #cameraWrap video{ width:100%; height:100%; object-fit:cover; transform:none !important; -webkit-transform:none !important; }
+  #cameraWrap video{
+    width:100%; height:100%;
+    object-fit:cover;
+    transform:none !important;
+    -webkit-transform:none !important;
+  }
 
-  /* Raw-lines style (exact look you approved) */
-  .raw-box{ background:#fff; border-radius:8px; padding:0; border:1px solid #e5e7eb; overflow:auto; }
+  .raw-box{
+    background:#fff;
+    border-radius:8px;
+    padding:0;
+    border:1px solid #e5e7eb;
+    overflow:auto;
+  }
   .qr-lines div{
     padding:8px 10px;
     border-bottom:2px solid #111;
-    font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+    font-family: ui-monospace, monospace;
     font-size:15px;
-    line-height:1.25;
     white-space:pre-wrap;
   }
-  .qr-lines .un{ color: var(--un-color); font-weight:700; }
+  .qr-lines .un{
+    color: var(--un-color);
+    font-weight:700;
+  }
 
-  /* Buttons (v1.5 PRO) */
-  .btn-row{ display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; align-items:center; }
+  .btn-row{ display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; }
   .btn{
     width:140px;
     height:48px;
@@ -59,7 +68,7 @@
     cursor:pointer;
     font-weight:700;
     font-size:16px;
-    display:inline-flex;
+    display:flex;
     align-items:center;
     justify-content:center;
     background:#111827;
@@ -68,56 +77,43 @@
   .btn.ghost{ background:#fff; color:#111827; border:1px solid #d1d5db; }
   .btn:disabled{ opacity:0.45; cursor:not-allowed; }
 
-  .status{ color:var(--muted); font-size:14px; margin-left:6px; }
+  .status{ color:var(--muted); font-size:14px; }
 
-  @media (max-width:900px){
+  @media(max-width:900px){
     .container{ grid-template-columns:1fr; }
   }
 </style>
 </head>
 <body>
-<h1>QR Scanner — v2.7</h1>
+<h1>QR Scanner — v2.8</h1>
 
 <div class="container">
-  <!-- Scanner card -->
   <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;">
-      <strong>Scanner</strong>
-    </div>
+    <strong>Scanner</strong>
+    <div id="cameraWrap">Kamera preview</div>
 
-    <div id="cameraWrap" aria-label="Kamera preview">Kamera preview</div>
-
-    <div class="btn-row" style="margin-top:12px;">
-      <!-- START visible before scanning and after scan -->
+    <div class="btn-row">
       <button class="btn" id="startBtn">START SCANNING</button>
-
-      <!-- NY visible during scanning only -->
       <button class="btn ghost" id="newBtn" style="display:none;">NY SCANNING</button>
-
       <div class="status" id="scanStatus"></div>
     </div>
   </div>
 
-  <!-- Raw data card -->
   <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;">
-      <strong>Rådata</strong>
-      <div style="font-size:12px;color:var(--muted);">Monospace — kun rå tekst</div>
-    </div>
+    <strong>Rådata</strong>
 
     <div class="raw-box" style="margin-top:10px;">
-      <div id="rawLines" class="qr-lines" aria-live="polite"></div>
+      <div id="rawLines" class="qr-lines"></div>
     </div>
 
     <div class="btn-row">
       <button class="btn ghost" id="copyBtn" disabled>KOPIER</button>
-      <!-- AFLUT fjernet -->
     </div>
   </div>
 </div>
 
 <script>
-/* QR Scanner v2.7 (AFLUT removed) */
+/* QR Scanner v2.8 */
 
 /* Elements */
 const startBtn = document.getElementById('startBtn');
@@ -134,18 +130,30 @@ let ctx = null;
 let scanning = false;
 let rafId = null;
 
-/* Utility */
+/* Utilities */
 function escapeHtml(str){
-  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
-function normalizeRawText(raw){
-  return String(raw||'').split(/\r?\n/).map(l=>l.trim()).filter(l=>l!=='').join('\n');
-}
-function highlightUN(str){
-  return String(str).replace(/\b(UN\d{1,6})\b/g, '<span class="un">$1</span>');
+  return String(str).replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
 }
 
-/* Display functions */
+function normalizeRawText(raw){
+  return String(raw||'')
+    .split(/\r?\n/)
+    .map(l=>l.trim())
+    .filter(l=>l!=='')
+    .join('\n');
+}
+
+/* NEW UN REGEX — v2.8 */
+function highlightUN(str){
+  return String(str).replace(
+    /\b(UN\d+(?:,\d+)+|UN\d+)\b/g,
+    '<span class="un">$1</span>'
+  );
+}
+
+/* UI states */
 function showStartOnly(){
   startBtn.style.display = 'inline-flex';
   newBtn.style.display = 'none';
@@ -165,165 +173,153 @@ function showAfterScan(){
   scanStatus.textContent = '';
 }
 
-/* Set raw data exactly as required */
+/* Set raw data */
 function setRawData(raw){
   rawLines.innerHTML = '';
   const normalized = normalizeRawText(raw);
+
   if(!normalized){
     copyBtn.disabled = true;
     return;
   }
-  const lines = normalized.split(/\r?\n/);
-  lines.forEach(line => {
+
+  normalized.split(/\r?\n/).forEach(line=>{
     const div = document.createElement('div');
     div.innerHTML = highlightUN(escapeHtml(line));
     rawLines.appendChild(div);
   });
+
   copyBtn.disabled = false;
 }
 
 /* Copy */
 async function copyRaw(){
   try{
-    const text = rawLines.innerText || '';
-    await navigator.clipboard.writeText(text);
+    await navigator.clipboard.writeText(rawLines.innerText);
     const prev = copyBtn.innerText;
     copyBtn.innerText = 'KOPIERET';
     setTimeout(()=> copyBtn.innerText = prev, 900);
   }catch(e){
-    alert('Kunne ikke kopiere — brug Ctrl/Cmd+C');
+    alert('Kunne ikke kopiere');
   }
 }
 
-/* Load jsQR dynamically */
+copyBtn.addEventListener('click', copyRaw);
+
+/* Load jsQR */
 function loadJsQr(){
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, reject)=>{
     if(window.jsQR) return resolve(window.jsQR);
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
-    s.onload = () => resolve(window.jsQR);
-    s.onerror = () => reject(new Error('Kunne ikke indlæse jsQR'));
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+    s.onload = ()=> resolve(window.jsQR);
+    s.onerror = ()=> reject(new Error('Kan ikke loade jsQR'));
     document.head.appendChild(s);
   });
 }
 
-/* Start camera */
+/* Camera */
 async function startCamera(){
   if(!videoEl){
     videoEl = document.createElement('video');
     videoEl.setAttribute('playsinline','true');
-    videoEl.style.width = '100%';
-    videoEl.style.height = '100%';
-    videoEl.autoplay = true;
+    videoEl.style.width='100%';
+    videoEl.style.height='100%';
   }
   if(!canvas){
-    canvas = document.createElement('canvas');
-    ctx = canvas.getContext('2d');
+    canvas=document.createElement('canvas');
+    ctx=canvas.getContext('2d');
   }
 
   try{
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+    stream = await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:'environment'}},
+      audio:false
+    });
     videoEl.srcObject = stream;
     await videoEl.play();
-    cameraWrap.innerHTML = '';
+    cameraWrap.innerHTML='';
     cameraWrap.appendChild(videoEl);
     return true;
   }catch(e){
-    console.warn('camera start failed', e);
     return false;
   }
 }
 
-/* Stop camera */
 function stopCamera(){
-  if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
-  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream = null; }
-  if(videoEl){ try{ videoEl.pause(); }catch(e){} }
-  cameraWrap.innerHTML = 'Kamera er slukket';
+  if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  cameraWrap.innerHTML='Kamera er slukket';
 }
 
 /* Scan loop */
 async function scanLoop(){
   if(!videoEl || videoEl.readyState !== videoEl.HAVE_ENOUGH_DATA){
-    rafId = requestAnimationFrame(scanLoop);
+    rafId=requestAnimationFrame(scanLoop);
     return;
   }
 
-  if(canvas.width !== videoEl.videoWidth || canvas.height !== videoEl.videoHeight){
-    canvas.width = videoEl.videoWidth || 640;
-    canvas.height = videoEl.videoHeight || 480;
+  if(canvas.width !== videoEl.videoWidth){
+    canvas.width = videoEl.videoWidth;
+    canvas.height = videoEl.videoHeight;
   }
 
-  ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-  const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
+  ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
+  const img = ctx.getImageData(0,0,canvas.width,canvas.height);
 
   let code = null;
   try{
-    if(window.jsQR) code = window.jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
-  }catch(e){
-    console.warn('jsQR decode error', e);
-  }
+    if(window.jsQR) code = jsQR(img.data, img.width, img.height);
+  }catch(e){}
 
   if(code && code.data){
     setRawData(code.data);
-    scanning = false;
+    scanning=false;
     stopCamera();
     showAfterScan();
     return;
   }
 
-  rafId = requestAnimationFrame(scanLoop);
+  rafId=requestAnimationFrame(scanLoop);
 }
 
-/* START action */
+/* START */
 async function startScanning(){
   if(scanning) return;
   scanning = true;
   showDuringScanning();
 
-  try{ await loadJsQr(); }catch(e){ console.warn('jsQR load failed', e); }
+  try{ await loadJsQr(); }catch(e){}
 
   const ok = await startCamera();
   if(!ok){
-    // fallback demo data if camera fails
-    const demo = 'Område: KONF\nVarenummer: 50023166\nMateriale: Tape\nAntal: 18';
-    setTimeout(()=>{ setRawData(demo); scanning=false; showAfterScan(); }, 700);
+    const demo='Område: KONF\nVarenummer: 50023166\nMateriale: Tape\nAntal: 18\nKemi: UN1725,1,11';
+    setTimeout(()=>{ setRawData(demo); scanning=false; showAfterScan(); },600);
     return;
   }
 
-  // begin scanning
   showDuringScanning();
   scanLoop();
 }
 
-/* NY SCANNING action */
+/* NY SCANNING */
 function newScanning(){
-  // Clear raw display and continue scanning. If camera not active, start camera+scan.
-  rawLines.innerHTML = '';
-  copyBtn.disabled = true;
-  scanStatus.textContent = 'SCANNING…';
+  rawLines.innerHTML='';
+  copyBtn.disabled=true;
+  scanStatus.textContent='SCANNING…';
   if(!stream) startScanning();
-  else {
+  else{
     showDuringScanning();
     if(!rafId) scanLoop();
   }
 }
 
-/* No AFLUT button — camera stops automatically on detection or unload */
-
-/* Hook UI */
 startBtn.addEventListener('click', startScanning);
 newBtn.addEventListener('click', newScanning);
-copyBtn.addEventListener('click', copyRaw);
 
-/* initial state */
+/* init */
 showStartOnly();
-
-/* stop camera on unload */
-window.addEventListener('beforeunload', () => { stopCamera(); });
-
-/* expose version */
-window.__QR_SCANNER_VERSION = 'v2.7';
+window.addEventListener('beforeunload', stopCamera);
 </script>
 </body>
 </html>
