@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>QR Scanner v2.6</title>
+<title>QR Scanner v2.7</title>
 <style>
   :root{
     --bg: #f9fafb;
@@ -76,25 +76,23 @@
 </style>
 </head>
 <body>
-<h1>QR Scanner — v2.6</h1>
+<h1>QR Scanner — v2.7</h1>
 
 <div class="container">
   <!-- Scanner card -->
   <div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <strong>Scanner</strong>
-      <!-- logo placeholder if needed -->
-      <img src="" alt="" style="height:26px;opacity:0.9;display:none;">
     </div>
 
     <div id="cameraWrap" aria-label="Kamera preview">Kamera preview</div>
 
     <div class="btn-row" style="margin-top:12px;">
-      <!-- START visible before scanning and after end -->
+      <!-- START visible before scanning and after scan -->
       <button class="btn" id="startBtn">START SCANNING</button>
 
       <!-- NY visible during scanning only -->
-      <button class="btn ghost" id="newBtn" style="display:none;" >NY SCANNING</button>
+      <button class="btn ghost" id="newBtn" style="display:none;">NY SCANNING</button>
 
       <div class="status" id="scanStatus"></div>
     </div>
@@ -113,19 +111,18 @@
 
     <div class="btn-row">
       <button class="btn ghost" id="copyBtn" disabled>KOPIER</button>
-      <button class="btn" id="endBtn">AFLUT SCANNING</button>
+      <!-- AFLUT fjernet -->
     </div>
   </div>
 </div>
 
 <script>
-/* QR Scanner v2.6 (full clean script) */
+/* QR Scanner v2.7 (AFLUT removed) */
 
 /* Elements */
 const startBtn = document.getElementById('startBtn');
 const newBtn   = document.getElementById('newBtn');
 const copyBtn  = document.getElementById('copyBtn');
-const endBtn   = document.getElementById('endBtn');
 const scanStatus = document.getElementById('scanStatus');
 const cameraWrap = document.getElementById('cameraWrap');
 const rawLines = document.getElementById('rawLines');
@@ -148,7 +145,7 @@ function highlightUN(str){
   return String(str).replace(/\b(UN\d{1,6})\b/g, '<span class="un">$1</span>');
 }
 
-/* Display functions: control visibility to match spec */
+/* Display functions */
 function showStartOnly(){
   startBtn.style.display = 'inline-flex';
   newBtn.style.display = 'none';
@@ -305,25 +302,19 @@ function newScanning(){
   rawLines.innerHTML = '';
   copyBtn.disabled = true;
   scanStatus.textContent = 'SCANNING…';
-  if(!stream){ startScanning(); }
+  if(!stream) startScanning();
   else {
     showDuringScanning();
     if(!rafId) scanLoop();
   }
 }
 
-/* AFLUT action */
-function endScanning(){
-  stopCamera();
-  scanning = false;
-  showStartOnly();
-}
+/* No AFLUT button — camera stops automatically on detection or unload */
 
 /* Hook UI */
 startBtn.addEventListener('click', startScanning);
 newBtn.addEventListener('click', newScanning);
 copyBtn.addEventListener('click', copyRaw);
-endBtn.addEventListener('click', endScanning);
 
 /* initial state */
 showStartOnly();
@@ -332,7 +323,7 @@ showStartOnly();
 window.addEventListener('beforeunload', () => { stopCamera(); });
 
 /* expose version */
-window.__QR_SCANNER_VERSION = 'v2.6';
+window.__QR_SCANNER_VERSION = 'v2.7';
 </script>
 </body>
 </html>
