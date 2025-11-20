@@ -3,78 +3,82 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Info Scan v4.7</title>
-
+<title>Info Scan v4.8</title>
 <style>
   :root{
-    --bg: #D20014;
-    --text:#111827;
-    --muted:#6b7280;
-    --un-color:#b91c1c;
-    --weight-green:#059669;
-    --weight-yellow:#CA8A04;
-    --weight-red:#B91C1C;
+    --bg: #D20014; /* ROCKWOOL red */
+    --text: #111827;
+    --muted: #6b7280;
+    --un-color: #b91c1c;
+    --card-bg: #ffffff;
+    --card-border: #e6e8eb;
+    --weight-green: #059669;
+    --weight-yellow: #CA8A04;
+    --weight-red: #B91C1C;
   }
 
+  html,body{height:100%;margin:0;}
   body{
     background:var(--bg);
-    margin:16px;
-    font-family:Arial, monospace;
+    color:var(--text);
+    font-family: Arial, monospace;
+    padding:14px;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
   }
 
-  /* HEADER */
-  .header{
+  /* Header like screenshot: title left, logo in white rounded box right */
+  .app-header{
     display:flex;
-    justify-content:space-between;
     align-items:center;
-    margin-bottom:14px;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:12px;
   }
-
-  .header-title{
+  .app-title{
+    color:#fff;
     font-size:20px;
     font-weight:700;
-    color:white;
     margin:0;
   }
-
   .logo-box{
-    background:white;
+    background:#fff;
     padding:6px 12px;
     border-radius:10px;
-    display:flex;
+    display:inline-flex;
     align-items:center;
+    justify-content:center;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.06);
   }
-
   .rw-logo{
     height:34px;
     display:block;
   }
 
-  /* LAYOUT */
+  /* Main grid and cards */
   .container{
     display:grid;
     grid-template-columns:1fr 1fr;
-    gap:20px;
+    gap:18px;
   }
-
   .card{
-    background:white;
+    background:var(--card-bg);
+    border:1px solid var(--card-border);
     border-radius:10px;
-    padding:16px;
-    border:1px solid #e5e7eb;
+    padding:14px;
   }
 
+  /* Camera preview */
   #cameraWrap{
-    height:260px;
     background:#f3f4f6;
     border-radius:8px;
+    height:260px;
     display:flex;
     align-items:center;
     justify-content:center;
-    overflow:hidden;
     color:#9ca3af;
+    overflow:hidden;
   }
-
   #cameraWrap video{
     width:100%;
     height:100%;
@@ -83,27 +87,34 @@
     -webkit-transform:none !important;
   }
 
+  /* Raw data */
   .raw-box{
-    background:white;
+    background:#fff;
     border-radius:8px;
     border:1px solid #e5e7eb;
     position:relative;
     overflow:auto;
   }
-
   .qr-lines div{
     padding:8px 10px;
-    border-bottom:2px solid black;
+    border-bottom:2px solid #111;
+    font-family: ui-monospace, monospace;
+    font-size:15px;
     white-space:pre-wrap;
-    font-family:ui-monospace, monospace;
   }
 
-  .un{ color:#b91c1c; font-weight:700; }
+  /* UN highlight */
+  .qr-lines .un{
+    color: var(--un-color);
+    font-weight:700;
+  }
 
-  .weight-green{ color:#059669; font-weight:700; }
-  .weight-yellow{ color:#CA8A04; font-weight:700; }
-  .weight-red{ color:#B91C1C; font-weight:700; }
+  /* Weight color classes */
+  .weight-green{ color: var(--weight-green); font-weight:700; }
+  .weight-yellow{ color: var(--weight-yellow); font-weight:700; }
+  .weight-red{ color: var(--weight-red); font-weight:700; }
 
+  /* Hazard icon (shows when UN present) */
   #hazardIcon{
     position:absolute;
     bottom:6px;
@@ -111,91 +122,109 @@
     width:38px;
     height:38px;
     display:none;
+    pointer-events:none;
+    z-index:50;
   }
 
+  /* Buttons */
   .btn-row{
     display:flex;
     gap:10px;
     margin-top:12px;
+    align-items:center;
   }
-
   .btn{
     width:140px;
     height:48px;
     border-radius:8px;
-    border:none;
+    border:0;
     cursor:pointer;
     font-weight:700;
     font-size:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
     background:#111827;
-    color:white;
+    color:#fff;
   }
-
   .btn.ghost{
-    background:white;
+    background:#fff;
     color:#111827;
     border:1px solid #d1d5db;
   }
+  .btn:disabled{
+    opacity:0.45;
+    cursor:not-allowed;
+  }
 
-  .btn:disabled{ opacity:.45; }
+  .status{
+    color:#ffffff;
+    font-size:14px;
+  }
 
   @media(max-width:900px){
     .container{ grid-template-columns:1fr; }
+    .rw-logo{ height:30px; }
+    .app-title{ font-size:18px; }
   }
 </style>
 </head>
-
 <body>
 
-<!-- HEADER -->
-<div class="header">
-  <h1 class="header-title">Info Scan — v4.7</h1>
+<!-- Header -->
+<header class="app-header" role="banner">
+  <h1 class="app-title">Info Scan — v4.8</h1>
 
-  <!-- Official ROCKWOOL logo SVG -->
-  <div class="logo-box">
-    <svg class="rw-logo" viewBox="0 0 900 220" xmlns="http://www.w3.org/2000/svg">
+  <!-- Logo in white rounded box (small, right side) -->
+  <div class="logo-box" aria-hidden="true">
+    <!-- SVG logo: white background inside box, red square icon + red text -->
+    <svg class="rw-logo" viewBox="0 0 900 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Rockwool logo">
+      <!-- Background of box intentionally left to container (white) -->
+      <!-- Red square icon -->
+      <g>
+        <rect x="0" y="28" width="160" height="160" fill="#D20014"/>
+        <!-- precise white symbol inside red square: two trapezoids/triangle-like shapes -->
+        <!-- Left shape -->
+        <path d="M32 160 L56 52 L80 160 Z" fill="#FFFFFF"/>
+        <!-- Right shape -->
+        <path d="M96 160 L120 52 L144 160 Z" fill="#FFFFFF"/>
+        <!-- small central separation to mimic original -->
+        <rect x="80" y="52" width="8" height="108" fill="#D20014" />
+      </g>
 
-      <!-- WHITE TEXT -->
-      <text x="250" y="150" font-family="Arial Black, Arial" font-size="130" fill="#FFFFFF">
-        ROCKWOOL
-      </text>
-
-      <!-- RED ICON BOX -->
-      <rect x="0" y="0" width="220" height="220" fill="#FFFFFF"/>
-      <rect x="10" y="10" width="200" height="200" fill="#D20014"/>
-
-      <!-- ICON SHAPE -->
-      <path d="M75 150 L110 60 L145 150 Z" fill="white"/>
-      <path d="M55 70 L75 70 L65 150 L55 150 Z" fill="white"/>
+      <!-- ROCKWOOL text: using bold sans, in red as requested (we display white text because box is white) -->
+      <!-- To match 'A' selection (white text + red icon on transparent), we draw text in white -->
+      <text x="190" y="150" font-family="Arial Black, Arial, sans-serif" font-size="110" fill="#FFFFFF" font-weight="700">ROCKWOOL</text>
     </svg>
   </div>
-</div>
+</header>
 
-<!-- MAIN -->
-<div class="container">
+<!-- Main content -->
+<main class="container" role="main">
 
-  <!-- SCANNER -->
-  <div class="card">
+  <!-- Scanner card -->
+  <section class="card" aria-label="Scanner">
     <strong>Scanner</strong>
     <div id="cameraWrap">Kamera er slukket</div>
 
     <div class="btn-row">
       <button class="btn" id="startBtn">START SCANNING</button>
       <button class="btn ghost" id="newBtn" style="display:none;">NY SCANNING</button>
+      <div class="status" id="scanStatus"></div>
     </div>
-  </div>
+  </section>
 
-  <!-- RAW DATA -->
-  <div class="card">
+  <!-- Raw data card -->
+  <section class="card" aria-label="Rådata">
     <strong>Rådata</strong>
 
     <div class="raw-box" style="margin-top:10px;">
-      <div id="rawLines" class="qr-lines"></div>
+      <div id="rawLines" class="qr-lines" aria-live="polite"></div>
 
-      <!-- HAZARD ICON -->
-      <svg id="hazardIcon" viewBox="0 0 400 400">
+      <!-- Hazard icon (shows when UN present) -->
+      <svg id="hazardIcon" viewBox="0 0 400 400" aria-hidden="true">
         <polygon points="200,20 380,200 200,380 20,200"
-        fill="white" stroke="#d32f2f" stroke-width="35"/>
+          fill="white" stroke="#d32f2f" stroke-width="35"/>
         <circle cx="200" cy="270" r="35" fill="black"/>
         <rect x="182" y="90" width="36" height="140" rx="18" fill="black"/>
       </svg>
@@ -204,58 +233,93 @@
     <div class="btn-row">
       <button class="btn ghost" id="copyBtn" disabled>KOPIER</button>
     </div>
-  </div>
-
-</div>
+  </section>
+</main>
 
 <script>
-/* --- Info Scan v4.7 engine (identisk med din stabile version) --- */
+/* Info Scan v4.8 - scanning engine (stable behavior preserved) */
 
-const startBtn=document.getElementById("startBtn");
-const newBtn=document.getElementById("newBtn");
-const copyBtn=document.getElementById("copyBtn");
-const cameraWrap=document.getElementById("cameraWrap");
-const rawLines=document.getElementById("rawLines");
-const hazardIcon=document.getElementById("hazardIcon");
+const startBtn = document.getElementById("startBtn");
+const newBtn   = document.getElementById("newBtn");
+const copyBtn  = document.getElementById("copyBtn");
+const scanStatus = document.getElementById("scanStatus");
+const cameraWrap = document.getElementById("cameraWrap");
+const rawLines   = document.getElementById("rawLines");
+const hazardIcon = document.getElementById("hazardIcon");
 
-let stream=null, videoEl=null, canvas=null, ctx=null, scanning=false, rafId=null;
+let stream=null, videoEl=null, canvas=null, ctx=null;
+let scanning=false, rafId=null;
 
-function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-function normalizeRaw(t){return t.split(/\r?\n/).map(l=>l.trim()).filter(l=>l).join("\n");}
-function highlightUN(s){return s.replace(/\b(UN\d+(?:,\d+)*)\b/g,'<span class="un">$1</span>');}
+/* Helpers */
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, m=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+function normalizeRawText(raw){
+  return String(raw||"").split(/\r?\n/).map(l=>l.trim()).filter(l=>l!=="").join("\n");
+}
+function highlightUN(str){
+  return str.replace(/\b(UN\d+(?:,\d+)*)\b/g,'<span class="un">$1</span>');
+}
 
+/* Weight logic */
 function classifyWeight(kg){
-  if(kg<=15) return {cls:"weight-green", extra:""};
-  if(kg<=30) return {cls:"weight-yellow", extra:" (Pas på når du løfter)"};
+  if(kg <= 15) return {cls:"weight-green", extra:""};
+  if(kg <= 30) return {cls:"weight-yellow", extra:" (Pas på når du løfter)"};
   return {cls:"weight-red", extra:" (Brug hjælpe værktøj til løft)"};
 }
 function extractWeight(line){
   const m=line.match(/Vægt:\s*([\d.,]+)/i);
   if(!m) return null;
-  return parseFloat(m[1].replace(",",".")) || null;
+  let kg=m[1].replace(",",".");
+  kg=parseFloat(kg);
+  return isNaN(kg)?null:kg;
 }
 
+/* UI states */
+function showStartOnly(){
+  startBtn.style.display="inline-flex";
+  newBtn.style.display="none";
+  copyBtn.disabled=(rawLines.innerText.trim()==="");
+  scanStatus.textContent="";
+}
+function showDuringScanning(){
+  startBtn.style.display="none";
+  newBtn.style.display="inline-flex";
+  copyBtn.disabled=true;
+  scanStatus.textContent="SCANNING…";
+}
+function showAfterScan(){
+  startBtn.style.display="inline-flex";
+  newBtn.style.display="none";
+  copyBtn.disabled=(rawLines.innerText.trim()==="");
+  scanStatus.textContent="";
+}
+
+/* Rendering raw data */
 function setRawData(raw){
   rawLines.innerHTML="";
   hazardIcon.style.display="none";
 
-  const n=normalizeRaw(raw);
+  const n=normalizeRawText(raw);
   if(!n){ copyBtn.disabled=true; return; }
 
-  const lines=n.split("\n");
+  const lines=n.split(/\r?\n/);
 
   if(/\bUN\d+/.test(n)) hazardIcon.style.display="block";
 
   lines.forEach(line=>{
     const div=document.createElement("div");
-    let html = highlightUN(escapeHtml(line));
+    let html=escapeHtml(line);
+    html=highlightUN(html);
 
-    if(line.startsWith("Vægt")){
+    if(/^Vægt:/i.test(line)){
       const kg=extractWeight(line);
-      if(kg!==null){
+      if(kg !== null){
         const info=classifyWeight(kg);
         div.classList.add(info.cls);
-        html+=info.extra;
+        html+=escapeHtml(info.extra);
       }
     }
 
@@ -266,25 +330,27 @@ function setRawData(raw){
   copyBtn.disabled=false;
 }
 
-/* COPY */
+/* Copy */
 copyBtn.addEventListener("click", async()=>{
   await navigator.clipboard.writeText(rawLines.innerText);
+  const prev=copyBtn.innerText;
   copyBtn.innerText="KOPIERET";
-  setTimeout(()=>copyBtn.innerText="KOPIER",700);
+  setTimeout(()=>copyBtn.innerText=prev,700);
 });
 
-/* Load jsQR */
+/* jsQR loader */
 function loadJsQr(){
-  return new Promise((res)=>{
-    if(window.jsQR) return res();
+  return new Promise((res,rej)=>{
+    if(window.jsQR) return res(window.jsQR);
     const s=document.createElement("script");
     s.src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
-    s.onload=()=>res();
+    s.onload=()=>res(window.jsQR);
+    s.onerror=()=>rej();
     document.head.appendChild(s);
   });
 }
 
-/* CAMERA */
+/* Camera */
 async function startCamera(){
   if(!videoEl){
     videoEl=document.createElement("video");
@@ -302,16 +368,17 @@ async function startCamera(){
     });
     videoEl.srcObject=stream;
     await videoEl.play();
+
     cameraWrap.innerHTML="";
     cameraWrap.appendChild(videoEl);
     return true;
-  }catch{
+  }catch(e){
     return false;
   }
 }
 
 function stopCamera(){
-  if(rafId) cancelAnimationFrame(rafId);
+  if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
   if(stream){
     stream.getTracks().forEach(t=>t.stop());
     stream=null;
@@ -319,64 +386,81 @@ function stopCamera(){
   if(videoEl){
     videoEl.pause();
     videoEl.srcObject=null;
+    videoEl.removeAttribute("src");
+    videoEl.load();
   }
   cameraWrap.innerHTML="Kamera er slukket";
 }
 
-/* SCAN LOOP */
-function scanLoop(){
-  if(!scanning) return;
+/* Scan loop */
+async function scanLoop(){
+  if(!videoEl || videoEl.readyState!==videoEl.HAVE_ENOUGH_DATA){
+    rafId=requestAnimationFrame(scanLoop);
+    return;
+  }
 
-  if(videoEl.readyState===videoEl.HAVE_ENOUGH_DATA){
+  if(canvas.width!==videoEl.videoWidth){
     canvas.width=videoEl.videoWidth;
     canvas.height=videoEl.videoHeight;
-    ctx.drawImage(videoEl,0,0);
-
-    const img = ctx.getImageData(0,0,canvas.width,canvas.height);
-    const code = window.jsQR ? jsQR(img.data,img.width,img.height) : null;
-
-    if(code){
-      scanning=false;
-      stopCamera();
-      setRawData(code.data);
-      startBtn.style.display="inline-flex";
-      newBtn.style.display="none";
-      return;
-    }
   }
+
+  ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
+  const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+
+  let code=null;
+  if(window.jsQR) code=jsQR(img.data,img.width,img.height);
+
+  if(code && code.data){
+    setRawData(code.data);
+    scanning=false;
+    stopCamera();
+    showAfterScan();
+    return;
+  }
+
   rafId=requestAnimationFrame(scanLoop);
 }
 
-/* START */
-startBtn.onclick=async()=>{
+/* Start scanning */
+async function startScanning(){
+  if(scanning) return;
   scanning=true;
-  startBtn.style.display="none";
-  newBtn.style.display="inline-flex";
+  showDuringScanning();
 
-  await loadJsQr();
+  try{ await loadJsQr(); }catch(e){}
+
   const ok=await startCamera();
-
   if(!ok){
-    setTimeout(()=>{ setRawData("Demo\nVægt: 18 kg\nKemi: UN1209"); },400);
-    scanning=false;
+    const demo="Demo\nVægt: 18 kg\nKemi: UN1209";
+    setTimeout(()=>{ setRawData(demo); showAfterScan(); scanning=false; },600);
     return;
   }
 
   scanLoop();
-};
+}
 
-/* NEW */
-newBtn.onclick=()=>{
+/* New scanning (reset) */
+async function newScanning(){
+  // stop camera + clear raw area immediately
   stopCamera();
   rawLines.innerHTML="";
   hazardIcon.style.display="none";
   copyBtn.disabled=true;
-  scanning=true;
-  startBtn.onclick();
-};
 
+  scanStatus.textContent="SCANNING…";
+  showDuringScanning();
+
+  await new Promise(r=>setTimeout(r,200));
+  startScanning();
+}
+
+/* Init */
+startBtn.addEventListener("click", startScanning);
+newBtn.addEventListener("click", newScanning);
+
+showStartOnly();
 window.addEventListener("beforeunload", stopCamera);
-</script>
 
+</script>
 </body>
 </html>
