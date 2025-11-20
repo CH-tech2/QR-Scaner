@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Info Scan v3.6</title>
+<title>Info Scan v3.7</title>
 
 <style>
   :root{
-    --bg: #f9fafb;
+    --bg: #D20014; /* ROCKWOOL RØD */
     --text: #111827;
     --muted: #6b7280;
     --un-color: #b91c1c;
@@ -24,9 +24,20 @@
     margin: 20px;
   }
 
-  h1 { font-size:18px; margin:0 0 12px 0; }
-  .container{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
-  .card{ background:#fff; border:1px solid #e6e8eb; border-radius:10px; padding:16px; }
+  h1 { font-size:18px; margin:0 0 12px 0; color:#ffffff; }
+
+  .container{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+  }
+
+  .card{
+    background:#fff;
+    border:1px solid #e6e8eb;
+    border-radius:10px;
+    padding:16px;
+  }
 
   /* Camera preview */
   #cameraWrap{
@@ -39,6 +50,7 @@
     color:#9ca3af;
     overflow:hidden;
   }
+
   #cameraWrap video{
     width:100%;
     height:100%;
@@ -56,6 +68,7 @@
     overflow:auto;
     position:relative;
   }
+
   .qr-lines div{
     padding:8px 10px;
     border-bottom:2px solid #111;
@@ -64,7 +77,7 @@
     white-space:pre-wrap;
   }
 
-  /* UN hazard */
+  /* UN highlight */
   .qr-lines .un{
     color: var(--un-color);
     font-weight:700;
@@ -88,7 +101,12 @@
   }
 
   /* Buttons */
-  .btn-row{ display:flex; gap:10px; margin-top:12px; }
+  .btn-row{
+    display:flex;
+    gap:10px;
+    margin-top:12px;
+  }
+
   .btn{
     width:140px;
     height:48px;
@@ -103,17 +121,19 @@
     background:#111827;
     color:#fff;
   }
+
   .btn.ghost{
     background:#fff;
     color:#111827;
     border:1px solid #d1d5db;
   }
+
   .btn:disabled{
     opacity:0.45;
   }
 
   .status{
-    color:var(--muted);
+    color:#ffffff;
     font-size:14px;
   }
 
@@ -124,11 +144,11 @@
 </head>
 
 <body>
-<h1>Info Scan — v3.6</h1>
+<h1>Info Scan — v3.7</h1>
 
 <div class="container">
 
-  <!-- SCANNER -->
+  <!-- SCANNER CARD -->
   <div class="card">
     <strong>Scanner</strong>
     <div id="cameraWrap">Kamera preview</div>
@@ -140,7 +160,7 @@
     </div>
   </div>
 
-  <!-- RAW DATA -->
+  <!-- RAW DATA CARD -->
   <div class="card">
     <strong>Rådata</strong>
 
@@ -164,22 +184,21 @@
 </div>
 
 <script>
-/* Info Scan v3.6 */
+/* Info Scan v3.7 */
 
-const startBtn = document.getElementById("startBtn");
-const newBtn   = document.getElementById("newBtn");
-const copyBtn  = document.getElementById("copyBtn");
-const scanStatus = document.getElementById("scanStatus");
-const cameraWrap = document.getElementById("cameraWrap");
-const rawLines   = document.getElementById("rawLines");
-const hazardIcon = document.getElementById("hazardIcon");
+const startBtn=document.getElementById("startBtn");
+const newBtn=document.getElementById("newBtn");
+const copyBtn=document.getElementById("copyBtn");
+const scanStatus=document.getElementById("scanStatus");
+const cameraWrap=document.getElementById("cameraWrap");
+const rawLines=document.getElementById("rawLines");
+const hazardIcon=document.getElementById("hazardIcon");
 
-let stream=null, videoEl=null, canvas=null, ctx=null;
-let scanning=false, rafId=null;
+let stream=null, videoEl=null, canvas=null, ctx=null, scanning=false, rafId=null;
 
-/* Helpers */
+/* Helper functions */
 function escapeHtml(str){
-  return String(str).replace(/[&<>"']/g, m=>({
+  return String(str).replace(/[&<>"']/g,m=>({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[m]));
 }
@@ -197,14 +216,14 @@ function classifyWeight(kg){
   return {cls:"weight-red", extra:" (Brug hjælpe værktøj til løft)"};
 }
 function extractWeight(line){
-  const m = line.match(/Vægt:\s*([\d.,]+)/i);
+  const m=line.match(/Vægt:\s*([\d.,]+)/i);
   if(!m) return null;
-  let kg = m[1].replace(",",".");
-  kg = parseFloat(kg);
-  return isNaN(kg) ? null : kg;
+  let kg=m[1].replace(",",".");
+  kg=parseFloat(kg);
+  return isNaN(kg)?null:kg;
 }
 
-/* UI states */
+/* UI */
 function showStartOnly(){
   startBtn.style.display="inline-flex";
   newBtn.style.display="none";
@@ -224,15 +243,15 @@ function showAfterScan(){
   scanStatus.textContent="";
 }
 
-/* Rendering of raw data */
+/* Rådata-tegning */
 function setRawData(raw){
   rawLines.innerHTML="";
   hazardIcon.style.display="none";
 
-  const n = normalizeRawText(raw);
+  const n=normalizeRawText(raw);
   if(!n){ copyBtn.disabled=true; return; }
 
-  const lines = n.split(/\r?\n/);
+  const lines=n.split(/\r?\n/);
 
   if(/\bUN\d+/.test(n)) hazardIcon.style.display="block";
 
@@ -246,7 +265,7 @@ function setRawData(raw){
       if(kg !== null){
         const info=classifyWeight(kg);
         div.classList.add(info.cls);
-        html += escapeHtml(info.extra);
+        html+=escapeHtml(info.extra);
       }
     }
 
@@ -293,11 +312,14 @@ async function startCamera(){
       video:{facingMode:{ideal:"environment"}},
       audio:false
     });
+
     videoEl.srcObject=stream;
     await videoEl.play();
+
     cameraWrap.innerHTML="";
     cameraWrap.appendChild(videoEl);
     return true;
+
   }catch(e){
     return false;
   }
@@ -318,7 +340,7 @@ function stopCamera(){
   cameraWrap.innerHTML="Kamera er slukket";
 }
 
-/* Scan Loop */
+/* Scan loop */
 async function scanLoop(){
   if(!videoEl || videoEl.readyState!==videoEl.HAVE_ENOUGH_DATA){
     rafId=requestAnimationFrame(scanLoop);
@@ -347,7 +369,7 @@ async function scanLoop(){
   rafId=requestAnimationFrame(scanLoop);
 }
 
-/* Start scanning */
+/* Start Scanning */
 async function startScanning(){
   if(scanning) return;
   scanning=true;
@@ -357,15 +379,15 @@ async function startScanning(){
 
   const ok=await startCamera();
   if(!ok){
-    const demo="Demo\nVægt: 22 kg\nKemi: UN1209";
-    setTimeout(()=>{ setRawData(demo); showAfterScan(); scanning=false; },600);
+    const demo="Demo\nVægt: 18 kg\nKemi: UN1209";
+    setTimeout(()=>{ setRawData(demo);showAfterScan();scanning=false; },600);
     return;
   }
 
   scanLoop();
 }
 
-/* New scanning (reset) */
+/* NY SCANNING reset */
 async function newScanning(){
   stopCamera();
   rawLines.innerHTML="";
@@ -376,13 +398,13 @@ async function newScanning(){
   showDuringScanning();
 
   await new Promise(r=>setTimeout(r,300));
-
   startScanning();
 }
 
 /* Init */
 startBtn.addEventListener("click", startScanning);
 newBtn.addEventListener("click", newScanning);
+
 showStartOnly();
 window.addEventListener("beforeunload", stopCamera);
 
