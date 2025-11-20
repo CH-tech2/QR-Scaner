@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Info Scan v4,2</title>
+<title>Info Scan v3.8</title>
 
 <style>
   :root{
@@ -17,45 +17,57 @@
     --weight-red: #B91C1C;
   }
 
+  /* Page */
+  html,body{height:100%;margin:0;}
   body{
     background: var(--bg);
     color: var(--text);
     font-family: Arial, monospace;
-    margin: 20px;
+    padding:14px;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
   }
 
-  /* HEADER + LOGO */
-  .header {
+  /* Header (photo-like): title left, logo right in white rounded box */
+  .app-header{
     display:flex;
     align-items:center;
-    gap:16px;
+    justify-content:space-between;
+    gap:12px;
     margin-bottom:12px;
   }
-  .rw-logo{
-    width:260px;
-    background:white;
-    padding:8px;
+  .app-title{
+    color:#fff;
+    font-size:18px;
+    font-weight:700;
+    margin:0;
+  }
+  .logo-box{
+    background:#fff;
+    padding:6px 10px;
     border-radius:8px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+  }
+  .rw-logo{
+    height:28px; /* matches mobile look */
     display:block;
   }
-  .title {
-    color:#ffffff;
-    font-size:18px;
-    margin:0;
-    font-weight:700;
-  }
 
+  /* Main container */
   .container{
     display:grid;
     grid-template-columns:1fr 1fr;
-    gap:20px;
+    gap:18px;
   }
 
   .card{
     background:#fff;
     border:1px solid #e6e8eb;
     border-radius:10px;
-    padding:16px;
+    padding:14px;
   }
 
   /* Camera preview */
@@ -69,7 +81,6 @@
     color:#9ca3af;
     overflow:hidden;
   }
-
   #cameraWrap video{
     width:100%;
     height:100%;
@@ -78,7 +89,7 @@
     -webkit-transform:none !important;
   }
 
-  /* RAW DATA BOX */
+  /* Raw data box */
   .raw-box{
     background:#fff;
     border-radius:8px;
@@ -87,7 +98,6 @@
     overflow:auto;
     position:relative;
   }
-
   .qr-lines div{
     padding:8px 10px;
     border-bottom:2px solid #111;
@@ -97,10 +107,7 @@
   }
 
   /* UN highlight */
-  .qr-lines .un{
-    color: var(--un-color);
-    font-weight:700;
-  }
+  .qr-lines .un{ color: var(--un-color); font-weight:700; }
 
   /* Weight colors */
   .weight-green{ color: var(--weight-green); font-weight:700; }
@@ -120,12 +127,7 @@
   }
 
   /* Buttons */
-  .btn-row{
-    display:flex;
-    gap:10px;
-    margin-top:12px;
-  }
-
+  .btn-row{ display:flex; gap:10px; margin-top:12px; align-items:center; }
   .btn{
     width:140px;
     height:48px;
@@ -140,40 +142,30 @@
     background:#111827;
     color:#fff;
   }
+  .btn.ghost{ background:#fff; color:#111827; border:1px solid #d1d5db; }
+  .btn:disabled{ opacity:0.45; cursor:not-allowed; }
 
-  .btn.ghost{
-    background:#fff;
-    color:#111827;
-    border:1px solid #d1d5db;
-  }
-
-  .btn:disabled{
-    opacity:0.45;
-  }
-
-  .status{
-    color:#ffffff;
-    font-size:14px;
-  }
+  .status{ color:#ffffff; font-size:14px; }
 
   @media(max-width:900px){
     .container{ grid-template-columns:1fr; }
-    .header{ flex-direction:column; align-items:flex-start; gap:8px; }
-    .rw-logo{ width:200px; }
+    .app-header{ align-items:flex-start; gap:8px; }
   }
 </style>
 </head>
-
 <body>
 
-<!-- HEADER: LOGO (HVID BAGGRUND) + TITEL -->
-<div class="header">
-  <img class="rw-logo"
-       src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/7QAsUGhvdG9zaG9wIDMuMAA4QklNBAQAAAAAAGccAgAAAgAAADhCSU0EJQAAAAAAEABIAAAAAQAAAEgAAAABAAIATGF2YzU4LjY0LjEwMAAAAAAAAAAAAAAA/9sAQwAKBwcIBwYKCAgICwoKCw4YEA4NDQ4dFRYVFhUdKx8jJSInJy0wMzMwMDQ0NDM8RkZFOE1MTU5MT0ZGRkZGRkZGRkZGRkb/9sAQwEKCwsODQ4cEBAcR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0f/wAARCAAUABQDASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAAAAMEBf/EABQBAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhADEAAAAf8A/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABBQJF/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPwF//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAgEBPwF//8QAGBAAAgMAAAAAAAAAAAAAAAAAAAERIVH/2gAIAQEABj8CXpGf/8QAGxABAAICAwAAAAAAAAAAAAAAAAAREiExQVH/2gAIAQEAAT8hYHqWmMcH/9oADAMBAAIAAwAAABAf/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPxBP/8QAFhEBAQEAAAAAAAAAAAAAAAAAARAR/9oACAECAQE/EEj/xAAZEAEAAwEBAAAAAAAAAAAAAAAAARExQVH/2gAIAQEAAT8QTb0gTCv/2Q=="
-       alt="ROCKWOOL Logo (hvid baggrund)">
-  <h1 class="title">Info Scan — v4,2</h1>
+<!-- Header like the photo: title left, logo in white box to the right -->
+<div class="app-header">
+  <h1 class="app-title">Info Scan — v3.8</h1>
+
+  <div class="logo-box" aria-hidden="true">
+    <!-- JPG with white background (stable) -->
+    <img class="rw-logo" alt="ROCKWOOL" src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/7QAsUGhvdG9zaG9wIDMuMAA4QklNBAQAAAAAAGccAgAAAgAAADhCSU0EJQAAAAAAEABIAAAAAQAAAEgAAAABAAIATGF2YzU4LjY0LjEwMAAAAAAAAAAAAAAA/9sAQwAKBwcIBwYKCAgICwoKCw4YEA4NDQ4dFRYVFhUdKx8jJSInJy0wMzMwMDQ0NDM8RkZFOE1MTU5MT0ZGRkZGRkZGRkZGRkb/9sAQwEKCwsODQ4cEBAcR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0f/wAARCAAUABQDASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAAAAMEBf/EABQBAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhADEAAAAf8A/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABBQJF/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPwF//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAgEBPwF//8QAGBAAAgMAAAAAAAAAAAAAAAAAAAERIVH/2gAIAQEABj8CXpGf/8QAGxABAAICAwAAAAAAAAAAAAAAAAAREiExQVH/2gAIAQEAAT8hYHqWmMcH/9oADAMBAAIAAwAAABAf/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPxBP/8QAFhEBAQEAAAAAAAAAAAAAAAAAARAR/9oACAECAQE/EEj/xAAZEAEAAwEBAAAAAAAAAAAAAAAAARExQVH/2gAIAQEAAT8QTb0gTCv/2Q==">
+  </div>
 </div>
 
+<!-- Main grid -->
 <div class="container">
 
   <!-- SCANNER CARD -->
@@ -212,7 +204,8 @@
 </div>
 
 <script>
-/* Info Scan v4,2 (based on stable v3.7) */
+/* Info Scan v3.8 (header adjusted to photo) */
+/* Camera + scan logic preserved from stable v3.7 */
 
 const startBtn=document.getElementById("startBtn");
 const newBtn=document.getElementById("newBtn");
@@ -224,7 +217,7 @@ const hazardIcon=document.getElementById("hazardIcon");
 
 let stream=null, videoEl=null, canvas=null, ctx=null, scanning=false, rafId=null;
 
-/* Helper functions */
+/* Helpers */
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g,m=>({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
@@ -251,7 +244,7 @@ function extractWeight(line){
   return isNaN(kg)?null:kg;
 }
 
-/* UI */
+/* UI states */
 function showStartOnly(){
   startBtn.style.display="inline-flex";
   newBtn.style.display="none";
@@ -271,7 +264,7 @@ function showAfterScan(){
   scanStatus.textContent="";
 }
 
-/* Rådata-tegning */
+/* Render raw data */
 function setRawData(raw){
   rawLines.innerHTML="";
   hazardIcon.style.display="none";
@@ -324,7 +317,7 @@ function loadJsQr(){
   });
 }
 
-/* Camera */
+/* Camera start/stop */
 async function startCamera(){
   if(!videoEl){
     videoEl=document.createElement('video');
@@ -352,7 +345,6 @@ async function startCamera(){
     return false;
   }
 }
-
 function stopCamera(){
   if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
   if(stream){
@@ -397,7 +389,7 @@ async function scanLoop(){
   rafId=requestAnimationFrame(scanLoop);
 }
 
-/* Start Scanning */
+/* Start scanning */
 async function startScanning(){
   if(scanning) return;
   scanning=true;
@@ -415,7 +407,7 @@ async function startScanning(){
   scanLoop();
 }
 
-/* NY SCANNING reset */
+/* New scanning (reset) */
 async function newScanning(){
   stopCamera();
   rawLines.innerHTML="";
