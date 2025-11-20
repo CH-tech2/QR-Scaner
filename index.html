@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>QR Scanner v3.2</title>
+<title>QR Scanner v3.3</title>
 
 <style>
   :root{
@@ -50,7 +50,7 @@
     border:1px solid #e5e7eb;
     padding:0;
     overflow:auto;
-    position:relative; /* Nødvendig for hazard-icon */
+    position:relative;
   }
   .qr-lines div{
     padding:8px 10px;
@@ -113,7 +113,7 @@
 </style>
 </head>
 <body>
-<h1>QR Scanner — v3.2</h1>
+<h1>QR Scanner — v3.3</h1>
 
 <div class="container">
 
@@ -137,7 +137,7 @@
       <div id="rawLines" class="qr-lines"></div>
 
       <!-- FARE-IKON (SVG) -->
-      <svg id="hazardIcon" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <svg id="hazardIcon" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
         <polygon points="200,20 380,200 200,380 20,200"
                  fill="white" stroke="#d32f2f" stroke-width="35"/>
         <circle cx="200" cy="270" r="35" fill="black"/>
@@ -152,9 +152,11 @@
 </div>
 
 <script>
-/* QR Scanner v3.2 -- fixes: NY SCANNING now reliably clears raw data and prevents immediate re-population */
+/* QR Scanner v3.3 */
 
-/* ELEMENTS */
+/*******************************
+  ELEMENTS
+********************************/
 const startBtn = document.getElementById('startBtn');
 const newBtn   = document.getElementById('newBtn');
 const copyBtn  = document.getElementById('copyBtn');
@@ -170,10 +172,9 @@ let ctx = null;
 let scanning = false;
 let rafId = null;
 
-/* NEW: ignore immediate detections for a short window after "new scanning" */
-let ignoreDetectionsUntil = 0; // timestamp in ms
-
-/* HELPERS */
+/*******************************
+  HELPERS
+********************************/
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, m => ({
     '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
@@ -188,7 +189,6 @@ function normalizeRawText(raw){
     .join('\n');
 }
 
-/* UN highlight */
 function highlightUN(str){
   return String(str).replace(
     /\b(UN\d+(?:,\d+)*|UN\d+)\b/g,
@@ -196,7 +196,9 @@ function highlightUN(str){
   );
 }
 
-/* UI states */
+/*******************************
+  UI MODES
+********************************/
 function showStartOnly(){
   startBtn.style.display = 'inline-flex';
   newBtn.style.display = 'none';
@@ -218,16 +220,10 @@ function showAfterScan(){
   scanStatus.textContent = '';
 }
 
-/* RÅDATA + HAZARD LOGIK */
+/*******************************
+  RÅDATA / HAZARD LOGIK
+********************************/
 function setRawData(raw){
-  // If we are currently ignoring detections (because user pressed NEW), and the current time is before
-  // ignoreDetectionsUntil, then do not set data.
-  const now = Date.now();
-  if(now < ignoreDetectionsUntil){
-    // ignore this detection
-    return;
-  }
-
   rawLines.innerHTML = '';
   hazardIcon.style.display = 'none';
 
@@ -237,8 +233,7 @@ function setRawData(raw){
     return;
   }
 
-  const containsUN = /\b(UN\d+(?:,\d+)*|UN\d+)\b/.test(normalized);
-  if(containsUN){
+  if(/\b(UN\d+(?:,\d+)*|UN\d+)\b/.test(normalized)){
     hazardIcon.style.display = 'block';
   }
 
@@ -251,7 +246,9 @@ function setRawData(raw){
   copyBtn.disabled = false;
 }
 
-/* COPY */
+/*******************************
+  COPY
+********************************/
 async function copyRaw(){
   try{
     await navigator.clipboard.writeText(rawLines.innerText);
@@ -264,19 +261,23 @@ async function copyRaw(){
 }
 copyBtn.addEventListener('click', copyRaw);
 
-/* jsQR loader */
+/*******************************
+  LOAD jsQR
+********************************/
 function loadJsQr(){
   return new Promise((resolve,reject)=>{
     if(window.jsQR) return resolve(window.jsQR);
     const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
-    s.onload = ()=> resolve(window.jsQR);
-    s.onerror = ()=> reject(new Error('Kunne ikke loade jsQR'));
+    s.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
+    s.onload = () => resolve(window.jsQR);
+    s.onerror = () => reject();
     document.head.appendChild(s);
   });
 }
 
-/* CAMERA */
+/*******************************
+  CAMERA
+********************************/
 async function startCamera(){
   if(!videoEl){
     videoEl = document.createElement('video');
@@ -291,13 +292,15 @@ async function startCamera(){
 
   try{
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' } },
-      audio: false
+      video:{ facingMode:{ ideal:'environment' } },
+      audio:false
     });
     videoEl.srcObject = stream;
     await videoEl.play();
-    cameraWrap.innerHTML = '';
+
+    cameraWrap.innerHTML = "";
     cameraWrap.appendChild(videoEl);
+
     return true;
   }catch(e){
     return false;
@@ -306,15 +309,21 @@ async function startCamera(){
 
 function stopCamera(){
   if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
+
   if(stream){
     stream.getTracks().forEach(t => t.stop());
     stream = null;
   }
-  if(videoEl){ try{ videoEl.pause(); }catch(e){} }
-  cameraWrap.innerHTML = 'Kamera er slukket';
+  if(videoEl){
+    try{ videoEl.pause(); }catch(e){}
+  }
+
+  cameraWrap.innerHTML = "Kamera er slukket";
 }
 
-/* SCAN LOOP */
+/*******************************
+  SCAN LOOP
+********************************/
 async function scanLoop(){
   if(!videoEl || videoEl.readyState !== videoEl.HAVE_ENOUGH_DATA){
     rafId = requestAnimationFrame(scanLoop);
@@ -326,91 +335,80 @@ async function scanLoop(){
     canvas.height = videoEl.videoHeight;
   }
 
-  ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+  ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
   const img = ctx.getImageData(0,0,canvas.width,canvas.height);
 
   let code = null;
   try{
-    if(window.jsQR) code = jsQR(img.data, img.width, img.height);
+    if(window.jsQR){
+      code = jsQR(img.data,img.width,img.height);
+    }
   }catch(e){}
 
   if(code && code.data){
-    // pass code.data to setRawData — setRawData will ignore if within ignore window
     setRawData(code.data);
-    // If setRawData accepted it (i.e. now rawLines isn't empty), then we should stop camera.
-    if(rawLines.innerText.trim() !== ''){
-      scanning = false;
-      stopCamera();
-      showAfterScan();
-      return;
-    } else {
-      // ignored detection — continue scanning
-    }
+    scanning = false;
+    stopCamera();
+    showAfterScan();
+    return;
   }
 
   rafId = requestAnimationFrame(scanLoop);
 }
 
-/* START */
+/*******************************
+  START SCANNING
+********************************/
 async function startScanning(){
   if(scanning) return;
   scanning = true;
   showDuringScanning();
 
-  try{ await loadJsQr(); }catch(e){ /* ignore loading errors */ }
+  try{ await loadJsQr(); }catch(e){}
 
   const ok = await startCamera();
   if(!ok){
-    // demo fallback only
     const demo = "Område: KONF\nVarenummer: 50023166\nMateriale: Tape\nAntal: 18\nKemi: UN1725,1,11";
-    setTimeout(()=>{ setRawData(demo); scanning = false; showAfterScan(); }, 600);
+    setTimeout(()=>{ setRawData(demo); scanning=false; showAfterScan(); },600);
     return;
   }
 
-  // no ignoring by default
-  ignoreDetectionsUntil = 0;
   scanLoop();
 }
 
-/* NEW SCANNING (robust) */
-function newScanning(){
-  // 1) Immediately clear visible data
-  rawLines.innerHTML = '';
-  // 2) Hide hazard icon
-  hazardIcon.style.display = 'none';
-  // 3) Disable copy
+/*******************************
+  NY SCANNING (v3.3 – stabil version)
+********************************/
+async function newScanning(){
+  // 1) Stop kamera helt → ingen gamle frames kan detekteres
+  stopCamera();
+
+  // 2) Ryd data helt
+  rawLines.innerHTML = "";
+  hazardIcon.style.display = "none";
   copyBtn.disabled = true;
-  // 4) Update UI status
-  scanStatus.textContent = 'SCANNING…';
-  // 5) Set ignore window so any immediate detection within next X ms is ignored
-  const IGNORE_MS = 700; // tweak if needed
-  ignoreDetectionsUntil = Date.now() + IGNORE_MS;
 
-  // 6) If camera not active -> start fresh scanning
-  if(!stream){
-    startScanning();
-    return;
-  }
-
-  // 7) camera is active — ensure UI and scanning loop run
+  // 3) UI status
+  scanStatus.textContent = "SCANNING…";
   showDuringScanning();
-  if(!rafId){
-    scanLoop();
-  }
+
+  // 4) Stabiliser DOM og kamera – lille pause
+  await new Promise(res => setTimeout(res, 120));
+
+  // 5) Start scanning helt forfra
+  startScanning();
 }
 
-/* HOOKS */
+/*******************************
+  HOOKS
+********************************/
 startBtn.addEventListener('click', startScanning);
 newBtn.addEventListener('click', newScanning);
 
-/* initial state */
 showStartOnly();
 
-/* stop camera on unload */
 window.addEventListener('beforeunload', stopCamera);
 
-/* expose version */
-window.__QR_SCANNER_VERSION = 'v3.2';
 </script>
 </body>
 </html>
