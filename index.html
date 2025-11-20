@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Info Scan v3.8</title>
+<title>Info Scan v3.7</title>
 
 <style>
   :root{
@@ -24,21 +24,7 @@
     margin: 20px;
   }
 
-  /* LOGO MED HVID BAGGRUND */
-  .rw-logo{
-    width:260px;
-    display:block;
-    margin-bottom:10px;
-    background:white;
-    padding:10px;
-    border-radius:8px;
-  }
-
-  h1 {
-    font-size:18px;
-    margin:0 0 12px 0;
-    color:#ffffff;
-  }
+  h1 { font-size:18px; margin:0 0 12px 0; color:#ffffff; }
 
   .container{
     display:grid;
@@ -152,12 +138,265 @@
 </head>
 
 <body>
-
-<!-- ROCKWOOL LOGO MED HVID BAGGRUND -->
-<img class="rw-logo" 
-src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/7QAsUGhvdG9zaG9wIDMuMAA4QklNBAQAAAAAAGccAgAAAgAAADhCSU0EJQAAAAAAEABIAAAAAQAAAEgAAAABAAIATGF2YzU4LjY0LjEwMAAAAAAAAAAAAAAA/9sAQwAKBwcIBwYKCAgICwoKCw4YEA4NDQ4dFRYVFhUdKx8jJSInJy0wMzMwMDQ0NDM8RkZFOE1MTU5MT0ZGRkZGRkZGRkZGRkb/9sAQwEKCwsODQ4cEBAcR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0f/wAARCAAUABQDASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAAAAMEBf/EABQBAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhADEAAAAf8A/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABBQJF/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPwF//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAgEBPwF//8QAGBAAAgMAAAAAAAAAAAAAAAAAAAERIVH/2gAIAQEABj8CXpGf/8QAGxABAAICAwAAAAAAAAAAAAAAAAAREiExQVH/2gAIAQEAAT8hYHqWmMcH/9oADAMBAAIAAwAAABAf/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPxBP/8QAFhEBAQEAAAAAAAAAAAAAAAAAARAR/9oACAECAQE/EEj/xAAZEAEAAwEBAAAAAAAAAAAAAAAAARExQVH/2gAIAQEAAT8QTb0gTCv/2Q=="
-alt="ROCKWOOL Logo">
-
-<h1>Info Scan — v3.8</h1>
+<h1>Info Scan — v3.7</h1>
 
 <div class="container">
+
+  <!-- SCANNER CARD -->
+  <div class="card">
+    <strong>Scanner</strong>
+    <div id="cameraWrap">Kamera preview</div>
+
+    <div class="btn-row">
+      <button class="btn" id="startBtn">START SCANNING</button>
+      <button class="btn ghost" id="newBtn" style="display:none;">NY SCANNING</button>
+      <div class="status" id="scanStatus"></div>
+    </div>
+  </div>
+
+  <!-- RAW DATA CARD -->
+  <div class="card">
+    <strong>Rådata</strong>
+
+    <div class="raw-box" style="margin-top:10px;">
+      <div id="rawLines" class="qr-lines"></div>
+
+      <!-- FARE-IKON -->
+      <svg id="hazardIcon" viewBox="0 0 400 400">
+        <polygon points="200,20 380,200 200,380 20,200"
+          fill="white" stroke="#d32f2f" stroke-width="35"/>
+        <circle cx="200" cy="270" r="35" fill="black"/>
+        <rect x="182" y="90" width="36" height="140" rx="18" fill="black"/>
+      </svg>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn ghost" id="copyBtn" disabled>KOPIER</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* Info Scan v3.7 */
+
+const startBtn=document.getElementById("startBtn");
+const newBtn=document.getElementById("newBtn");
+const copyBtn=document.getElementById("copyBtn");
+const scanStatus=document.getElementById("scanStatus");
+const cameraWrap=document.getElementById("cameraWrap");
+const rawLines=document.getElementById("rawLines");
+const hazardIcon=document.getElementById("hazardIcon");
+
+let stream=null, videoEl=null, canvas=null, ctx=null, scanning=false, rafId=null;
+
+/* Helpers */
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g,m=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+function normalizeRawText(raw){
+  return String(raw||"").split(/\r?\n/).map(l=>l.trim()).filter(l=>l!=="").join("\n");
+}
+function highlightUN(str){
+  return str.replace(/\b(UN\d+(?:,\d+)*)\b/g,'<span class="un">$1</span>');
+}
+
+/* Weight logic */
+function classifyWeight(kg){
+  if(kg <= 15) return {cls:"weight-green", extra:""};
+  if(kg <= 30) return {cls:"weight-yellow", extra:" (Pas på når du løfter)"};
+  return {cls:"weight-red", extra:" (Brug hjælpe værktøj til løft)"};
+}
+function extractWeight(line){
+  const m=line.match(/Vægt:\s*([\d.,]+)/i);
+  if(!m) return null;
+  let kg=m[1].replace(",",".");
+  kg=parseFloat(kg);
+  return isNaN(kg)?null:kg;
+}
+
+/* UI */
+function showStartOnly(){
+  startBtn.style.display="inline-flex";
+  newBtn.style.display="none";
+  copyBtn.disabled=(rawLines.innerText.trim()==="");
+  scanStatus.textContent="";
+}
+function showDuringScanning(){
+  startBtn.style.display="none";
+  newBtn.style.display="inline-flex";
+  copyBtn.disabled=true;
+  scanStatus.textContent="SCANNING…";
+}
+function showAfterScan(){
+  startBtn.style.display="inline-flex";
+  newBtn.style.display="none";
+  copyBtn.disabled=(rawLines.innerText.trim()==="");
+  scanStatus.textContent="";
+}
+
+/* Rådata-tegning */
+function setRawData(raw){
+  rawLines.innerHTML="";
+  hazardIcon.style.display="none";
+
+  const n=normalizeRawText(raw);
+  if(!n){ copyBtn.disabled=true; return; }
+
+  const lines=n.split(/\r?\n/);
+
+  if(/\bUN\d+/.test(n)) hazardIcon.style.display="block";
+
+  lines.forEach(line=>{
+    const div=document.createElement("div");
+    let html=escapeHtml(line);
+    html=highlightUN(html);
+
+    if(/^Vægt:/i.test(line)){
+      const kg=extractWeight(line);
+      if(kg !== null){
+        const info=classifyWeight(kg);
+        div.classList.add(info.cls);
+        html+=escapeHtml(info.extra);
+      }
+    }
+
+    div.innerHTML=html;
+    rawLines.appendChild(div);
+  });
+
+  copyBtn.disabled=false;
+}
+
+/* Copy */
+copyBtn.addEventListener("click", async()=>{
+  await navigator.clipboard.writeText(rawLines.innerText);
+  const prev=copyBtn.innerText;
+  copyBtn.innerText="KOPIERET";
+  setTimeout(()=>copyBtn.innerText=prev,700);
+});
+
+/* jsQR loader */
+function loadJsQr(){
+  return new Promise((res,rej)=>{
+    if(window.jsQR) return res(window.jsQR);
+    const s=document.createElement("script");
+    s.src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
+    s.onload=()=>res(window.jsQR);
+    s.onerror=()=>rej();
+    document.head.appendChild(s);
+  });
+}
+
+/* Camera */
+async function startCamera(){
+  if(!videoEl){
+    videoEl=document.createElement("video");
+    videoEl.setAttribute("playsinline","true");
+  }
+  if(!canvas){
+    canvas=document.createElement("canvas");
+    ctx=canvas.getContext("2d");
+  }
+
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:"environment"}},
+      audio:false
+    });
+
+    videoEl.srcObject=stream;
+    await videoEl.play();
+
+    cameraWrap.innerHTML="";
+    cameraWrap.appendChild(videoEl);
+    return true;
+
+  }catch(e){
+    return false;
+  }
+}
+
+function stopCamera(){
+  if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+  if(stream){
+    stream.getTracks().forEach(t=>t.stop());
+    stream=null;
+  }
+  if(videoEl){
+    videoEl.pause();
+    videoEl.srcObject=null;
+    videoEl.removeAttribute("src");
+    videoEl.load();
+  }
+  cameraWrap.innerHTML="Kamera er slukket";
+}
+
+/* Scan loop */
+async function scanLoop(){
+  if(!videoEl || videoEl.readyState!==videoEl.HAVE_ENOUGH_DATA){
+    rafId=requestAnimationFrame(scanLoop);
+    return;
+  }
+
+  if(canvas.width!==videoEl.videoWidth){
+    canvas.width=videoEl.videoWidth;
+    canvas.height=videoEl.videoHeight;
+  }
+
+  ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
+  const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+
+  let code=null;
+  if(window.jsQR) code=jsQR(img.data,img.width,img.height);
+
+  if(code && code.data){
+    setRawData(code.data);
+    scanning=false;
+    stopCamera();
+    showAfterScan();
+    return;
+  }
+
+  rafId=requestAnimationFrame(scanLoop);
+}
+
+/* Start Scanning */
+async function startScanning(){
+  if(scanning) return;
+  scanning=true;
+  showDuringScanning();
+
+  try{ await loadJsQr(); }catch(e){}
+
+  const ok=await startCamera();
+  if(!ok){
+    const demo="Demo\nVægt: 18 kg\nKemi: UN1209";
+    setTimeout(()=>{ setRawData(demo);showAfterScan();scanning=false; },600);
+    return;
+  }
+
+  scanLoop();
+}
+
+/* NY SCANNING reset */
+async function newScanning(){
+  stopCamera();
+  rawLines.innerHTML="";
+  hazardIcon.style.display="none";
+  copyBtn.disabled=true;
+
+  scanStatus.textContent="SCANNING…";
+  showDuringScanning();
+
+  await new Promise(r=>setTimeout(r,300));
+  startScanning();
+}
+
+/* Init */
+startBtn.addEventListener("click", startScanning);
+newBtn.addEventListener("click", newScanning);
+
+showStartOnly();
