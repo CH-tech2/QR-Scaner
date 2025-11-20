@@ -3,68 +3,65 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Info Scan v4.4</title>
+<title>Info Scan v4.5</title>
 
 <style>
   :root{
-    --bg: #D20014;
-    --text: #111827;
-    --muted: #6b7280;
-    --un-color: #b91c1c;
-    --weight-green: #059669;
-    --weight-yellow: #CA8A04;
-    --weight-red: #B91C1C;
+    --bg: #D20014; /* Rockwool red */
+    --text:#111827;
+    --muted:#6b7280;
+    --un-color:#b91c1c;
+    --weight-green:#059669;
+    --weight-yellow:#CA8A04;
+    --weight-red:#B91C1C;
   }
 
+  html,body{height:100%;margin:0;}
   body{
-    background: var(--bg);
-    color: var(--text);
-    font-family: Arial, monospace;
-    margin: 20px;
+    background:var(--bg);
+    color:var(--text);
+    font-family:Arial, monospace;
+    padding:14px;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
   }
 
-  /* HEADER */
+  /* Header layout */
   .header{
     display:flex;
     align-items:center;
     justify-content:space-between;
+    gap:12px;
     margin-bottom:12px;
   }
-  .header-title{
-    color:white;
-    font-size:18px;
+  .header-left{display:flex;align-items:center;gap:12px;}
+  .app-title{
+    color:#fff;
+    font-size:20px;
     font-weight:700;
     margin:0;
   }
 
-  /* ROCKWOOL LOGO BOX */
+  /* Logo container with white rounded box */
   .logo-box{
-    background:white;
-    border-radius:8px;
-    padding:6px 10px;
-    display:flex;
+    background:#fff;
+    padding:8px 12px;
+    border-radius:10px;
+    display:inline-flex;
     align-items:center;
     justify-content:center;
+    box-shadow:0 2px 6px rgba(0,0,0,0.08);
   }
 
-  .rw-logo{
-    height:28px;
-    display:block;
-  }
+  /* SVG scales responsively */
+  .rw-svg{ height:32px; display:block; }
 
-  .container{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:20px;
-  }
+  /* grid */
+  .container{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
 
-  .card{
-    background:#fff;
-    border:1px solid #e6e8eb;
-    border-radius:10px;
-    padding:16px;
-  }
+  .card{ background:#fff; border-radius:10px; padding:14px; border:1px solid #e6e8eb; }
 
+  /* camera preview */
   #cameraWrap{
     background:#f3f4f6;
     border-radius:8px;
@@ -75,107 +72,68 @@
     color:#9ca3af;
     overflow:hidden;
   }
+  #cameraWrap video{ width:100%; height:100%; object-fit:cover; transform:none !important; -webkit-transform:none !important; }
 
-  #cameraWrap video{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    transform:none !important;
-    -webkit-transform:none !important;
-  }
+  /* raw */
+  .raw-box{ background:#fff; border-radius:8px; border:1px solid #e5e7eb; position:relative; overflow:auto; }
+  .qr-lines div{ padding:8px 10px; border-bottom:2px solid #111; font-family:ui-monospace,monospace; font-size:15px; white-space:pre-wrap; }
+  .qr-lines .un{ color:var(--un-color); font-weight:700; }
 
-  .raw-box{
-    background:#fff;
-    border-radius:8px;
-    border:1px solid #e5e7eb;
-    position:relative;
-    overflow:auto;
-  }
-
-  .qr-lines div{
-    padding:8px 10px;
-    border-bottom:2px solid #111;
-    font-family:ui-monospace, monospace;
-    white-space:pre-wrap;
-  }
-
-  .qr-lines .un{
-    color:var(--un-color);
-    font-weight:700;
-  }
-
+  /* weight colors */
   .weight-green{ color:var(--weight-green); font-weight:700; }
   .weight-yellow{ color:var(--weight-yellow); font-weight:700; }
   .weight-red{ color:var(--weight-red); font-weight:700; }
 
-  #hazardIcon{
-    position:absolute;
-    bottom:6px;
-    right:6px;
-    width:38px;
-    height:38px;
-    display:none;
-  }
+  /* hazard icon */
+  #hazardIcon{ position:absolute; bottom:6px; right:6px; width:38px; height:38px; display:none; }
 
-  .btn-row{
-    display:flex;
-    gap:10px;
-    margin-top:12px;
-  }
+  /* buttons */
+  .btn-row{ display:flex; gap:10px; margin-top:12px; align-items:center; }
+  .btn{ width:140px; height:48px; border-radius:8px; border:0; cursor:pointer; font-weight:700; font-size:16px; display:flex; align-items:center; justify-content:center; background:#111827; color:#fff; }
+  .btn.ghost{ background:#fff; color:#111827; border:1px solid #d1d5db; }
+  .btn:disabled{ opacity:0.45; cursor:not-allowed; }
 
-  .btn{
-    width:140px;
-    height:48px;
-    border-radius:8px;
-    background:#111827;
-    color:white;
-    font-weight:700;
-    font-size:16px;
-    border:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-
-  .btn.ghost{
-    background:white;
-    color:#111827;
-    border:1px solid #d1d5db;
-  }
-
-  .btn:disabled{ opacity:.45; }
-
-  .status{ color:white;font-size:14px; }
+  .status{ color:#fff; font-size:14px; }
 
   @media(max-width:900px){
-    .container{grid-template-columns:1fr;}
+    .container{ grid-template-columns:1fr; }
+    .rw-svg{ height:26px; }
+    .app-title{ font-size:18px; }
+    .logo-box{ padding:6px 8px; }
   }
-
 </style>
 </head>
 <body>
 
 <!-- HEADER -->
-<div class="header">
-  <h1 class="header-title">Info Scan — v4.4</h1>
+<div class="header" role="banner">
+  <div class="header-left">
+    <h1 class="app-title">Info Scan — v4.5</h1>
+  </div>
 
-  <!-- SAFARI-PROOF SVG LOGO -->
-  <div class="logo-box">
-    <svg class="rw-logo" viewBox="0 0 512 128">
-      <rect width="128" height="128" fill="#D20014"/>
-      <polygon points="48,88 64,40 80,88" fill="white"/>
-      <polygon points="20,40 44,40 32,88" fill="white"/>
-      <text x="150" y="88" font-family="Arial Black, Arial" font-size="70" fill="#D20014">
-        ROCKWOOL
-      </text>
+  <!-- Logo: SVG (no base64, Safari-safe) -->
+  <div class="logo-box" aria-hidden="true">
+    <svg class="rw-svg" viewBox="0 0 520 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Rockwool logo">
+      <!-- Red square / icon -->
+      <g transform="translate(0, -4)">
+        <rect x="0" y="0" width="120" height="120" rx="6" ry="6" fill="#D20014"/>
+        <!-- Stylized white icon inside square (triangular shapes) -->
+        <g transform="translate(20,16)" fill="#ffffff">
+          <path d="M12 72 L36 8 L60 72 Z" />
+          <rect x="24" y="8" width="8" height="64" rx="4" fill="#ffffff" opacity="0.0"/>
+          <path d="M0 12 L12 12 L6 72 L0 72 Z" />
+        </g>
+        <!-- ROCKWOOL text to the right -->
+        <text x="140" y="82" font-family="Arial Black, Arial, sans-serif" font-size="62" fill="#D20014">ROCKWOOL</text>
+      </g>
     </svg>
   </div>
 </div>
 
-<!-- MAIN CONTAINER -->
+<!-- MAIN -->
 <div class="container">
 
-  <!-- SCANNER -->
+  <!-- Scanner card -->
   <div class="card">
     <strong>Scanner</strong>
     <div id="cameraWrap">Kamera er slukket</div>
@@ -187,16 +145,15 @@
     </div>
   </div>
 
-  <!-- RAWDATA -->
+  <!-- Raw data card -->
   <div class="card">
     <strong>Rådata</strong>
-
-    <div class="raw-box">
+    <div class="raw-box" style="margin-top:10px;">
       <div id="rawLines" class="qr-lines"></div>
 
-      <svg id="hazardIcon" viewBox="0 0 400 400">
-        <polygon points="200,20 380,200 200,380 20,200"
-          fill="white" stroke="#d32f2f" stroke-width="35"/>
+      <!-- hazard icon -->
+      <svg id="hazardIcon" viewBox="0 0 400 400" style="display:none;">
+        <polygon points="200,20 380,200 200,380 20,200" fill="white" stroke="#d32f2f" stroke-width="35"/>
         <circle cx="200" cy="270" r="35" fill="black"/>
         <rect x="182" y="90" width="36" height="140" rx="18" fill="black"/>
       </svg>
@@ -210,9 +167,9 @@
 </div>
 
 <script>
-/* v4.4 — same engine as v3.7 + SVG logo */
+/* Info Scan v4.5 (logo fixed) */
+/* Camera + scanner logic unchanged from your working version */
 
-/* Variables */
 const startBtn=document.getElementById("startBtn");
 const newBtn=document.getElementById("newBtn");
 const copyBtn=document.getElementById("copyBtn");
@@ -223,20 +180,18 @@ const hazardIcon=document.getElementById("hazardIcon");
 
 let stream=null, videoEl=null, canvas=null, ctx=null, scanning=false, rafId=null;
 
-/* Helpers */
+/* helpers */
 function escapeHtml(str){
-  return str.replace(/[&<>"']/g,m=>({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[m]));
+  return String(str).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
 }
 function normalizeRawText(raw){
-  return raw.split(/\r?\n/).map(l=>l.trim()).filter(l=>l).join("\n");
+  return String(raw||"").split(/\r?\n/).map(l=>l.trim()).filter(l=>l!=="").join("\n");
 }
 function highlightUN(str){
   return str.replace(/\b(UN\d+(?:,\d+)*)\b/g,'<span class="un">$1</span>');
 }
 
-/* Weight logic */
+/* weight */
 function classifyWeight(kg){
   if(kg <= 15) return {cls:"weight-green", extra:""};
   if(kg <= 30) return {cls:"weight-yellow", extra:" (Pas på når du løfter)"};
@@ -245,15 +200,16 @@ function classifyWeight(kg){
 function extractWeight(line){
   const m=line.match(/Vægt:\s*([\d.,]+)/i);
   if(!m) return null;
-  let kg=parseFloat(m[1].replace(",",".")); 
+  let kg=m[1].replace(",",".");
+  kg=parseFloat(kg);
   return isNaN(kg)?null:kg;
 }
 
-/* UI */
+/* UI states */
 function showStartOnly(){
   startBtn.style.display="inline-flex";
   newBtn.style.display="none";
-  copyBtn.disabled=true;
+  copyBtn.disabled=(rawLines.innerText.trim()==="");
   scanStatus.textContent="";
 }
 function showDuringScanning(){
@@ -269,7 +225,7 @@ function showAfterScan(){
   scanStatus.textContent="";
 }
 
-/* Set raw data */
+/* render raw */
 function setRawData(raw){
   rawLines.innerHTML="";
   hazardIcon.style.display="none";
@@ -277,23 +233,22 @@ function setRawData(raw){
   const n=normalizeRawText(raw);
   if(!n){ copyBtn.disabled=true; return; }
 
-  const lines=n.split("\n");
-
+  const lines=n.split(/\r?\n/);
   if(/\bUN\d+/.test(n)) hazardIcon.style.display="block";
 
   lines.forEach(line=>{
     const div=document.createElement("div");
-    let html=highlightUN(escapeHtml(line));
+    let html=escapeHtml(line);
+    html=highlightUN(html);
 
-    if(line.startsWith("Vægt")){
+    if(/^Vægt:/i.test(line)){
       const kg=extractWeight(line);
-      if(kg!==null){
+      if(kg !== null){
         const info=classifyWeight(kg);
         div.classList.add(info.cls);
-        html += info.extra;
+        html+=escapeHtml(info.extra);
       }
     }
-
     div.innerHTML=html;
     rawLines.appendChild(div);
   });
@@ -301,12 +256,15 @@ function setRawData(raw){
   copyBtn.disabled=false;
 }
 
-/* Copy */
-copyBtn.onclick=async()=>{
+/* copy */
+copyBtn.addEventListener("click", async()=>{
   await navigator.clipboard.writeText(rawLines.innerText);
-};
+  const prev=copyBtn.innerText;
+  copyBtn.innerText="KOPIERET";
+  setTimeout(()=>copyBtn.innerText=prev,700);
+});
 
-/* Load jsQR */
+/* load jsQR lib */
 function loadJsQr(){
   return new Promise((res,rej)=>{
     if(window.jsQR) return res();
@@ -318,33 +276,32 @@ function loadJsQr(){
   });
 }
 
-/* Camera */
+/* camera start/stop */
 async function startCamera(){
   if(!videoEl){
-    videoEl=document.createElement("video");
-    videoEl.setAttribute("playsinline","true");
+    videoEl=document.createElement('video');
+    videoEl.setAttribute('playsinline','true');
   }
   if(!canvas){
-    canvas=document.createElement("canvas");
-    ctx=canvas.getContext("2d");
+    canvas=document.createElement('canvas');
+    ctx=canvas.getContext('2d');
   }
 
   try{
     stream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:"environment"}},
+      video:{facingMode:{ideal:'environment'}},
       audio:false
     });
-
     videoEl.srcObject=stream;
     await videoEl.play();
 
     cameraWrap.innerHTML="";
     cameraWrap.appendChild(videoEl);
     return true;
-
-  }catch(e){ return false; }
+  }catch(e){
+    return false;
+  }
 }
-
 function stopCamera(){
   if(rafId) cancelAnimationFrame(rafId);
   if(stream){
@@ -358,18 +315,18 @@ function stopCamera(){
   cameraWrap.innerHTML="Kamera er slukket";
 }
 
-/* Scan loop */
+/* scan loop */
 function scanLoop(){
   if(!scanning) return;
 
   if(videoEl && videoEl.readyState===videoEl.HAVE_ENOUGH_DATA){
-    canvas.width=videoEl.videoWidth;
-    canvas.height=videoEl.videoHeight;
-    ctx.drawImage(videoEl,0,0);
-
+    if(canvas.width !== videoEl.videoWidth){
+      canvas.width = videoEl.videoWidth;
+      canvas.height = videoEl.videoHeight;
+    }
+    ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
     const img=ctx.getImageData(0,0,canvas.width,canvas.height);
-    const code=window.jsQR ? jsQR(img.data,img.width,img.height) : null;
-
+    const code = window.jsQR ? jsQR(img.data,img.width,img.height) : null;
     if(code){
       scanning=false;
       stopCamera();
@@ -382,35 +339,36 @@ function scanLoop(){
   rafId=requestAnimationFrame(scanLoop);
 }
 
-/* Start scanning */
+/* start scanning */
 startBtn.onclick=async()=>{
+  if(scanning) return;
   scanning=true;
   showDuringScanning();
-
   await loadJsQr();
-  const ok=await startCamera();
-
+  const ok = await startCamera();
   if(!ok){
-    setTimeout(()=>{setRawData("Demo\nVægt: 18 kg\nKemi: UN1209");showAfterScan();},400);
+    // fallback demo text
+    setTimeout(()=>{ setRawData("Demo\nVægt: 18 kg\nKemi: UN1209"); showAfterScan(); },400);
     scanning=false;
     return;
   }
-
   scanLoop();
 };
 
-/* New scan */
-newBtn.onclick=()=>{
+/* new scanning */
+newBtn.onclick=async()=>{
+  stopCamera();
   rawLines.innerHTML="";
   hazardIcon.style.display="none";
   copyBtn.disabled=true;
-  scanning=true;
+  scanStatus.textContent="SCANNING…";
   showDuringScanning();
+  await new Promise(r=>setTimeout(r,300));
   startBtn.onclick();
 };
 
 showStartOnly();
-window.onbeforeunload=stopCamera;
+window.addEventListener('beforeunload', stopCamera);
 
 </script>
 </body>
