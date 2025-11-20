@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>QR Scanner v3.5</title>
+<title>Info Scan v3.6</title>
 
 <style>
   :root{
@@ -70,7 +70,7 @@
     font-weight:700;
   }
 
-  /* Weight color classes */
+  /* Weight colors */
   .weight-green{ color: var(--weight-green); font-weight:700; }
   .weight-yellow{ color: var(--weight-yellow); font-weight:700; }
   .weight-red{ color: var(--weight-red); font-weight:700; }
@@ -124,7 +124,7 @@
 </head>
 
 <body>
-<h1>QR Scanner — v3.5</h1>
+<h1>Info Scan — v3.6</h1>
 
 <div class="container">
 
@@ -164,7 +164,7 @@
 </div>
 
 <script>
-/* QR Scanner v3.5 */
+/* Info Scan v3.6 */
 
 const startBtn = document.getElementById("startBtn");
 const newBtn   = document.getElementById("newBtn");
@@ -177,6 +177,7 @@ const hazardIcon = document.getElementById("hazardIcon");
 let stream=null, videoEl=null, canvas=null, ctx=null;
 let scanning=false, rafId=null;
 
+/* Helpers */
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, m=>({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
@@ -189,18 +190,16 @@ function highlightUN(str){
   return str.replace(/\b(UN\d+(?:,\d+)*)\b/g,'<span class="un">$1</span>');
 }
 
-/* ⭐ NEW: weight classification */
+/* Weight logic */
 function classifyWeight(kg){
   if(kg <= 15) return {cls:"weight-green", extra:""};
   if(kg <= 30) return {cls:"weight-yellow", extra:" (Pas på når du løfter)"};
   return {cls:"weight-red", extra:" (Brug hjælpe værktøj til løft)"};
 }
-
 function extractWeight(line){
-  // match tal, komma eller punktum, med eller uden kg
   const m = line.match(/Vægt:\s*([\d.,]+)/i);
   if(!m) return null;
-  let kg = m[1].replace(",","."); 
+  let kg = m[1].replace(",",".");
   kg = parseFloat(kg);
   return isNaN(kg) ? null : kg;
 }
@@ -209,7 +208,7 @@ function extractWeight(line){
 function showStartOnly(){
   startBtn.style.display="inline-flex";
   newBtn.style.display="none";
-  copyBtn.disabled = (rawLines.innerText.trim()==="");
+  copyBtn.disabled=(rawLines.innerText.trim()==="");
   scanStatus.textContent="";
 }
 function showDuringScanning(){
@@ -225,7 +224,7 @@ function showAfterScan(){
   scanStatus.textContent="";
 }
 
-/* Rådata renderer med vægtfarver + UN + original format */
+/* Rendering of raw data */
 function setRawData(raw){
   rawLines.innerHTML="";
   hazardIcon.style.display="none";
@@ -235,31 +234,23 @@ function setRawData(raw){
 
   const lines = n.split(/\r?\n/);
 
-  // UN detection
-  const unFound = /\bUN\d+/.test(n);
-  if(unFound) hazardIcon.style.display="block";
+  if(/\bUN\d+/.test(n)) hazardIcon.style.display="block";
 
   lines.forEach(line=>{
     const div=document.createElement("div");
+    let html=escapeHtml(line);
+    html=highlightUN(html);
 
-    let html = escapeHtml(line);
-
-    // UN highlight
-    html = highlightUN(html);
-
-    // ⭐ Check for weight line
     if(/^Vægt:/i.test(line)){
-      const kg = extractWeight(line);
+      const kg=extractWeight(line);
       if(kg !== null){
-        const info = classifyWeight(kg);
+        const info=classifyWeight(kg);
         div.classList.add(info.cls);
-
-        // tilføj tekst BAGEFTER værdien (ved visning, ikke i original data)
         html += escapeHtml(info.extra);
       }
     }
 
-    div.innerHTML = html;
+    div.innerHTML=html;
     rawLines.appendChild(div);
   });
 
@@ -267,11 +258,11 @@ function setRawData(raw){
 }
 
 /* Copy */
-copyBtn.addEventListener("click", async ()=>{
+copyBtn.addEventListener("click", async()=>{
   await navigator.clipboard.writeText(rawLines.innerText);
-  const p=copyBtn.innerText;
+  const prev=copyBtn.innerText;
   copyBtn.innerText="KOPIERET";
-  setTimeout(()=>copyBtn.innerText=p,700);
+  setTimeout(()=>copyBtn.innerText=prev,700);
 });
 
 /* jsQR loader */
@@ -298,7 +289,7 @@ async function startCamera(){
   }
 
   try{
-    stream = await navigator.mediaDevices.getUserMedia({
+    stream=await navigator.mediaDevices.getUserMedia({
       video:{facingMode:{ideal:"environment"}},
       audio:false
     });
@@ -340,12 +331,10 @@ async function scanLoop(){
   }
 
   ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
-  const img = ctx.getImageData(0,0,canvas.width,canvas.height);
+  const img=ctx.getImageData(0,0,canvas.width,canvas.height);
 
   let code=null;
-  if(window.jsQR){
-    code = jsQR(img.data,img.width,img.height);
-  }
+  if(window.jsQR) code=jsQR(img.data,img.width,img.height);
 
   if(code && code.data){
     setRawData(code.data);
@@ -366,9 +355,9 @@ async function startScanning(){
 
   try{ await loadJsQr(); }catch(e){}
 
-  const ok = await startCamera();
+  const ok=await startCamera();
   if(!ok){
-    const demo = "Test\nVægt: 22 kg\nKemi: UN1209";
+    const demo="Demo\nVægt: 22 kg\nKemi: UN1209";
     setTimeout(()=>{ setRawData(demo); showAfterScan(); scanning=false; },600);
     return;
   }
@@ -376,7 +365,7 @@ async function startScanning(){
   scanLoop();
 }
 
-/* ⭐ v3.4 reset, unchanged in v3.5 */
+/* New scanning (reset) */
 async function newScanning(){
   stopCamera();
   rawLines.innerHTML="";
@@ -391,7 +380,7 @@ async function newScanning(){
   startScanning();
 }
 
-/* init */
+/* Init */
 startBtn.addEventListener("click", startScanning);
 newBtn.addEventListener("click", newScanning);
 showStartOnly();
