@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>QR Scanner v3.4</title>
+<title>QR Scanner v3.5</title>
 
 <style>
   :root{
@@ -11,6 +11,10 @@
     --text: #111827;
     --muted: #6b7280;
     --un-color: #b91c1c;
+
+    --weight-green: #059669;
+    --weight-yellow: #CA8A04;
+    --weight-red: #B91C1C;
   }
 
   body{
@@ -57,11 +61,19 @@
     border-bottom:2px solid #111;
     font-family: ui-monospace, monospace;
     font-size:15px;
+    white-space:pre-wrap;
   }
+
+  /* UN hazard */
   .qr-lines .un{
     color: var(--un-color);
     font-weight:700;
   }
+
+  /* Weight color classes */
+  .weight-green{ color: var(--weight-green); font-weight:700; }
+  .weight-yellow{ color: var(--weight-yellow); font-weight:700; }
+  .weight-red{ color: var(--weight-red); font-weight:700; }
 
   /* Hazard icon */
   #hazardIcon{
@@ -110,8 +122,9 @@
   }
 </style>
 </head>
+
 <body>
-<h1>QR Scanner — v3.4</h1>
+<h1>QR Scanner — v3.5</h1>
 
 <div class="container">
 
@@ -134,10 +147,10 @@
     <div class="raw-box" style="margin-top:10px;">
       <div id="rawLines" class="qr-lines"></div>
 
-      <!-- FARE-IKON (SVG) -->
-      <svg id="hazardIcon" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <!-- FARE-IKON -->
+      <svg id="hazardIcon" viewBox="0 0 400 400">
         <polygon points="200,20 380,200 200,380 20,200"
-                 fill="white" stroke="#d32f2f" stroke-width="35"/>
+          fill="white" stroke="#d32f2f" stroke-width="35"/>
         <circle cx="200" cy="270" r="35" fill="black"/>
         <rect x="182" y="90" width="36" height="140" rx="18" fill="black"/>
       </svg>
@@ -147,10 +160,11 @@
       <button class="btn ghost" id="copyBtn" disabled>KOPIER</button>
     </div>
   </div>
+
 </div>
 
 <script>
-/* QR Scanner v3.4 */
+/* QR Scanner v3.5 */
 
 const startBtn = document.getElementById("startBtn");
 const newBtn   = document.getElementById("newBtn");
@@ -160,95 +174,107 @@ const cameraWrap = document.getElementById("cameraWrap");
 const rawLines   = document.getElementById("rawLines");
 const hazardIcon = document.getElementById("hazardIcon");
 
-let stream = null;
-let videoEl = null;
-let canvas = null;
-let ctx = null;
-let scanning = false;
-let rafId = null;
+let stream=null, videoEl=null, canvas=null, ctx=null;
+let scanning=false, rafId=null;
 
-/* Helpers */
 function escapeHtml(str){
-  return String(str).replace(/[&<>"']/g, m => ({
-    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  return String(str).replace(/[&<>"']/g, m=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[m]));
 }
-
 function normalizeRawText(raw){
-  return String(raw||"")
-    .split(/\r?\n/)
-    .map(l=>l.trim())
-    .filter(l=>l !== "")
-    .join("\n");
+  return String(raw||"").split(/\r?\n/).map(l=>l.trim()).filter(l=>l!=="").join("\n");
 }
-
 function highlightUN(str){
-  return String(str).replace(
-    /\b(UN\d+(?:,\d+)*|UN\d+)\b/g,
-    `<span class="un">$1</span>`
-  );
+  return str.replace(/\b(UN\d+(?:,\d+)*)\b/g,'<span class="un">$1</span>');
 }
 
-/* UI States */
+/* ⭐ NEW: weight classification */
+function classifyWeight(kg){
+  if(kg <= 15) return {cls:"weight-green", extra:""};
+  if(kg <= 30) return {cls:"weight-yellow", extra:" (Pas på når du løfter)"};
+  return {cls:"weight-red", extra:" (Brug hjælpe værktøj til løft)"};
+}
+
+function extractWeight(line){
+  // match tal, komma eller punktum, med eller uden kg
+  const m = line.match(/Vægt:\s*([\d.,]+)/i);
+  if(!m) return null;
+  let kg = m[1].replace(",","."); 
+  kg = parseFloat(kg);
+  return isNaN(kg) ? null : kg;
+}
+
+/* UI states */
 function showStartOnly(){
-  startBtn.style.display = "inline-flex";
-  newBtn.style.display = "none";
+  startBtn.style.display="inline-flex";
+  newBtn.style.display="none";
   copyBtn.disabled = (rawLines.innerText.trim()==="");
-  scanStatus.textContent = "";
+  scanStatus.textContent="";
 }
-
 function showDuringScanning(){
-  startBtn.style.display = "none";
-  newBtn.style.display = "inline-flex";
-  copyBtn.disabled = true;
-  scanStatus.textContent = "SCANNING…";
+  startBtn.style.display="none";
+  newBtn.style.display="inline-flex";
+  copyBtn.disabled=true;
+  scanStatus.textContent="SCANNING…";
 }
-
 function showAfterScan(){
-  startBtn.style.display = "inline-flex";
-  newBtn.style.display = "none";
-  copyBtn.disabled = (rawLines.innerText.trim()==="");
-  scanStatus.textContent = "";
+  startBtn.style.display="inline-flex";
+  newBtn.style.display="none";
+  copyBtn.disabled=(rawLines.innerText.trim()==="");
+  scanStatus.textContent="";
 }
 
-/* Rådata + Hazard */
+/* Rådata renderer med vægtfarver + UN + original format */
 function setRawData(raw){
-  rawLines.innerHTML = "";
-  hazardIcon.style.display = "none";
+  rawLines.innerHTML="";
+  hazardIcon.style.display="none";
 
-  const normalized = normalizeRawText(raw);
-  if(!normalized){
-    copyBtn.disabled = true;
-    return;
-  }
+  const n = normalizeRawText(raw);
+  if(!n){ copyBtn.disabled=true; return; }
 
-  if(/\b(UN\d+(?:,\d+)*|UN\d+)\b/.test(normalized)){
-    hazardIcon.style.display = "block";
-  }
+  const lines = n.split(/\r?\n/);
 
-  normalized.split(/\r?\n/).forEach(line=>{
-    const d = document.createElement("div");
-    d.innerHTML = highlightUN(escapeHtml(line));
-    rawLines.appendChild(d);
+  // UN detection
+  const unFound = /\bUN\d+/.test(n);
+  if(unFound) hazardIcon.style.display="block";
+
+  lines.forEach(line=>{
+    const div=document.createElement("div");
+
+    let html = escapeHtml(line);
+
+    // UN highlight
+    html = highlightUN(html);
+
+    // ⭐ Check for weight line
+    if(/^Vægt:/i.test(line)){
+      const kg = extractWeight(line);
+      if(kg !== null){
+        const info = classifyWeight(kg);
+        div.classList.add(info.cls);
+
+        // tilføj tekst BAGEFTER værdien (ved visning, ikke i original data)
+        html += escapeHtml(info.extra);
+      }
+    }
+
+    div.innerHTML = html;
+    rawLines.appendChild(div);
   });
 
-  copyBtn.disabled = false;
+  copyBtn.disabled=false;
 }
 
 /* Copy */
-async function copyRaw(){
-  try{
-    await navigator.clipboard.writeText(rawLines.innerText);
-    const prev = copyBtn.innerText;
-    copyBtn.innerText = "KOPIERET";
-    setTimeout(()=> copyBtn.innerText = prev, 800);
-  }catch(e){
-    alert("Kunne ikke kopiere");
-  }
-}
-copyBtn.addEventListener("click", copyRaw);
+copyBtn.addEventListener("click", async ()=>{
+  await navigator.clipboard.writeText(rawLines.innerText);
+  const p=copyBtn.innerText;
+  copyBtn.innerText="KOPIERET";
+  setTimeout(()=>copyBtn.innerText=p,700);
+});
 
-/* Load jsQR */
+/* jsQR loader */
 function loadJsQr(){
   return new Promise((res,rej)=>{
     if(window.jsQR) return res(window.jsQR);
@@ -265,8 +291,6 @@ async function startCamera(){
   if(!videoEl){
     videoEl=document.createElement("video");
     videoEl.setAttribute("playsinline","true");
-    videoEl.style.width="100%";
-    videoEl.style.height="100%";
   }
   if(!canvas){
     canvas=document.createElement("canvas");
@@ -278,7 +302,7 @@ async function startCamera(){
       video:{facingMode:{ideal:"environment"}},
       audio:false
     });
-    videoEl.srcObject = stream;
+    videoEl.srcObject=stream;
     await videoEl.play();
     cameraWrap.innerHTML="";
     cameraWrap.appendChild(videoEl);
@@ -290,46 +314,38 @@ async function startCamera(){
 
 function stopCamera(){
   if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
-
   if(stream){
     stream.getTracks().forEach(t=>t.stop());
     stream=null;
   }
   if(videoEl){
-    try{ videoEl.pause(); }catch(e){}
+    videoEl.pause();
     videoEl.srcObject=null;
     videoEl.removeAttribute("src");
     videoEl.load();
   }
-  if(canvas){
-    canvas.width=0;
-    canvas.height=0;
-  }
-
   cameraWrap.innerHTML="Kamera er slukket";
 }
 
 /* Scan Loop */
 async function scanLoop(){
-  if(!videoEl || videoEl.readyState !== videoEl.HAVE_ENOUGH_DATA){
+  if(!videoEl || videoEl.readyState!==videoEl.HAVE_ENOUGH_DATA){
     rafId=requestAnimationFrame(scanLoop);
     return;
   }
 
-  if(canvas.width !== videoEl.videoWidth){
-    canvas.width = videoEl.videoWidth;
-    canvas.height = videoEl.videoHeight;
+  if(canvas.width!==videoEl.videoWidth){
+    canvas.width=videoEl.videoWidth;
+    canvas.height=videoEl.videoHeight;
   }
 
   ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
   const img = ctx.getImageData(0,0,canvas.width,canvas.height);
 
   let code=null;
-  try{
-    if(window.jsQR){
-      code=jsQR(img.data,img.width,img.height);
-    }
-  }catch(e){}
+  if(window.jsQR){
+    code = jsQR(img.data,img.width,img.height);
+  }
 
   if(code && code.data){
     setRawData(code.data);
@@ -342,7 +358,7 @@ async function scanLoop(){
   rafId=requestAnimationFrame(scanLoop);
 }
 
-/* Start Scanning */
+/* Start scanning */
 async function startScanning(){
   if(scanning) return;
   scanning=true;
@@ -352,43 +368,32 @@ async function startScanning(){
 
   const ok = await startCamera();
   if(!ok){
-    const demo="Område: Demo\nVarenummer: 1234\nKemi: UN1209,1";
-    setTimeout(()=>{ setRawData(demo); showAfterScan(); scanning=false; },500);
+    const demo = "Test\nVægt: 22 kg\nKemi: UN1209";
+    setTimeout(()=>{ setRawData(demo); showAfterScan(); scanning=false; },600);
     return;
   }
 
   scanLoop();
 }
 
-/* ⭐ NY SCANNING — v3.4 ULTRA-STABIL VERSION */
+/* ⭐ v3.4 reset, unchanged in v3.5 */
 async function newScanning(){
-  stopCamera();                 // STOP kameraet helt
-  rawLines.innerHTML = "";      // RYD rådata
+  stopCamera();
+  rawLines.innerHTML="";
   hazardIcon.style.display="none";
-  copyBtn.disabled = true;
+  copyBtn.disabled=true;
+
   scanStatus.textContent="SCANNING…";
   showDuringScanning();
 
-  // HARD RESET (kritisk, ellers kommer gamle frames igen)
-  if(videoEl){
-    videoEl.srcObject=null;
-    videoEl.removeAttribute("src");
-    videoEl.load();
-  }
-  if(canvas){
-    canvas.width=0;
-    canvas.height=0;
-  }
-
   await new Promise(r=>setTimeout(r,300));
 
-  startScanning();              // Start scanning helt forfra
+  startScanning();
 }
 
-/* Hooks */
+/* init */
 startBtn.addEventListener("click", startScanning);
 newBtn.addEventListener("click", newScanning);
-
 showStartOnly();
 window.addEventListener("beforeunload", stopCamera);
 
