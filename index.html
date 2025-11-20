@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>QR Scanner v3.1</title>
+<title>QR Scanner v3.2</title>
 
 <style>
   :root{
@@ -113,7 +113,7 @@
 </style>
 </head>
 <body>
-<h1>QR Scanner — v3.1</h1>
+<h1>QR Scanner — v3.2</h1>
 
 <div class="container">
 
@@ -152,10 +152,9 @@
 </div>
 
 <script>
-/* QR Scanner v3.1 */
-/*******************************
-  ELEMENTS
-********************************/
+/* QR Scanner v3.2 -- fixes: NY SCANNING now reliably clears raw data and prevents immediate re-population */
+
+/* ELEMENTS */
 const startBtn = document.getElementById('startBtn');
 const newBtn   = document.getElementById('newBtn');
 const copyBtn  = document.getElementById('copyBtn');
@@ -171,9 +170,10 @@ let ctx = null;
 let scanning = false;
 let rafId = null;
 
-/*******************************
-  HELPERS
-********************************/
+/* NEW: ignore immediate detections for a short window after "new scanning" */
+let ignoreDetectionsUntil = 0; // timestamp in ms
+
+/* HELPERS */
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, m => ({
     '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
@@ -188,7 +188,7 @@ function normalizeRawText(raw){
     .join('\n');
 }
 
-/* UN highlight (handles UN1234 and UN1234,1,11 etc.) */
+/* UN highlight */
 function highlightUN(str){
   return String(str).replace(
     /\b(UN\d+(?:,\d+)*|UN\d+)\b/g,
@@ -196,9 +196,7 @@ function highlightUN(str){
   );
 }
 
-/*******************************
-  UI STATES
-********************************/
+/* UI states */
 function showStartOnly(){
   startBtn.style.display = 'inline-flex';
   newBtn.style.display = 'none';
@@ -220,11 +218,16 @@ function showAfterScan(){
   scanStatus.textContent = '';
 }
 
-/*******************************
-  RÅDATA + HAZARD LOGIK
-********************************/
+/* RÅDATA + HAZARD LOGIK */
 function setRawData(raw){
-  // Clear current lines and hide hazard by default
+  // If we are currently ignoring detections (because user pressed NEW), and the current time is before
+  // ignoreDetectionsUntil, then do not set data.
+  const now = Date.now();
+  if(now < ignoreDetectionsUntil){
+    // ignore this detection
+    return;
+  }
+
   rawLines.innerHTML = '';
   hazardIcon.style.display = 'none';
 
@@ -234,7 +237,6 @@ function setRawData(raw){
     return;
   }
 
-  // If any UN block present (including commas), show hazard icon
   const containsUN = /\b(UN\d+(?:,\d+)*|UN\d+)\b/.test(normalized);
   if(containsUN){
     hazardIcon.style.display = 'block';
@@ -249,9 +251,7 @@ function setRawData(raw){
   copyBtn.disabled = false;
 }
 
-/*******************************
-  COPY
-********************************/
+/* COPY */
 async function copyRaw(){
   try{
     await navigator.clipboard.writeText(rawLines.innerText);
@@ -264,9 +264,7 @@ async function copyRaw(){
 }
 copyBtn.addEventListener('click', copyRaw);
 
-/*******************************
-  jsQR LOADER
-********************************/
+/* jsQR loader */
 function loadJsQr(){
   return new Promise((resolve,reject)=>{
     if(window.jsQR) return resolve(window.jsQR);
@@ -278,9 +276,7 @@ function loadJsQr(){
   });
 }
 
-/*******************************
-  CAMERA
-********************************/
+/* CAMERA */
 async function startCamera(){
   if(!videoEl){
     videoEl = document.createElement('video');
@@ -318,9 +314,7 @@ function stopCamera(){
   cameraWrap.innerHTML = 'Kamera er slukket';
 }
 
-/*******************************
-  SCAN LOOP
-********************************/
+/* SCAN LOOP */
 async function scanLoop(){
   if(!videoEl || videoEl.readyState !== videoEl.HAVE_ENOUGH_DATA){
     rafId = requestAnimationFrame(scanLoop);
@@ -341,57 +335,64 @@ async function scanLoop(){
   }catch(e){}
 
   if(code && code.data){
+    // pass code.data to setRawData — setRawData will ignore if within ignore window
     setRawData(code.data);
-    scanning = false;
-    stopCamera();
-    showAfterScan();
-    return;
+    // If setRawData accepted it (i.e. now rawLines isn't empty), then we should stop camera.
+    if(rawLines.innerText.trim() !== ''){
+      scanning = false;
+      stopCamera();
+      showAfterScan();
+      return;
+    } else {
+      // ignored detection — continue scanning
+    }
   }
 
   rafId = requestAnimationFrame(scanLoop);
 }
 
-/*******************************
-  START SCANNING
-********************************/
+/* START */
 async function startScanning(){
   if(scanning) return;
   scanning = true;
   showDuringScanning();
 
-  try{ await loadJsQr(); }catch(e){ /* ignore */ }
+  try{ await loadJsQr(); }catch(e){ /* ignore loading errors */ }
 
   const ok = await startCamera();
   if(!ok){
-    // demo fallback only if camera can't be started
+    // demo fallback only
     const demo = "Område: KONF\nVarenummer: 50023166\nMateriale: Tape\nAntal: 18\nKemi: UN1725,1,11";
     setTimeout(()=>{ setRawData(demo); scanning = false; showAfterScan(); }, 600);
     return;
   }
 
+  // no ignoring by default
+  ignoreDetectionsUntil = 0;
   scanLoop();
 }
 
-/*******************************
-  NY SCANNING (v3.1) -- patched
-********************************/
+/* NEW SCANNING (robust) */
 function newScanning(){
-  // 1) Always clear visible data
+  // 1) Immediately clear visible data
   rawLines.innerHTML = '';
-  // 2) Hide hazard
+  // 2) Hide hazard icon
   hazardIcon.style.display = 'none';
   // 3) Disable copy
   copyBtn.disabled = true;
-  // 4) Update status text
+  // 4) Update UI status
   scanStatus.textContent = 'SCANNING…';
+  // 5) Set ignore window so any immediate detection within next X ms is ignored
+  const IGNORE_MS = 700; // tweak if needed
+  ignoreDetectionsUntil = Date.now() + IGNORE_MS;
 
-  // 5) If camera inactive -> start fresh scanning (startCamera + scanLoop)
+  // 6) If camera not active -> start fresh scanning
   if(!stream){
     startScanning();
     return;
   }
 
-  // 6) If camera already active -> ensure UI + loop are running
+  // 7) camera is active — ensure UI and scanning loop run
   showDuringScanning();
   if(!rafId){
     scanLoop();
@@ -402,14 +403,14 @@ function newScanning(){
 startBtn.addEventListener('click', startScanning);
 newBtn.addEventListener('click', newScanning);
 
-/* initial UI state */
+/* initial state */
 showStartOnly();
 
-/* stop camera when leaving page */
+/* stop camera on unload */
 window.addEventListener('beforeunload', stopCamera);
 
 /* expose version */
-window.__QR_SCANNER_VERSION = 'v3.1';
+window.__QR_SCANNER_VERSION = 'v3.2';
 </script>
 </body>
 </html>
