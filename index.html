@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>QR Scanner v3.0</title>
+<title>QR Scanner v3.1</title>
 
 <style>
   :root{
@@ -113,7 +113,7 @@
 </style>
 </head>
 <body>
-<h1>QR Scanner — v3.0</h1>
+<h1>QR Scanner — v3.1</h1>
 
 <div class="container">
 
@@ -137,7 +137,7 @@
       <div id="rawLines" class="qr-lines"></div>
 
       <!-- FARE-IKON (SVG) -->
-      <svg id="hazardIcon" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <svg id="hazardIcon" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <polygon points="200,20 380,200 200,380 20,200"
                  fill="white" stroke="#d32f2f" stroke-width="35"/>
         <circle cx="200" cy="270" r="35" fill="black"/>
@@ -152,9 +152,9 @@
 </div>
 
 <script>
-/* QR Scanner v3.0 */
+/* QR Scanner v3.1 */
 /*******************************
-  ELEMENTER
+  ELEMENTS
 ********************************/
 const startBtn = document.getElementById('startBtn');
 const newBtn   = document.getElementById('newBtn');
@@ -172,7 +172,7 @@ let scanning = false;
 let rafId = null;
 
 /*******************************
-  HJÆLPEFUNKTIONER
+  HELPERS
 ********************************/
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, m => ({
@@ -188,7 +188,7 @@ function normalizeRawText(raw){
     .join('\n');
 }
 
-/* UN-nummer farvemarkering */
+/* UN highlight (handles UN1234 and UN1234,1,11 etc.) */
 function highlightUN(str){
   return String(str).replace(
     /\b(UN\d+(?:,\d+)*|UN\d+)\b/g,
@@ -196,7 +196,9 @@ function highlightUN(str){
   );
 }
 
-/* UI tilstande */
+/*******************************
+  UI STATES
+********************************/
 function showStartOnly(){
   startBtn.style.display = 'inline-flex';
   newBtn.style.display = 'none';
@@ -219,41 +221,43 @@ function showAfterScan(){
 }
 
 /*******************************
-  RÅDATA-RENDERING + UN-DETEKTION
+  RÅDATA + HAZARD LOGIK
 ********************************/
 function setRawData(raw){
+  // Clear current lines and hide hazard by default
   rawLines.innerHTML = '';
   hazardIcon.style.display = 'none';
 
   const normalized = normalizeRawText(raw);
   if(!normalized){
-    copyBtn.disabled=true;
+    copyBtn.disabled = true;
     return;
   }
 
+  // If any UN block present (including commas), show hazard icon
   const containsUN = /\b(UN\d+(?:,\d+)*|UN\d+)\b/.test(normalized);
   if(containsUN){
     hazardIcon.style.display = 'block';
   }
 
-  normalized.split(/\r?\n/).forEach(line=>{
-    const div=document.createElement('div');
-    div.innerHTML = highlightUN(escapeHtml(line));
-    rawLines.appendChild(div);
+  normalized.split(/\r?\n/).forEach(line => {
+    const d = document.createElement('div');
+    d.innerHTML = highlightUN(escapeHtml(line));
+    rawLines.appendChild(d);
   });
 
-  copyBtn.disabled=false;
+  copyBtn.disabled = false;
 }
 
 /*******************************
-  KOPIER
+  COPY
 ********************************/
 async function copyRaw(){
   try{
     await navigator.clipboard.writeText(rawLines.innerText);
     const prev = copyBtn.innerText;
-    copyBtn.innerText='KOPIERET';
-    setTimeout(()=> copyBtn.innerText=prev,800);
+    copyBtn.innerText = 'KOPIERET';
+    setTimeout(()=> copyBtn.innerText = prev, 800);
   }catch(e){
     alert("Kunne ikke kopiere");
   }
@@ -266,37 +270,37 @@ copyBtn.addEventListener('click', copyRaw);
 function loadJsQr(){
   return new Promise((resolve,reject)=>{
     if(window.jsQR) return resolve(window.jsQR);
-    const s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
-    s.onload=()=>resolve(window.jsQR);
-    s.onerror=()=>reject();
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+    s.onload = ()=> resolve(window.jsQR);
+    s.onerror = ()=> reject(new Error('Kunne ikke loade jsQR'));
     document.head.appendChild(s);
   });
 }
 
 /*******************************
-  KAMERA
+  CAMERA
 ********************************/
 async function startCamera(){
   if(!videoEl){
-    videoEl=document.createElement('video');
+    videoEl = document.createElement('video');
     videoEl.setAttribute('playsinline','true');
-    videoEl.style.width='100%';
-    videoEl.style.height='100%';
+    videoEl.style.width = '100%';
+    videoEl.style.height = '100%';
   }
   if(!canvas){
-    canvas=document.createElement('canvas');
-    ctx=canvas.getContext('2d');
+    canvas = document.createElement('canvas');
+    ctx = canvas.getContext('2d');
   }
 
   try{
     stream = await navigator.mediaDevices.getUserMedia({
-      video:{ facingMode:{ ideal:'environment' } },
-      audio:false
+      video: { facingMode: { ideal: 'environment' } },
+      audio: false
     });
-    videoEl.srcObject=stream;
+    videoEl.srcObject = stream;
     await videoEl.play();
-    cameraWrap.innerHTML='';
+    cameraWrap.innerHTML = '';
     cameraWrap.appendChild(videoEl);
     return true;
   }catch(e){
@@ -305,45 +309,46 @@ async function startCamera(){
 }
 
 function stopCamera(){
-  if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+  if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
   if(stream){
-    stream.getTracks().forEach(t=>t.stop());
-    stream=null;
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
   }
-  cameraWrap.innerHTML='Kamera er slukket';
+  if(videoEl){ try{ videoEl.pause(); }catch(e){} }
+  cameraWrap.innerHTML = 'Kamera er slukket';
 }
 
 /*******************************
-  SCANNING LOOP
+  SCAN LOOP
 ********************************/
 async function scanLoop(){
-  if(!videoEl || videoEl.readyState!==videoEl.HAVE_ENOUGH_DATA){
-    rafId=requestAnimationFrame(scanLoop);
+  if(!videoEl || videoEl.readyState !== videoEl.HAVE_ENOUGH_DATA){
+    rafId = requestAnimationFrame(scanLoop);
     return;
   }
 
-  if(canvas.width!==videoEl.videoWidth){
-    canvas.width=videoEl.videoWidth;
-    canvas.height=videoEl.videoHeight;
+  if(canvas.width !== videoEl.videoWidth){
+    canvas.width = videoEl.videoWidth;
+    canvas.height = videoEl.videoHeight;
   }
 
-  ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
-  const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+  ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+  const img = ctx.getImageData(0,0,canvas.width,canvas.height);
 
-  let code=null;
+  let code = null;
   try{
-    if(window.jsQR) code = jsQR(img.data,img.width,img.height);
+    if(window.jsQR) code = jsQR(img.data, img.width, img.height);
   }catch(e){}
 
   if(code && code.data){
     setRawData(code.data);
-    scanning=false;
+    scanning = false;
     stopCamera();
     showAfterScan();
     return;
   }
 
-  rafId=requestAnimationFrame(scanLoop);
+  rafId = requestAnimationFrame(scanLoop);
 }
 
 /*******************************
@@ -351,15 +356,16 @@ async function scanLoop(){
 ********************************/
 async function startScanning(){
   if(scanning) return;
-  scanning=true;
+  scanning = true;
   showDuringScanning();
 
-  try{ await loadJsQr(); }catch(e){}
+  try{ await loadJsQr(); }catch(e){ /* ignore */ }
 
   const ok = await startCamera();
   if(!ok){
-    const demo="Område: KONF\nVarenummer: 50023166\nMateriale: Tape\nAntal: 18\nKemi: UN1725,1,11";
-    setTimeout(()=>{ setRawData(demo); scanning=false; showAfterScan(); },600);
+    // demo fallback only if camera can't be started
+    const demo = "Område: KONF\nVarenummer: 50023166\nMateriale: Tape\nAntal: 18\nKemi: UN1725,1,11";
+    setTimeout(()=>{ setRawData(demo); scanning = false; showAfterScan(); }, 600);
     return;
   }
 
@@ -367,29 +373,43 @@ async function startScanning(){
 }
 
 /*******************************
-  NY SCANNING
+  NY SCANNING (v3.1) -- patched
 ********************************/
 function newScanning(){
-  rawLines.innerHTML='';
-  hazardIcon.style.display='none';
-  copyBtn.disabled=true;
-  scanStatus.textContent='SCANNING…';
+  // 1) Always clear visible data
+  rawLines.innerHTML = '';
+  // 2) Hide hazard
+  hazardIcon.style.display = 'none';
+  // 3) Disable copy
+  copyBtn.disabled = true;
+  // 4) Update status text
+  scanStatus.textContent = 'SCANNING…';
 
-  if(!stream) startScanning();
-  else{
-    showDuringScanning();
-    if(!rafId) scanLoop();
+  // 5) If camera inactive -> start fresh scanning (startCamera + scanLoop)
+  if(!stream){
+    startScanning();
+    return;
+  }
+
+  // 6) If camera already active -> ensure UI + loop are running
+  showDuringScanning();
+  if(!rafId){
+    scanLoop();
   }
 }
 
+/* HOOKS */
 startBtn.addEventListener('click', startScanning);
 newBtn.addEventListener('click', newScanning);
 
+/* initial UI state */
 showStartOnly();
 
-/* Stop kamera på side-unload */
+/* stop camera when leaving page */
 window.addEventListener('beforeunload', stopCamera);
 
+/* expose version */
+window.__QR_SCANNER_VERSION = 'v3.1';
 </script>
 </body>
 </html>
