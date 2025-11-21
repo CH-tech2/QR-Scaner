@@ -3,67 +3,78 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Info Scan v5.0</title>
-
+<title>Info Scan — v5.1</title>
 <style>
   :root{
-    --bg: #D20014;
+    --bg: #D20014; /* ROCKWOOL red */
     --text: #111827;
     --muted: #6b7280;
     --un-color: #b91c1c;
+    --card-bg: #ffffff;
+    --card-border: #e6e8eb;
+
     --weight-green: #059669;
     --weight-yellow: #CA8A04;
     --weight-red: #B91C1C;
   }
 
+  html,body{height:100%;margin:0;}
   body{
-    background: var(--bg);
-    margin: 0;
-    padding: 16px;
-    font-family: Arial, sans-serif;
-    color: #fff;
+    background:var(--bg);
+    color:var(--text);
+    font-family: Arial, monospace;
+    padding:16px;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
   }
 
-  /* HEADER */
-  .header{
+  /* Header */
+  .app-header{
     display:flex;
-    justify-content:space-between;
     align-items:center;
+    justify-content:space-between;
+    gap:12px;
     margin-bottom:14px;
   }
-  .title{
+  .app-title{
+    color:#fff;
     font-size:20px;
     font-weight:700;
+    margin:0;
   }
 
+  /* Logo box: white rounded with proper containment */
   .logo-box{
     background:#fff;
-    padding:6px 12px;
+    padding:6px 10px;
     border-radius:10px;
-    display:flex;
+    display:inline-flex;
     align-items:center;
+    justify-content:center;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.06);
   }
   .logo-box img{
-    height:34px; /* → Lille størrelse (A) */
+    height:34px;            /* small size (A) */
+    width:auto;
     display:block;
+    object-fit:contain;
   }
 
-  /* MAIN LAYOUT */
+  /* Main grid */
   .container{
     display:grid;
     grid-template-columns:1fr 1fr;
-    gap:16px;
+    gap:18px;
   }
 
   .card{
-    background:#fff;
-    color:#111;
+    background:var(--card-bg);
+    border:1px solid var(--card-border);
     border-radius:10px;
-    padding:16px;
-    border:1px solid #e5e7eb;
+    padding:14px;
   }
 
-  /* CAMERA */
+  /* Camera preview */
   #cameraWrap{
     background:#f3f4f6;
     border-radius:8px;
@@ -82,102 +93,123 @@
     -webkit-transform:none !important;
   }
 
-  /* RÅDATA */
+  /* Raw data */
   .raw-box{
     background:#fff;
     border-radius:8px;
-    border:1px solid #ddd;
+    border:1px solid #e5e7eb;
     position:relative;
     overflow:auto;
   }
   .qr-lines div{
     padding:8px 10px;
-    border-bottom:2px solid #000;
-    font-family:ui-monospace, monospace;
-    white-space:pre-wrap;
+    border-bottom:2px solid #111;
+    font-family: ui-monospace, monospace;
     font-size:15px;
+    white-space:pre-wrap;
   }
 
-  .un{ color:#B91C1C; font-weight:700; }
+  .qr-lines .un{
+    color: var(--un-color);
+    font-weight:700;
+  }
 
-  .weight-green{ color:#059669; font-weight:700; }
-  .weight-yellow{ color:#CA8A04; font-weight:700; }
-  .weight-red{ color:#B91C1C; font-weight:700; }
+  .weight-green{ color: var(--weight-green); font-weight:700; }
+  .weight-yellow{ color: var(--weight-yellow); font-weight:700; }
+  .weight-red{ color: var(--weight-red); font-weight:700; }
 
+  /* Hazard icon */
   #hazardIcon{
     position:absolute;
     bottom:6px;
     right:6px;
     width:38px;
+    height:38px;
     display:none;
+    pointer-events:none;
+    z-index:50;
   }
 
-  /* BUTTONS */
+  /* Buttons */
   .btn-row{
-    margin-top:12px;
     display:flex;
     gap:10px;
+    margin-top:12px;
+    align-items:center;
+    flex-wrap:wrap;
   }
   .btn{
     width:140px;
     height:48px;
+    border-radius:8px;
+    border:0;
+    cursor:pointer;
+    font-weight:700;
+    font-size:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
     background:#111827;
     color:#fff;
-    border:0;
-    border-radius:8px;
-    font-weight:700;
-    cursor:pointer;
-    font-size:16px;
   }
   .btn.ghost{
     background:#fff;
     color:#111827;
-    border:1px solid #ccc;
+    border:1px solid #d1d5db;
   }
   .btn:disabled{
-    opacity:0.5;
+    opacity:0.45;
+    cursor:not-allowed;
+  }
+
+  .status{
+    color:#ffffff;
+    font-size:14px;
   }
 
   @media(max-width:900px){
     .container{ grid-template-columns:1fr; }
+    .logo-box img{ height:30px; }
+    .app-title{ font-size:18px; }
   }
 </style>
 </head>
-
 <body>
 
-<!-- HEADER -->
-<div class="header">
-  <div class="title">Info Scan — v5.0</div>
+<header class="app-header" role="banner">
+  <h1 class="app-title">Info Scan — v5.1</h1>
 
-  <div class="logo-box">
-    <img src="data:image/jpeg;base64, yRvW/qlqE37uljV71d3Eg0XE3z8Ir83vV64adr+JTTs9iVcs7qrm7q/lp8/PPmaD...AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//Z">
+  <!-- Use the uploaded logo file path directly (local path provided by you) -->
+  <div class="logo-box" aria-hidden="true">
+    <img alt="ROCKWOOL logo" src="/mnt/data/af87e6db-998d-44cc-9d74-be1931715180.jpg">
   </div>
-</div>
+</header>
 
-<div class="container">
+<main class="container" role="main">
 
-  <!-- SCANNER -->
-  <div class="card">
+  <!-- Scanner card -->
+  <section class="card" aria-label="Scanner">
     <strong>Scanner</strong>
     <div id="cameraWrap">Kamera er slukket</div>
 
     <div class="btn-row">
       <button class="btn" id="startBtn">START SCANNING</button>
       <button class="btn ghost" id="newBtn" style="display:none;">NY SCANNING</button>
-      <div id="scanStatus"></div>
+      <div class="status" id="scanStatus"></div>
     </div>
-  </div>
+  </section>
 
-  <!-- RÅDATA -->
-  <div class="card">
+  <!-- Raw data card -->
+  <section class="card" aria-label="Rådata">
     <strong>Rådata</strong>
 
     <div class="raw-box" style="margin-top:10px;">
-      <div id="rawLines" class="qr-lines"></div>
+      <div id="rawLines" class="qr-lines" aria-live="polite"></div>
 
-      <svg id="hazardIcon" viewBox="0 0 400 400">
-        <polygon points="200,20 380,200 200,380 20,200" fill="white" stroke="#d32f2f" stroke-width="35"/>
+      <!-- Hazard icon -->
+      <svg id="hazardIcon" viewBox="0 0 400 400" aria-hidden="true">
+        <polygon points="200,20 380,200 200,380 20,200"
+          fill="white" stroke="#d32f2f" stroke-width="35"/>
         <circle cx="200" cy="270" r="35" fill="black"/>
         <rect x="182" y="90" width="36" height="140" rx="18" fill="black"/>
       </svg>
@@ -186,26 +218,29 @@
     <div class="btn-row">
       <button class="btn ghost" id="copyBtn" disabled>KOPIER</button>
     </div>
-  </div>
+  </section>
 
-</div>
+</main>
 
 <script>
-/* --- SCANNER-SCRIPT (fra v3.7 — 100% stabil) --- */
+/* Info Scan v5.1
+   Full scanning script, camera handling, UI states
+   Preserves stable behavior from v3.7 and fixes prior issues.
+*/
 
-const startBtn=document.getElementById("startBtn");
-const newBtn=document.getElementById("newBtn");
-const copyBtn=document.getElementById("copyBtn");
-const scanStatus=document.getElementById("scanStatus");
-const cameraWrap=document.getElementById("cameraWrap");
-const rawLines=document.getElementById("rawLines");
-const hazardIcon=document.getElementById("hazardIcon");
+const startBtn = document.getElementById("startBtn");
+const newBtn   = document.getElementById("newBtn");
+const copyBtn  = document.getElementById("copyBtn");
+const scanStatus = document.getElementById("scanStatus");
+const cameraWrap = document.getElementById("cameraWrap");
+const rawLines   = document.getElementById("rawLines");
+const hazardIcon = document.getElementById("hazardIcon");
 
 let stream=null, videoEl=null, canvas=null, ctx=null, scanning=false, rafId=null;
 
 /* Helper functions */
 function escapeHtml(str){
-  return String(str).replace(/[&<>"']/g,m=>({
+  return String(str).replace(/[&<>"']/g, m=>({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[m]));
 }
@@ -215,6 +250,8 @@ function normalizeRawText(raw){
 function highlightUN(str){
   return str.replace(/\b(UN\d+(?:,\d+)*)\b/g,'<span class="un">$1</span>');
 }
+
+/* Weight logic */
 function classifyWeight(kg){
   if(kg <= 15) return {cls:"weight-green", extra:""};
   if(kg <= 30) return {cls:"weight-yellow", extra:" (Pas på når du løfter)"};
@@ -228,7 +265,7 @@ function extractWeight(line){
   return isNaN(kg)?null:kg;
 }
 
-/* UI states */
+/* UI state helpers */
 function showStartOnly(){
   startBtn.style.display="inline-flex";
   newBtn.style.display="none";
@@ -248,164 +285,167 @@ function showAfterScan(){
   scanStatus.textContent="";
 }
 
-/* Rådata visning */
+/* Render raw data lines */
 function setRawData(raw){
   rawLines.innerHTML="";
   hazardIcon.style.display="none";
 
-  const n=normalizeRawText(raw);
+  const n = normalizeRawText(raw);
   if(!n){ copyBtn.disabled=true; return; }
 
-  const lines=n.split(/\r?\n/);
+  const lines = n.split(/\r?\n/);
 
   if(/\bUN\d+/.test(n)) hazardIcon.style.display="block";
 
   lines.forEach(line=>{
-    const div=document.createElement("div");
-    let html=escapeHtml(line);
-    html=highlightUN(html);
+    const div = document.createElement("div");
+    let html = escapeHtml(line);
+    html = highlightUN(html);
 
     if(/^Vægt:/i.test(line)){
-      const kg=extractWeight(line);
+      const kg = extractWeight(line);
       if(kg !== null){
-        const info=classifyWeight(kg);
+        const info = classifyWeight(kg);
         div.classList.add(info.cls);
-        html+=escapeHtml(info.extra);
+        html += escapeHtml(info.extra);
       }
     }
 
-    div.innerHTML=html;
+    div.innerHTML = html;
     rawLines.appendChild(div);
   });
 
-  copyBtn.disabled=false;
+  copyBtn.disabled = false;
 }
 
-/* Copy */
+/* Copy to clipboard */
 copyBtn.addEventListener("click", async()=>{
-  await navigator.clipboard.writeText(rawLines.innerText);
-  const prev=copyBtn.innerText;
-  copyBtn.innerText="KOPIERET";
-  setTimeout(()=>copyBtn.innerText=prev,700);
+  try{
+    await navigator.clipboard.writeText(rawLines.innerText);
+    const prev = copyBtn.innerText;
+    copyBtn.innerText = "KOPIERET";
+    setTimeout(()=>copyBtn.innerText = prev, 800);
+  }catch(e){}
 });
 
-/* Load jsQR */
+/* Load jsQR if not present */
 function loadJsQr(){
   return new Promise((res,rej)=>{
     if(window.jsQR) return res(window.jsQR);
-    const s=document.createElement("script");
-    s.src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
-    s.onload=()=>res(window.jsQR);
-    s.onerror=()=>rej();
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
+    s.onload = ()=>res(window.jsQR);
+    s.onerror = ()=>rej(new Error("jsQR load failed"));
     document.head.appendChild(s);
   });
 }
 
-/* Camera */
+/* Camera start */
 async function startCamera(){
   if(!videoEl){
-    videoEl=document.createElement("video");
+    videoEl = document.createElement("video");
     videoEl.setAttribute("playsinline","true");
   }
   if(!canvas){
-    canvas=document.createElement("canvas");
-    ctx=canvas.getContext("2d");
+    canvas = document.createElement("canvas");
+    ctx = canvas.getContext("2d");
   }
 
   try{
-    stream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:"environment"}},
-      audio:false
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" } },
+      audio: false
     });
 
-    videoEl.srcObject=stream;
+    videoEl.srcObject = stream;
     await videoEl.play();
 
-    cameraWrap.innerHTML="";
+    cameraWrap.innerHTML = "";
     cameraWrap.appendChild(videoEl);
     return true;
-
   }catch(e){
+    console.warn("startCamera failed:", e);
     return false;
   }
 }
 
+/* Stop camera */
 function stopCamera(){
-  if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+  if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
   if(stream){
     stream.getTracks().forEach(t=>t.stop());
-    stream=null;
+    stream = null;
   }
   if(videoEl){
-    videoEl.pause();
-    videoEl.srcObject=null;
-    videoEl.removeAttribute("src");
-    videoEl.load();
+    try{ videoEl.pause(); }catch(e){}
+    videoEl.srcObject = null;
   }
-  cameraWrap.innerHTML="Kamera er slukket";
+  cameraWrap.innerHTML = "Kamera er slukket";
 }
 
-/* Scan loop */
+/* Scan loop — uses jsQR */
 async function scanLoop(){
-  if(!videoEl || videoEl.readyState!==videoEl.HAVE_ENOUGH_DATA){
-    rafId=requestAnimationFrame(scanLoop);
+  if(!videoEl || videoEl.readyState !== videoEl.HAVE_ENOUGH_DATA){
+    rafId = requestAnimationFrame(scanLoop);
     return;
   }
 
-  if(canvas.width!==videoEl.videoWidth){
-    canvas.width=videoEl.videoWidth;
-    canvas.height=videoEl.videoHeight;
+  if(canvas.width !== videoEl.videoWidth){
+    canvas.width  = videoEl.videoWidth;
+    canvas.height = videoEl.videoHeight;
   }
 
-  ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
-  const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+  ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+  const img = ctx.getImageData(0,0,canvas.width,canvas.height);
 
-  let code=null;
-  if(window.jsQR) code=jsQR(img.data,img.width,img.height);
+  let code = null;
+  if(window.jsQR) code = jsQR(img.data, img.width, img.height);
 
   if(code && code.data){
     setRawData(code.data);
-    scanning=false;
+    scanning = false;
     stopCamera();
     showAfterScan();
     return;
   }
 
-  rafId=requestAnimationFrame(scanLoop);
+  rafId = requestAnimationFrame(scanLoop);
 }
 
-/* START SCANNING */
+/* Start scanning (button) */
 async function startScanning(){
   if(scanning) return;
-  scanning=true;
+  scanning = true;
   showDuringScanning();
 
-  try{ await loadJsQr(); }catch(e){}
+  try{ await loadJsQr(); }catch(e){ /* continue with fallback */ }
 
-  const ok=await startCamera();
+  const ok = await startCamera();
   if(!ok){
-    const demo="Demo\nVægt: 18 kg\nKemi: UN1209";
-    setTimeout(()=>{ setRawData(demo); showAfterScan(); scanning=false; },600);
+    // fallback demo content when camera cannot start
+    const demo = "Demo\nVægt: 18 kg\nKemi: UN1209";
+    setTimeout(()=>{ setRawData(demo); showAfterScan(); scanning = false; }, 500);
     return;
   }
 
   scanLoop();
 }
 
-/* NY SCANNING */
+/* New scanning: clear and start */
 async function newScanning(){
   stopCamera();
-  rawLines.innerHTML="";
-  hazardIcon.style.display="none";
-  copyBtn.disabled=true;
+  rawLines.innerHTML = "";
+  hazardIcon.style.display = "none";
+  copyBtn.disabled = true;
 
-  scanStatus.textContent="SCANNING…";
+  scanStatus.textContent = "SCANNING…";
   showDuringScanning();
 
-  await new Promise(r=>setTimeout(r,200));
+  await new Promise(r=>setTimeout(r,250));
   startScanning();
 }
 
+/* Init button handlers */
 startBtn.addEventListener("click", startScanning);
 newBtn.addEventListener("click", newScanning);
 
