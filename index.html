@@ -3,26 +3,25 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Info Scan — v5.1</title>
+<title>Info Scan v5.2</title>
 <style>
   :root{
-    --bg: #D20014; /* ROCKWOOL red */
-    --text: #111827;
-    --muted: #6b7280;
-    --un-color: #b91c1c;
-    --card-bg: #ffffff;
-    --card-border: #e6e8eb;
-
-    --weight-green: #059669;
-    --weight-yellow: #CA8A04;
-    --weight-red: #B91C1C;
+    --bg:#D20014;
+    --text:#111827;
+    --muted:#6b7280;
+    --un-color:#b91c1c;
+    --card-bg:#ffffff;
+    --card-border:#e6e8eb;
+    --weight-green:#059669;
+    --weight-yellow:#CA8A04;
+    --weight-red:#B91C1C;
   }
 
   html,body{height:100%;margin:0;}
   body{
     background:var(--bg);
     color:var(--text);
-    font-family: Arial, monospace;
+    font-family:Arial, monospace;
     padding:16px;
     -webkit-font-smoothing:antialiased;
     -moz-osx-font-smoothing:grayscale;
@@ -43,7 +42,6 @@
     margin:0;
   }
 
-  /* Logo box: white rounded with proper containment */
   .logo-box{
     background:#fff;
     padding:6px 10px;
@@ -51,22 +49,21 @@
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+    box-shadow:0 1px 0 rgba(0,0,0,0.06);
   }
   .logo-box img{
-    height:34px;            /* small size (A) */
+    height:34px; /* Lille størrelse (A) */
     width:auto;
     display:block;
     object-fit:contain;
   }
 
-  /* Main grid */
+  /* Layout */
   .container{
     display:grid;
     grid-template-columns:1fr 1fr;
     gap:18px;
   }
-
   .card{
     background:var(--card-bg);
     border:1px solid var(--card-border);
@@ -104,19 +101,15 @@
   .qr-lines div{
     padding:8px 10px;
     border-bottom:2px solid #111;
-    font-family: ui-monospace, monospace;
+    font-family:ui-monospace, monospace;
     font-size:15px;
     white-space:pre-wrap;
   }
+  .qr-lines .un{ color:var(--un-color); font-weight:700; }
 
-  .qr-lines .un{
-    color: var(--un-color);
-    font-weight:700;
-  }
-
-  .weight-green{ color: var(--weight-green); font-weight:700; }
-  .weight-yellow{ color: var(--weight-yellow); font-weight:700; }
-  .weight-red{ color: var(--weight-red); font-weight:700; }
+  .weight-green{ color:var(--weight-green); font-weight:700; }
+  .weight-yellow{ color:var(--weight-yellow); font-weight:700; }
+  .weight-red{ color:var(--weight-red); font-weight:700; }
 
   /* Hazard icon */
   #hazardIcon{
@@ -131,41 +124,16 @@
   }
 
   /* Buttons */
-  .btn-row{
-    display:flex;
-    gap:10px;
-    margin-top:12px;
-    align-items:center;
-    flex-wrap:wrap;
-  }
+  .btn-row{ display:flex; gap:10px; margin-top:12px; align-items:center; flex-wrap:wrap; }
   .btn{
-    width:140px;
-    height:48px;
-    border-radius:8px;
-    border:0;
-    cursor:pointer;
-    font-weight:700;
-    font-size:16px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:#111827;
-    color:#fff;
+    width:140px; height:48px; border-radius:8px; border:0; cursor:pointer;
+    font-weight:700; font-size:16px; display:flex; align-items:center; justify-content:center;
+    background:#111827; color:#fff;
   }
-  .btn.ghost{
-    background:#fff;
-    color:#111827;
-    border:1px solid #d1d5db;
-  }
-  .btn:disabled{
-    opacity:0.45;
-    cursor:not-allowed;
-  }
+  .btn.ghost{ background:#fff; color:#111827; border:1px solid #d1d5db; }
+  .btn:disabled{ opacity:0.45; cursor:not-allowed; }
 
-  .status{
-    color:#ffffff;
-    font-size:14px;
-  }
+  .status{ color:#ffffff; font-size:14px; }
 
   @media(max-width:900px){
     .container{ grid-template-columns:1fr; }
@@ -177,11 +145,13 @@
 <body>
 
 <header class="app-header" role="banner">
-  <h1 class="app-title">Info Scan — v5.1</h1>
+  <h1 class="app-title">Info Scan — v5.2</h1>
 
-  <!-- Use the uploaded logo file path directly (local path provided by you) -->
+  <!-- <<-- IMPORTANT: this src points to the uploaded PNG file inside the environment.
+       When you deploy/serve this HTML, replace or transform this path to a hosted URL
+       or replace with the data: URI (Base64) version. --> -->
   <div class="logo-box" aria-hidden="true">
-    <img alt="ROCKWOOL logo" src="/mnt/data/af87e6db-998d-44cc-9d74-be1931715180.jpg">
+    <img alt="ROCKWOOL logo" src="/mnt/data/95f0b82a-db18-4152-9f4c-008b205f14c8.png">
   </div>
 </header>
 
@@ -206,10 +176,8 @@
     <div class="raw-box" style="margin-top:10px;">
       <div id="rawLines" class="qr-lines" aria-live="polite"></div>
 
-      <!-- Hazard icon -->
       <svg id="hazardIcon" viewBox="0 0 400 400" aria-hidden="true">
-        <polygon points="200,20 380,200 200,380 20,200"
-          fill="white" stroke="#d32f2f" stroke-width="35"/>
+        <polygon points="200,20 380,200 200,380 20,200" fill="white" stroke="#d32f2f" stroke-width="35"/>
         <circle cx="200" cy="270" r="35" fill="black"/>
         <rect x="182" y="90" width="36" height="140" rx="18" fill="black"/>
       </svg>
@@ -223,10 +191,7 @@
 </main>
 
 <script>
-/* Info Scan v5.1
-   Full scanning script, camera handling, UI states
-   Preserves stable behavior from v3.7 and fixes prior issues.
-*/
+/* Info Scan v5.2 — full scanner script (stable engine) */
 
 const startBtn = document.getElementById("startBtn");
 const newBtn   = document.getElementById("newBtn");
@@ -238,7 +203,7 @@ const hazardIcon = document.getElementById("hazardIcon");
 
 let stream=null, videoEl=null, canvas=null, ctx=null, scanning=false, rafId=null;
 
-/* Helper functions */
+/* Helpers */
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, m=>({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
@@ -265,7 +230,7 @@ function extractWeight(line){
   return isNaN(kg)?null:kg;
 }
 
-/* UI state helpers */
+/* UI */
 function showStartOnly(){
   startBtn.style.display="inline-flex";
   newBtn.style.display="none";
@@ -285,167 +250,168 @@ function showAfterScan(){
   scanStatus.textContent="";
 }
 
-/* Render raw data lines */
+/* Render raw data */
 function setRawData(raw){
   rawLines.innerHTML="";
   hazardIcon.style.display="none";
 
-  const n = normalizeRawText(raw);
+  const n=normalizeRawText(raw);
   if(!n){ copyBtn.disabled=true; return; }
 
-  const lines = n.split(/\r?\n/);
+  const lines=n.split(/\r?\n/);
 
   if(/\bUN\d+/.test(n)) hazardIcon.style.display="block";
 
   lines.forEach(line=>{
-    const div = document.createElement("div");
-    let html = escapeHtml(line);
-    html = highlightUN(html);
+    const div=document.createElement("div");
+    let html=escapeHtml(line);
+    html=highlightUN(html);
 
     if(/^Vægt:/i.test(line)){
-      const kg = extractWeight(line);
+      const kg=extractWeight(line);
       if(kg !== null){
-        const info = classifyWeight(kg);
+        const info=classifyWeight(kg);
         div.classList.add(info.cls);
-        html += escapeHtml(info.extra);
+        html+=escapeHtml(info.extra);
       }
     }
 
-    div.innerHTML = html;
+    div.innerHTML=html;
     rawLines.appendChild(div);
   });
 
-  copyBtn.disabled = false;
+  copyBtn.disabled=false;
 }
 
-/* Copy to clipboard */
+/* Copy */
 copyBtn.addEventListener("click", async()=>{
   try{
     await navigator.clipboard.writeText(rawLines.innerText);
     const prev = copyBtn.innerText;
     copyBtn.innerText = "KOPIERET";
-    setTimeout(()=>copyBtn.innerText = prev, 800);
+    setTimeout(()=>copyBtn.innerText = prev,700);
   }catch(e){}
 });
 
-/* Load jsQR if not present */
+/* Load jsQR */
 function loadJsQr(){
   return new Promise((res,rej)=>{
     if(window.jsQR) return res(window.jsQR);
-    const s = document.createElement("script");
-    s.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
-    s.onload = ()=>res(window.jsQR);
-    s.onerror = ()=>rej(new Error("jsQR load failed"));
+    const s=document.createElement("script");
+    s.src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
+    s.onload=()=>res(window.jsQR);
+    s.onerror=()=>rej();
     document.head.appendChild(s);
   });
 }
 
-/* Camera start */
+/* Camera */
 async function startCamera(){
   if(!videoEl){
-    videoEl = document.createElement("video");
+    videoEl=document.createElement("video");
     videoEl.setAttribute("playsinline","true");
   }
   if(!canvas){
-    canvas = document.createElement("canvas");
-    ctx = canvas.getContext("2d");
+    canvas=document.createElement("canvas");
+    ctx=canvas.getContext("2d");
   }
 
   try{
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" } },
-      audio: false
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:"environment"}},
+      audio:false
     });
 
-    videoEl.srcObject = stream;
+    videoEl.srcObject=stream;
     await videoEl.play();
 
-    cameraWrap.innerHTML = "";
+    cameraWrap.innerHTML="";
     cameraWrap.appendChild(videoEl);
     return true;
+
   }catch(e){
     console.warn("startCamera failed:", e);
     return false;
   }
 }
 
-/* Stop camera */
 function stopCamera(){
-  if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
+  if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
   if(stream){
     stream.getTracks().forEach(t=>t.stop());
-    stream = null;
+    stream=null;
   }
   if(videoEl){
     try{ videoEl.pause(); }catch(e){}
-    videoEl.srcObject = null;
+    videoEl.srcObject=null;
+    videoEl.removeAttribute("src");
+    videoEl.load();
   }
-  cameraWrap.innerHTML = "Kamera er slukket";
+  cameraWrap.innerHTML="Kamera er slukket";
 }
 
-/* Scan loop — uses jsQR */
+/* Scan loop */
 async function scanLoop(){
-  if(!videoEl || videoEl.readyState !== videoEl.HAVE_ENOUGH_DATA){
-    rafId = requestAnimationFrame(scanLoop);
+  if(!videoEl || videoEl.readyState!==videoEl.HAVE_ENOUGH_DATA){
+    rafId=requestAnimationFrame(scanLoop);
     return;
   }
 
-  if(canvas.width !== videoEl.videoWidth){
-    canvas.width  = videoEl.videoWidth;
-    canvas.height = videoEl.videoHeight;
+  if(canvas.width!==videoEl.videoWidth){
+    canvas.width=videoEl.videoWidth;
+    canvas.height=videoEl.videoHeight;
   }
 
-  ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-  const img = ctx.getImageData(0,0,canvas.width,canvas.height);
+  ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
+  const img=ctx.getImageData(0,0,canvas.width,canvas.height);
 
-  let code = null;
-  if(window.jsQR) code = jsQR(img.data, img.width, img.height);
+  let code=null;
+  if(window.jsQR) code=jsQR(img.data,img.width,img.height);
 
   if(code && code.data){
     setRawData(code.data);
-    scanning = false;
+    scanning=false;
     stopCamera();
     showAfterScan();
     return;
   }
 
-  rafId = requestAnimationFrame(scanLoop);
+  rafId=requestAnimationFrame(scanLoop);
 }
 
-/* Start scanning (button) */
+/* Start scanning */
 async function startScanning(){
   if(scanning) return;
-  scanning = true;
+  scanning=true;
   showDuringScanning();
 
-  try{ await loadJsQr(); }catch(e){ /* continue with fallback */ }
+  try{ await loadJsQr(); }catch(e){}
 
-  const ok = await startCamera();
+  const ok=await startCamera();
   if(!ok){
-    // fallback demo content when camera cannot start
-    const demo = "Demo\nVægt: 18 kg\nKemi: UN1209";
-    setTimeout(()=>{ setRawData(demo); showAfterScan(); scanning = false; }, 500);
+    const demo="Demo\nVægt: 18 kg\nKemi: UN1209";
+    setTimeout(()=>{ setRawData(demo); showAfterScan(); scanning=false; },600);
     return;
   }
 
   scanLoop();
 }
 
-/* New scanning: clear and start */
+/* New scanning */
 async function newScanning(){
   stopCamera();
-  rawLines.innerHTML = "";
-  hazardIcon.style.display = "none";
-  copyBtn.disabled = true;
+  rawLines.innerHTML="";
+  hazardIcon.style.display="none";
+  copyBtn.disabled=true;
 
-  scanStatus.textContent = "SCANNING…";
+  scanStatus.textContent="SCANNING…";
   showDuringScanning();
 
-  await new Promise(r=>setTimeout(r,250));
+  await new Promise(r=>setTimeout(r,200));
   startScanning();
 }
 
-/* Init button handlers */
+/* Init */
 startBtn.addEventListener("click", startScanning);
 newBtn.addEventListener("click", newScanning);
 
