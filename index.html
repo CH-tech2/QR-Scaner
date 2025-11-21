@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Info Scan v4.9</title>
+<title>Info Scan v5.0</title>
 
 <style>
   :root{
@@ -35,24 +35,26 @@
     font-size:20px;
     font-weight:700;
   }
+
   .logo-box{
     background:#fff;
-    padding:6px 10px;
+    padding:6px 12px;
     border-radius:10px;
     display:flex;
     align-items:center;
   }
   .logo-box img{
-    height:34px;
+    height:34px; /* → Lille størrelse (A) */
     display:block;
   }
 
-  /* GRID */
+  /* MAIN LAYOUT */
   .container{
     display:grid;
     grid-template-columns:1fr 1fr;
     gap:16px;
   }
+
   .card{
     background:#fff;
     color:#111;
@@ -80,7 +82,7 @@
     -webkit-transform:none !important;
   }
 
-  /* RAW DATA */
+  /* RÅDATA */
   .raw-box{
     background:#fff;
     border-radius:8px;
@@ -144,18 +146,18 @@
 
 <body>
 
+<!-- HEADER -->
 <div class="header">
-  <div class="title">Info Scan — v4.9</div>
+  <div class="title">Info Scan — v5.0</div>
 
-  <!-- REAL LOGO HERE -->
   <div class="logo-box">
-    <img src="/mnt/data/af87e6db-998d-44cc-9d74-be1931715180.jpg">
+    <img src="data:image/jpeg;base64, yRvW/qlqE37uljV71d3Eg0XE3z8Ir83vV64adr+JTTs9iVcs7qrm7q/lp8/PPmaD...AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//Z">
   </div>
 </div>
 
 <div class="container">
 
-  <!-- Scanner -->
+  <!-- SCANNER -->
   <div class="card">
     <strong>Scanner</strong>
     <div id="cameraWrap">Kamera er slukket</div>
@@ -167,7 +169,7 @@
     </div>
   </div>
 
-  <!-- Rådata -->
+  <!-- RÅDATA -->
   <div class="card">
     <strong>Rådata</strong>
 
@@ -189,8 +191,226 @@
 </div>
 
 <script>
-/* SAME SCANNING SCRIPT AS DIN STABILE 3.7 — forkortet her pga plads,
-   men fungerer præcis som før. Hvis du vil have fuld kode igen, siger du til. */
+/* --- SCANNER-SCRIPT (fra v3.7 — 100% stabil) --- */
+
+const startBtn=document.getElementById("startBtn");
+const newBtn=document.getElementById("newBtn");
+const copyBtn=document.getElementById("copyBtn");
+const scanStatus=document.getElementById("scanStatus");
+const cameraWrap=document.getElementById("cameraWrap");
+const rawLines=document.getElementById("rawLines");
+const hazardIcon=document.getElementById("hazardIcon");
+
+let stream=null, videoEl=null, canvas=null, ctx=null, scanning=false, rafId=null;
+
+/* Helper functions */
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g,m=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+function normalizeRawText(raw){
+  return String(raw||"").split(/\r?\n/).map(l=>l.trim()).filter(l=>l!=="").join("\n");
+}
+function highlightUN(str){
+  return str.replace(/\b(UN\d+(?:,\d+)*)\b/g,'<span class="un">$1</span>');
+}
+function classifyWeight(kg){
+  if(kg <= 15) return {cls:"weight-green", extra:""};
+  if(kg <= 30) return {cls:"weight-yellow", extra:" (Pas på når du løfter)"};
+  return {cls:"weight-red", extra:" (Brug hjælpe værktøj til løft)"};
+}
+function extractWeight(line){
+  const m=line.match(/Vægt:\s*([\d.,]+)/i);
+  if(!m) return null;
+  let kg=m[1].replace(",",".");
+  kg=parseFloat(kg);
+  return isNaN(kg)?null:kg;
+}
+
+/* UI states */
+function showStartOnly(){
+  startBtn.style.display="inline-flex";
+  newBtn.style.display="none";
+  copyBtn.disabled=(rawLines.innerText.trim()==="");
+  scanStatus.textContent="";
+}
+function showDuringScanning(){
+  startBtn.style.display="none";
+  newBtn.style.display="inline-flex";
+  copyBtn.disabled=true;
+  scanStatus.textContent="SCANNING…";
+}
+function showAfterScan(){
+  startBtn.style.display="inline-flex";
+  newBtn.style.display="none";
+  copyBtn.disabled=(rawLines.innerText.trim()==="");
+  scanStatus.textContent="";
+}
+
+/* Rådata visning */
+function setRawData(raw){
+  rawLines.innerHTML="";
+  hazardIcon.style.display="none";
+
+  const n=normalizeRawText(raw);
+  if(!n){ copyBtn.disabled=true; return; }
+
+  const lines=n.split(/\r?\n/);
+
+  if(/\bUN\d+/.test(n)) hazardIcon.style.display="block";
+
+  lines.forEach(line=>{
+    const div=document.createElement("div");
+    let html=escapeHtml(line);
+    html=highlightUN(html);
+
+    if(/^Vægt:/i.test(line)){
+      const kg=extractWeight(line);
+      if(kg !== null){
+        const info=classifyWeight(kg);
+        div.classList.add(info.cls);
+        html+=escapeHtml(info.extra);
+      }
+    }
+
+    div.innerHTML=html;
+    rawLines.appendChild(div);
+  });
+
+  copyBtn.disabled=false;
+}
+
+/* Copy */
+copyBtn.addEventListener("click", async()=>{
+  await navigator.clipboard.writeText(rawLines.innerText);
+  const prev=copyBtn.innerText;
+  copyBtn.innerText="KOPIERET";
+  setTimeout(()=>copyBtn.innerText=prev,700);
+});
+
+/* Load jsQR */
+function loadJsQr(){
+  return new Promise((res,rej)=>{
+    if(window.jsQR) return res(window.jsQR);
+    const s=document.createElement("script");
+    s.src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
+    s.onload=()=>res(window.jsQR);
+    s.onerror=()=>rej();
+    document.head.appendChild(s);
+  });
+}
+
+/* Camera */
+async function startCamera(){
+  if(!videoEl){
+    videoEl=document.createElement("video");
+    videoEl.setAttribute("playsinline","true");
+  }
+  if(!canvas){
+    canvas=document.createElement("canvas");
+    ctx=canvas.getContext("2d");
+  }
+
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:"environment"}},
+      audio:false
+    });
+
+    videoEl.srcObject=stream;
+    await videoEl.play();
+
+    cameraWrap.innerHTML="";
+    cameraWrap.appendChild(videoEl);
+    return true;
+
+  }catch(e){
+    return false;
+  }
+}
+
+function stopCamera(){
+  if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+  if(stream){
+    stream.getTracks().forEach(t=>t.stop());
+    stream=null;
+  }
+  if(videoEl){
+    videoEl.pause();
+    videoEl.srcObject=null;
+    videoEl.removeAttribute("src");
+    videoEl.load();
+  }
+  cameraWrap.innerHTML="Kamera er slukket";
+}
+
+/* Scan loop */
+async function scanLoop(){
+  if(!videoEl || videoEl.readyState!==videoEl.HAVE_ENOUGH_DATA){
+    rafId=requestAnimationFrame(scanLoop);
+    return;
+  }
+
+  if(canvas.width!==videoEl.videoWidth){
+    canvas.width=videoEl.videoWidth;
+    canvas.height=videoEl.videoHeight;
+  }
+
+  ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
+  const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+
+  let code=null;
+  if(window.jsQR) code=jsQR(img.data,img.width,img.height);
+
+  if(code && code.data){
+    setRawData(code.data);
+    scanning=false;
+    stopCamera();
+    showAfterScan();
+    return;
+  }
+
+  rafId=requestAnimationFrame(scanLoop);
+}
+
+/* START SCANNING */
+async function startScanning(){
+  if(scanning) return;
+  scanning=true;
+  showDuringScanning();
+
+  try{ await loadJsQr(); }catch(e){}
+
+  const ok=await startCamera();
+  if(!ok){
+    const demo="Demo\nVægt: 18 kg\nKemi: UN1209";
+    setTimeout(()=>{ setRawData(demo); showAfterScan(); scanning=false; },600);
+    return;
+  }
+
+  scanLoop();
+}
+
+/* NY SCANNING */
+async function newScanning(){
+  stopCamera();
+  rawLines.innerHTML="";
+  hazardIcon.style.display="none";
+  copyBtn.disabled=true;
+
+  scanStatus.textContent="SCANNING…";
+  showDuringScanning();
+
+  await new Promise(r=>setTimeout(r,200));
+  startScanning();
+}
+
+startBtn.addEventListener("click", startScanning);
+newBtn.addEventListener("click", newScanning);
+
+showStartOnly();
+window.addEventListener("beforeunload", stopCamera);
 </script>
 
 </body>
