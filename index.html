@@ -2,95 +2,81 @@
 <html lang="da">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Info Scan v5.7</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Info Scan v5.8</title>
 
 <style>
-  /* ------------------------------
-     GLOBAL FARVER + FONT
-  ------------------------------ */
   :root{
     --rw-red: #D20014;
     --text: #111827;
-    --un-color: #b91c1c;
-
-    --weight-green: #059669;
-    --weight-yellow: #CA8A04;
-    --weight-red: #B91C1C;
+    --un: #b91c1c;
+    --green: #059669;
+    --yellow: #CA8A04;
+    --red: #B91C1C;
   }
 
   body{
-    background: var(--rw-red);
-    color: var(--text);
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 20px;
+    margin:0;
+    padding:20px;
+    background:var(--rw-red);
+    font-family:Arial, sans-serif;
+    color:var(--text);
   }
 
-  /* ------------------------------
-     TOP HEADER
-  ------------------------------ */
-  .topbar{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 18px;
+  /* TOP BAR */
+  .top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
   }
 
   .title{
-    font-size: 20px;
-    font-weight: 700;
-    color: white;
+    font-size:22px;
+    color:white;
+    font-weight:bold;
   }
 
-  /* Logo container (hvid boks) */
   .logo-box{
-    background: #ffffff;
-    padding: 6px 14px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 48px;
-  }
-
-  /* Logo via CSS background (Safari/GitHub-sikker version) */
-  .rw-logo{
-    width: 138px;
-    height: 28px;
-    background-repeat: no-repeat;
-    background-size: contain;
-    background-position: center;
-    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAoAAAAEsCAYAAACtLBXRAAAACXBIWXMAAAsTAAALEwEAmpwYAAAKT2lDQ1BJQ0MgUHJvZmlsZQAASMedlXdUFNd5kO+9N7szuzszO7szuzv7u7szO7s7u7s7szs7M7Ozs7u7u7MLu7s7szs7O7s7uzv5tkQRAIhCQgQRAkEQhAQEQhAQhAQhAQhEQhARCIQEISAj8ggk... (FORKORTET — KOMMER FULDVERSION I NÆSTE BESKED)");
-  }
-
-  /* ------------------------------
-     KORT DESIGN
-  ------------------------------ */
-  .container{
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 22px;
-  }
-
-  .card{
-    background: white;
-    border-radius: 14px;
-    padding: 18px;
-  }
-
-  /* ------------------------------
-     CAMERA
-  ------------------------------ */
-  #cameraWrap{
-    background:#f3f4f6;
-    border-radius:10px;
-    height:260px;
+    background:white;
+    padding:8px 14px;
+    border-radius:12px;
     display:flex;
     align-items:center;
     justify-content:center;
-    color:#9ca3af;
+  }
+
+  .rw-logo{
+    width:140px;
+    height:32px;
+    background-image:url("logo.png");  /* FIL-BASERET LOGO */
+    background-size:contain;
+    background-repeat:no-repeat;
+    background-position:center;
+  }
+
+  /* LAYOUT */
+  .container{
+    display:grid;
+    gap:22px;
+  }
+
+  .card{
+    background:white;
+    padding:18px;
+    border-radius:14px;
+  }
+
+  /* CAMERA */
+  #cameraWrap{
+    height:260px;
+    background:#f3f4f6;
+    border-radius:10px;
     overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#777;
   }
 
   #cameraWrap video{
@@ -101,57 +87,58 @@
     -webkit-transform:none !important;
   }
 
-  /* ------------------------------
-     RÅDATA VISNING
-  ------------------------------ */
+  /* RAWDATA */
   .raw-box{
-    background:#fff;
-    border-radius:10px;
     border:1px solid #ddd;
-    padding:0;
+    border-radius:10px;
+    overflow:auto;
     position:relative;
   }
 
   .qr-lines div{
     padding:10px;
-    border-bottom:2px solid #000;
-    font-family: ui-monospace, monospace;
+    border-bottom:2px solid black;
     white-space:pre-wrap;
-    font-size: 16px;
+    font-family:ui-monospace, monospace;
+    font-size:16px;
   }
 
-  .qr-lines .un{ color: var(--un-color); font-weight: 700; }
+  .un{ color:var(--un); font-weight:bold; }
 
-  .weight-green{ color: var(--weight-green); font-weight:700; }
-  .weight-yellow{ color: var(--weight-yellow); font-weight:700; }
-  .weight-red{ color: var(--weight-red); font-weight:700; }
+  .weight-green{ color:var(--green); font-weight:bold; }
+  .weight-yellow{ color:var(--yellow); font-weight:bold; }
+  .weight-red{ color:var(--red); font-weight:bold; }
 
-  /* Hazard icon */
   #hazardIcon{
     position:absolute;
     bottom:8px;
     right:8px;
-    width:40px;
-    height:40px;
+    width:42px;
+    height:42px;
     display:none;
   }
 
-  /* ------------------------------
-     BUTTONS
-  ------------------------------ */
+  /* BUTTONS */
   .btn{
     width:160px;
     height:52px;
     border-radius:10px;
     border:0;
-    background:#0d1321;
-    color:white;
     font-size:18px;
-    font-weight:700;
+    font-weight:bold;
     display:flex;
     align-items:center;
     justify-content:center;
-    margin-top:14px;
+    cursor:pointer;
+    margin-top:12px;
+    background:#0d1321;
+    color:white;
+  }
+
+  .btn.ghost{
+    background:white;
+    border:1px solid #ccc;
+    color:#000;
   }
 
   .btn:disabled{
@@ -160,12 +147,11 @@
 
 </style>
 </head>
-
 <body>
 
-<!-- HEADER -->
-<div class="topbar">
-  <div class="title">Info Scan — v5.7</div>
+<!-- TOP BAR -->
+<div class="top">
+  <div class="title">Info Scan — v5.8</div>
 
   <div class="logo-box">
     <div class="rw-logo"></div>
@@ -174,23 +160,25 @@
 
 <div class="container">
 
-  <!-- SCANNER -->
+  <!-- CAMERA SECTION -->
   <div class="card">
     <strong>Scanner</strong>
     <div id="cameraWrap">Kamera er slukket</div>
+
     <button class="btn" id="startBtn">START SCANNING</button>
-    <button class="btn" id="newBtn" style="display:none;background:#fff;color:#000;border:1px solid #ccc;">NY SCANNING</button>
-    <div class="status" id="scanStatus" style="margin-top:8px;color:#555;"></div>
+    <button class="btn ghost" id="newBtn" style="display:none;">NY SCANNING</button>
+
+    <div id="scanStatus" style="color:white;margin-top:6px;"></div>
   </div>
 
-  <!-- RÅDATA -->
+  <!-- RAWDATA SECTION -->
   <div class="card">
     <strong>Rådata</strong>
 
     <div class="raw-box" style="margin-top:10px;">
       <div id="rawLines" class="qr-lines"></div>
 
-      <!-- Hazard-icon -->
+      <!-- Hazard indikator -->
       <svg id="hazardIcon" viewBox="0 0 400 400">
         <polygon points="200,20 380,200 200,380 20,200"
           fill="white" stroke="#d32f2f" stroke-width="35"/>
@@ -199,45 +187,31 @@
       </svg>
     </div>
 
-    <button class="btn" id="copyBtn" style="background:#fff;color:#000;border:1px solid #ccc;" disabled>KOPIER</button>
+    <button class="btn ghost" id="copyBtn" disabled>KOPIER</button>
   </div>
 
 </div>
 
 <script>
-/* 
-   SCAN-LOGIK / KAMERA / RÅDATA
-   (samme stabile motor som v3.7)
-*/
 
-const startBtn=document.getElementById("startBtn");
-const newBtn=document.getElementById("newBtn");
-const copyBtn=document.getElementById("copyBtn");
-const scanStatus=document.getElementById("scanStatus");
-const cameraWrap=document.getElementById("cameraWrap");
-const rawLines=document.getElementById("rawLines");
-const hazardIcon=document.getElementById("hazardIcon");
+/* -------------- HELPER FUNKTIONER -------------- */
 
-let stream=null, videoEl=null, canvas=null, ctx=null, scanning=false, rafId=null;
-
-/* HTML Escape */
-function escapeHtml(s){
+function escapeHTML(s){
   return s.replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
 }
 
-function normalize(text){
-  return String(text).split(/\r?\n/).map(l=>l.trim()).filter(l=>l!=="").join("\n");
+function normalize(raw){
+  return raw.split(/\r?\n/).map(l=>l.trim()).filter(l=>l!=="").join("\n");
 }
 
 function highlightUN(txt){
   return txt.replace(/\b(UN\d+(?:,\d+)*)\b/g,'<span class="un">$1</span>');
 }
 
-/* Vægt */
 function classifyWeight(kg){
-  if(kg <= 15) return {cls:"weight-green", extra:""};
-  if(kg <= 30) return {cls:"weight-yellow", extra:" (Pas på når du løfter)"};
-  return {cls:"weight-red", extra:" (Brug hjælpe værktøj til løft)"};
+  if(kg<=15) return {cls:"weight-green",extra:""};
+  if(kg<=30) return {cls:"weight-yellow",extra:" (Pas på når du løfter)"};
+  return {cls:"weight-red",extra:" (Brug hjælpe værktøj til løft)"};
 }
 
 function extractWeight(line){
@@ -246,7 +220,18 @@ function extractWeight(line){
   return parseFloat(m[1].replace(",","."));
 }
 
-/* Tegn rådata */
+/* -------------- UI ELEMENTER -------------- */
+const startBtn=document.getElementById("startBtn");
+const newBtn=document.getElementById("newBtn");
+const copyBtn=document.getElementById("copyBtn");
+const scanStatus=document.getElementById("scanStatus");
+const cameraWrap=document.getElementById("cameraWrap");
+const rawLines=document.getElementById("rawLines");
+const hazardIcon=document.getElementById("hazardIcon");
+
+let stream=null,videoEl=null,canvas=null,ctx=null,rafId=null;
+
+/* -------------- VIS RAWDATA -------------- */
 function setRawData(raw){
   rawLines.innerHTML="";
   hazardIcon.style.display="none";
@@ -254,24 +239,23 @@ function setRawData(raw){
   const n=normalize(raw);
   if(!n){ copyBtn.disabled=true; return; }
 
-  const lines=n.split(/\r?\n/);
+  const lines=n.split("\n");
 
   if(/\bUN\d+/.test(n)) hazardIcon.style.display="block";
 
   lines.forEach(line=>{
     const div=document.createElement("div");
-    let html=escapeHtml(line);
+    let html=escapeHTML(line);
     html=highlightUN(html);
 
     if(/^Vægt:/i.test(line)){
       const kg=extractWeight(line);
-      if(kg!==null){
+      if(!isNaN(kg)){
         const info=classifyWeight(kg);
         div.classList.add(info.cls);
-        html+=escapeHtml(info.extra);
+        html+=escapeHTML(info.extra);
       }
     }
-
     div.innerHTML=html;
     rawLines.appendChild(div);
   });
@@ -279,25 +263,25 @@ function setRawData(raw){
   copyBtn.disabled=false;
 }
 
-/* Copy */
-copyBtn.addEventListener("click", async()=>{
+/* -------------- COPY RAWDATA -------------- */
+copyBtn.addEventListener("click",async()=>{
   await navigator.clipboard.writeText(rawLines.innerText);
   copyBtn.textContent="KOPIERET";
   setTimeout(()=>copyBtn.textContent="KOPIER",800);
 });
 
-/* Load jsQR */
-function loadJsQr(){
-  return new Promise((res)=>{
-    if(window.jsQR) return res(window.jsQR);
+/* -------------- SCANNER -------------- */
+
+async function loadQR(){
+  return new Promise(res=>{
+    if(window.jsQR) return res();
     const s=document.createElement("script");
     s.src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
-    s.onload=()=>res(window.jsQR);
+    s.onload=res;
     document.head.appendChild(s);
   });
 }
 
-/* CAMERA */
 async function startCamera(){
   if(!videoEl){
     videoEl=document.createElement("video");
@@ -310,32 +294,27 @@ async function startCamera(){
 
   try{
     stream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:"environment"}},
+      video:{ facingMode:{ ideal:"environment" }},
       audio:false
     });
-
     videoEl.srcObject=stream;
     await videoEl.play();
 
     cameraWrap.innerHTML="";
     cameraWrap.appendChild(videoEl);
     return true;
-
-  }catch(e){
+  }
+  catch(err){
     return false;
   }
 }
 
 function stopCamera(){
   if(rafId) cancelAnimationFrame(rafId);
-  if(stream){
-    stream.getTracks().forEach(t=>t.stop());
-    stream=null;
-  }
+  if(stream) stream.getTracks().forEach(t=>t.stop());
   cameraWrap.innerHTML="Kamera er slukket";
 }
 
-/* Scan loop */
 async function scanLoop(){
   if(!videoEl || videoEl.readyState!==videoEl.HAVE_ENOUGH_DATA){
     rafId=requestAnimationFrame(scanLoop);
@@ -348,13 +327,13 @@ async function scanLoop(){
   ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
   const img=ctx.getImageData(0,0,canvas.width,canvas.height);
 
-  const code=window.jsQR && jsQR(img.data,img.width,img.height);
+  const code = window.jsQR && jsQR(img.data,img.width,img.height);
+
   if(code && code.data){
     setRawData(code.data);
-    scanning=false;
     stopCamera();
-    startBtn.style.display="inline-flex";
     newBtn.style.display="none";
+    startBtn.style.display="inline-flex";
     scanStatus.textContent="";
     return;
   }
@@ -362,50 +341,41 @@ async function scanLoop(){
   rafId=requestAnimationFrame(scanLoop);
 }
 
-/* Start scanning */
-async function startScanning(){
-  scanning=true;
+/* -------------- HANDLERE -------------- */
+
+startBtn.addEventListener("click", async()=>{
+  scanStatus.textContent="SCANNING…";
   startBtn.style.display="none";
   newBtn.style.display="inline-flex";
-  scanStatus.textContent="SCANNING…";
 
-  await loadJsQr();
+  await loadQR();
 
   const ok=await startCamera();
   if(!ok){
     setTimeout(()=>{
       setRawData("Demo\nVægt: 18 kg\nKemi: UN1209");
       scanStatus.textContent="";
-      scanning=false;
-      startBtn.style.display="inline-flex";
-      newBtn.style.display="none";
     },600);
     return;
   }
 
   scanLoop();
-}
+});
 
-/* NY SCANNING */
-async function newScanning(){
+newBtn.addEventListener("click", ()=>{
   rawLines.innerHTML="";
-  copyBtn.disabled=true;
   hazardIcon.style.display="none";
+  copyBtn.disabled=true;
 
   stopCamera();
   scanStatus.textContent="SCANNING…";
 
-  await new Promise(r=>setTimeout(r,250));
-  startScanning();
-}
+  setTimeout(()=>startBtn.click(),200);
+});
 
-/* Events */
-startBtn.addEventListener("click", startScanning);
-newBtn.addEventListener("click", newScanning);
 window.addEventListener("beforeunload", stopCamera);
 
 </script>
 
 </body>
 </html>
-
