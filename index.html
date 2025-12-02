@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Info Scan — v6.8</title>
+<title>Info Scan — v6.6</title>
 
 <style>
   :root{
     --rw-red: #D20014;
-    --text: #111827;
-    --muted: #6b7280;
-
+    --bg: #D20014;
+    --text: #111;
+    --line: #000;
     --green: #059669;
     --yellow: #CA8A04;
     --red: #B91C1C;
@@ -18,276 +18,195 @@
 
   body{
     margin:0;
-    background:var(--rw-red);
-    font-family: Arial, monospace;
-    color:var(--text);
+    background:var(--bg);
+    font-family: Arial, sans-serif;
   }
 
-  /* TOP LOGO BAR */
-  .top{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
+  /* --- HEADER --- */
+  .header{
     padding:18px 20px;
     background:var(--rw-red);
     color:white;
-    font-size:22px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+
+  .header .title{
+    font-size:24px;
     font-weight:700;
+    line-height:1.1;
   }
 
-  .logo{
-    height:34px;
+  .header img{
+    height:38px;
   }
 
-  .container{
-    padding:14px;
+  /* --- MAIN AREA --- */
+  .page{
+    padding:20px;
   }
 
   .card{
     background:white;
-    border-radius:14px;
-    padding:16px;
-    margin-bottom:14px;
+    border-radius:16px;
+    padding:20px;
+    margin-bottom:22px;
   }
 
+  /* CAMERA BOX */
   #cameraWrap{
-    height:260px;
-    border-radius:14px;
     background:#f3f4f6;
+    border-radius:12px;
+    height:260px;
     display:flex;
-    align-items:center;
     justify-content:center;
-    font-size:20px;
+    align-items:center;
     color:#9ca3af;
     overflow:hidden;
   }
-
   #cameraWrap video{
     width:100%;
     height:100%;
     object-fit:cover;
   }
 
+  /* BUTTON */
   .btn{
     width:100%;
-    height:56px;
-    background:#0f172a;
-    color:white;
-    border:0;
-    border-radius:14px;
-    font-size:20px;
-    font-weight:700;
-    margin-top:16px;
-    cursor:pointer;
-  }
-
-  /* RAW DATA SECTION */
-  .section-title{
-    font-weight:700;
     margin-top:20px;
-    margin-bottom:8px;
+    padding:20px 0;
     font-size:22px;
+    font-weight:700;
+    color:white;
+    background:#0D1117;
+    border:none;
+    border-radius:12px;
   }
 
+  /* RÅDATA */
+  .raw-title{
+    font-size:22px;
+    font-weight:700;
+    margin-bottom:12px;
+  }
+
+  .raw-line{
+    padding:10px 0;
+    font-size:20px;
+    border-bottom:2px solid var(--line);
+    white-space:pre-wrap;
+  }
+
+  /* CATEGORY HEADERS */
   .cat{
+    font-size:22px;
     font-weight:700;
     margin-top:18px;
-    font-size:20px;
   }
 
-  .line{
-    border-bottom:3px solid #000;
-    margin:8px 0 14px 0;
-  }
+  /* WEIGHT COLORS */
+  .w-green{ color:var(--green); font-weight:700; }
+  .w-yellow{ color:var(--yellow); font-weight:700; }
+  .w-red{ color:var(--red); font-weight:700; }
 
-  .value{
-    font-size:20px;
-    white-space:pre-line;
-  }
-
-  .weight-green{ color:var(--green);font-weight:700; }
-  .weight-yellow{ color:var(--yellow);font-weight:700; }
-  .weight-red{ color:var(--red);font-weight:700; }
-
+  /* HAZARD ICON */
   #hazardIcon{
-    width:40px;
-    height:40px;
+    width:48px;
     position:absolute;
-    right:10px;
-    bottom:10px;
+    right:18px;
+    bottom:18px;
     display:none;
   }
-
-  #rawBox{
-    position:relative;
-  }
-
-  #copyBtn{
-    margin-top:20px;
-    width:100%;
-    height:50px;
-    border-radius:12px;
-    border:2px solid #ddd;
-    font-size:20px;
-    font-weight:700;
-    background:white;
-    color:#111;
-    cursor:pointer;
-  }
-
 </style>
 </head>
 
 <body>
 
-<!-- TOP -->
-<div class="top">
-  <span>Info Scan</span>
-  <img class="logo" src="rw-logo.png" alt="">
+<!-- HEADER -->
+<div class="header">
+  <div class="title">Info Scan —<br>v6.6</div>
+  <img src="rockwool-logo.png" alt="ROCKWOOL">
 </div>
 
-<div class="container">
+<div class="page">
 
   <!-- SCANNER -->
   <div class="card">
-    <div style="font-size:22px;font-weight:700;">Scanner</div>
     <div id="cameraWrap">Kamera er slukket</div>
-
-    <button class="btn" id="scanBtn">NY SCANNING</button>
+    <button id="scanBtn" class="btn">NY SCANNING</button>
   </div>
 
-  <!-- RAW DATA -->
-  <div class="card" id="rawBox">
-    <div class="section-title">Rådata</div>
-
-    <div id="dataFields"></div>
-
-    <svg id="hazardIcon" viewBox="0 0 400 400">
-      <polygon points="200,20 380,200 200,380 20,200"
-        fill="white" stroke="#d32f2f" stroke-width="35"/>
-      <circle cx="200" cy="270" r="35" fill="black"/>
-      <rect x="182" y="90" width="36" height="140" rx="18" fill="black"/>
-    </svg>
-
-    <button id="copyBtn">KOPIER</button>
+  <!-- RÅDATA -->
+  <div class="card" style="position:relative;">
+    <div class="raw-title">Rådata</div>
+    <div id="raw"></div>
+    <img id="hazardIcon" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA0MDAgNDAwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwb2x5Z29uIHBvaW50cz0iMjAwLDIwIDM4MCwyMDAgMjAwLDM4MCAyMCwyMDAiIGZpbGw9IndoaXRlIiBzdHJva2U9IiNkMzJmMmYiIHN0cm9rZS13aWR0aD0iMzUiLz48Y2lyY2xlIGN4PSIyMDAiIGN5PSIyNzAiIHI9IjM1IiBmaWxsPSJibGFjayIvPjxyZWN0IHg9IjE4MiIgeT0iOTAiIHdpZHRoPSIzNiIgaGVpZ2h0PSIxNDAiIHJ4PSIxOCIgc3R5bGU9ImZpbGw6YmxhY2siLz48L3N2Zz4="/>
   </div>
+
 </div>
 
-
 <script>
-/* CAMERA + QR LOGIC */
-let video=null, stream=null, canvas=null, ctx=null, scanning=false;
+const scanBtn = document.getElementById("scanBtn");
+const rawBox = document.getElementById("raw");
+const hazardIcon = document.getElementById("hazardIcon");
+let video, stream, canvas, ctx;
 
-/* CATEGORY ORDER */
-const ORDER=[
-  "Område","Varenummer","Materiale","Antal",
-  "L","B","T","Vægt","Meter","Areal m²","Anden info",
-  "Lager/Område","Reol","Hylde","Plads","Kemi"
-];
-
-function classifyWeight(kg){
-  if(kg <= 15) return {cls:"weight-green",extra:""};
-  if(kg <= 30) return {cls:"weight-yellow",extra:" (Pas på når du løfter)"};
-  return {cls:"weight-red",extra:" (Brug hjælpe værktøj til løft)"};
+/* Helpers */
+function escape(s){ return s.replace(/[&<>]/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m])) }
+function weightClass(v){
+  if(v <= 15) return ["w-green",""];
+  if(v <= 30) return ["w-yellow"," (Pas på når du løfter)"];
+  return ["w-red"," (Brug hjælpe værktøj til løft)"];
 }
 
+/* Clear data */
 function clearRaw(){
-  document.getElementById("dataFields").innerHTML="";
-  document.getElementById("hazardIcon").style.display="none";
+  rawBox.innerHTML="";
+  hazardIcon.style.display="none";
 }
 
-/* PARSE RAW DATA */
-function parseRaw(raw){
+/* Draw lines */
+function addLine(text, cls=""){
+  const div=document.createElement("div");
+  div.className="raw-line "+cls;
+  div.innerHTML=text;
+  rawBox.appendChild(div);
+}
 
+/* Parse QR */
+function showRaw(data){
   clearRaw();
+  const lines = data.trim().split(/\r?\n/);
 
-  const out={};
-  const lines = String(raw).split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
+  let insideInfo = false;
 
-  let collectAndenInfo = false;
-  let andenInfoText = [];
+  lines.forEach(line=>{
+    const clean = escape(line);
 
-  lines.forEach(l=>{
-    if(/^Anden info/i.test(l)){
-      collectAndenInfo=true;
-      const parts=l.split(":");
-      if(parts[1]) andenInfoText.push(parts[1].trim());
+    // Hazard detection
+    if(/UN\d+/.test(line)) hazardIcon.style.display="block";
+
+    // Weight detection
+    if(/^Vægt:/i.test(line)){
+      const kg = parseFloat(line.replace(",",".").match(/([\d\.]+)/));
+      const [cls, extra] = weightClass(kg);
+      addLine(`Vægt: ${kg} kg${extra}`, cls);
       return;
     }
-    if(collectAndenInfo){
-      if(/^[A-Za-z]/.test(l)) andenInfoText.push(l);
-      return;
-    }
-    const p=l.split(":");
-    if(p.length>=2){
-      const key=p[0].trim();
-      const val=p.slice(1).join(":").trim();
-      out[key]=val;
-    }
-  });
 
-  if(andenInfoText.length>0){
-    out["Anden info"]=andenInfoText.join("\n");
-  }
-
-  if(/UN\d+/i.test(raw)){
-    document.getElementById("hazardIcon").style.display="block";
-  }
-
-  drawParsed(out);
-}
-
-function drawParsed(obj){
-  const box=document.getElementById("dataFields");
-
-  ORDER.forEach(key=>{
-    if(!(key in obj)) return;
-
-    const wrap=document.createElement("div");
-
-    const cat=document.createElement("div");
-    cat.className="cat";
-    cat.textContent=key;
-    wrap.appendChild(cat);
-
-    const line=document.createElement("div");
-    line.className="line";
-    wrap.appendChild(line);
-
-    const val=document.createElement("div");
-    val.className="value";
-
-    let txt=obj[key];
-
-    if(/^Vægt/i.test(key)){
-      let kg=parseFloat(String(txt).replace(",","."));
-      if(!isNaN(kg)){
-        const info=classifyWeight(kg);
-        val.classList.add(info.cls);
-        txt = kg+" kg"+info.extra;
-      }
-    }
-
-    val.textContent=txt;
-    wrap.appendChild(val);
-
-    box.appendChild(wrap);
+    addLine(clean);
   });
 }
 
-/* COPY */
-document.getElementById("copyBtn").onclick=function(){
-  const text=document.getElementById("dataFields").innerText;
-  navigator.clipboard.writeText(text);
-  this.textContent="KOPIERET";
-  setTimeout(()=>this.textContent="KOPIER",800);
-};
+/* Start scanning */
+async function startScan(){
+  clearRaw();
+  scanBtn.textContent = "SCANNER…";
 
-/* CAMERA */
-async function startCamera(){
   if(!video){
     video=document.createElement("video");
-    video.setAttribute("playsinline","true");
+    video.setAttribute("playsinline",true);
   }
   if(!canvas){
     canvas=document.createElement("canvas");
@@ -295,77 +214,55 @@ async function startCamera(){
   }
 
   try{
-    stream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:"environment"},
-      audio:false
-    });
-  } catch(e){
-    parseRaw("Demo\nVægt: 18\nKemi: UN1209\nAnden info: Test");
-    scanning=false;
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+    video.srcObject = stream;
+    await video.play();
+    document.getElementById("cameraWrap").innerHTML="";
+    document.getElementById("cameraWrap").appendChild(video);
+  }catch(e){
+    addLine("DEMO DATA:");
+    showRaw("Vægt: 20 kg\nKemi: UN1209");
+    scanBtn.textContent="NY SCANNING";
     return;
   }
 
-  video.srcObject=stream;
-  await video.play();
-
-  const wrap=document.getElementById("cameraWrap");
-  wrap.innerHTML="";
-  wrap.appendChild(video);
-
-  scanLoop();
+  requestAnimationFrame(loop);
 }
 
-async function scanLoop(){
-  if(!video || video.readyState!==video.HAVE_ENOUGH_DATA){
-    requestAnimationFrame(scanLoop);
-    return;
-  }
+/* Loop */
+async function loop(){
+  if(video.readyState < 2){ requestAnimationFrame(loop); return; }
 
-  if(canvas.width!==video.videoWidth){
-    canvas.width=video.videoWidth;
-    canvas.height=video.videoHeight;
-  }
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.drawImage(video,0,0);
 
-  ctx.drawImage(video,0,0,canvas.width,canvas.height);
-  const img=ctx.getImageData(0,0,canvas.width,canvas.height);
-
+  const img = ctx.getImageData(0,0,canvas.width,canvas.height);
   if(window.jsQR){
-    const code=jsQR(img.data, img.width, img.height);
-    if(code && code.data){
-      stopCamera();
-      parseRaw(code.data);
+    const code = jsQR(img.data, img.width, img.height);
+    if(code){
+      stopScan();
+      showRaw(code.data);
+      scanBtn.textContent="NY SCANNING";
       return;
     }
   }
-
-  requestAnimationFrame(scanLoop);
+  requestAnimationFrame(loop);
 }
 
-function stopCamera(){
-  if(stream) stream.getTracks().forEach(t=>t.stop());
-  stream=null;
+function stopScan(){
+  if(stream){
+    stream.getTracks().forEach(t=>t.stop());
+  }
 }
 
-/* LOAD jsQR */
-function loadJsQR(){
-  return new Promise(res=>{
-    if(window.jsQR) return res();
-    let s=document.createElement("script");
-    s.src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
-    s.onload=res;
-    document.body.appendChild(s);
-  });
-}
+scanBtn.addEventListener("click", startScan);
 
-/* START SCAN BUTTON */
-document.getElementById("scanBtn").onclick=async()=>{
-  clearRaw();
-  document.getElementById("cameraWrap").textContent="Kamera starter…";
-
-  await loadJsQR();
-  startCamera();
-};
-
+/* Load jsQR */
+const s=document.createElement("script");
+s.src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
+document.head.appendChild(s);
 </script>
+
 </body>
 </html>
