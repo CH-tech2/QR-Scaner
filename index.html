@@ -3,248 +3,352 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Info Scan — v6.2</title>
+<title>Info Scan — v6.3</title>
+
 <style>
-:root{
-  --rw-red:#D20014;
-  --text:#111827;
-  --un:#b91c1c;
-  --green:#059669;
-  --yellow:#CA8A04;
-  --red:#B91C1C;
-}
-body{
-  margin:0;padding:18px;background:var(--rw-red);font-family:Arial, monospace;color:var(--text);
-}
-.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
-.title{color:#fff;font-size:20px;font-weight:700;margin:0;}
-#rwlogo{height:34px;width:auto;display:block;}
-.container{display:grid;gap:18px;}
-.card{background:#fff;border-radius:12px;padding:16px;color:#000;}
-#cameraWrap{background:#f3f4f6;border-radius:10px;height:260px;display:flex;align-items:center;justify-content:center;color:#9ca3af;overflow:hidden;}
-#cameraWrap video{width:100%;height:100%;object-fit:cover;transform:none !important;-webkit-transform:none !important;}
-.raw-box{position:relative;border-radius:10px;overflow:auto;}
-.qr-lines div{font-family:ui-monospace,monospace;font-size:15px;padding:10px;border-bottom:2px solid #111;white-space:pre-wrap;}
-.qr-lines .un{color:var(--un);font-weight:700;}
-.weight-green{color:var(--green);font-weight:700;}
-.weight-yellow{color:var(--yellow);font-weight:700;}
-.weight-red{color:var(--red);font-weight:700;}
-#hazardIcon{position:absolute;right:10px;bottom:10px;width:40px;height:40px;display:none;pointer-events:none;}
-.btn-row{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;align-items:center;}
-.btn{width:160px;height:50px;border-radius:10px;border:0;background:#0d1321;color:#fff;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;}
-.btn.ghost{background:#fff;color:#111;border:1px solid #d1d5db;}
-.btn:disabled{opacity:0.45;cursor:not-allowed;}
-.status{color:#fff;margin-left:8px;}
-@media(max-width:900px){body{padding:12px} #rwlogo{height:32px} .btn{width:140px;height:48px}}
+  :root{
+    --bg: #D20014;
+    --text: #111;
+    --un: #b91c1c;
+
+    --green:#059669;
+    --yellow:#CA8A04;
+    --red:#B91C1C;
+  }
+
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:Arial, monospace;
+    margin:20px;
+  }
+
+  h1{color:#fff;margin:0 0 15px 0;font-size:20px;}
+
+  .container{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+  }
+
+  .card{
+    background:#fff;
+    border-radius:12px;
+    padding:16px;
+    border:1px solid #e5e7eb;
+  }
+
+  /* Camera area */
+  #cameraWrap{
+    background:#f3f4f6;
+    border-radius:10px;
+    height:260px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#9ca3af;
+    overflow:hidden;
+  }
+  #cameraWrap video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+
+  /* RAW DATA */
+  .raw-box{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:10px;
+    padding:0;
+    overflow:auto;
+    position:relative;
+  }
+  .line{
+    font-family:ui-monospace, monospace;
+    padding:8px 10px;
+    white-space:pre-wrap;
+  }
+  .divider{
+    border-bottom:2px solid #111;
+    margin:0 10px;
+  }
+
+  .un{color:var(--un);font-weight:700;}
+
+  /* Vægt farver */
+  .green{color:var(--green);font-weight:700;}
+  .yellow{color:var(--yellow);font-weight:700;}
+  .red{color:var(--red);font-weight:700;}
+
+  /* Hazard icon */
+  #hazardIcon{
+    position:absolute;
+    right:10px;
+    bottom:10px;
+    width:38px;
+    height:38px;
+    display:none;
+  }
+
+  /* Buttons */
+  .btn{
+    width:160px;
+    height:48px;
+    border-radius:8px;
+    border:none;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .primary{background:#111827;color:#fff;}
+  .ghost{background:#fff;border:1px solid #d1d5db;color:#111;}
+  .disabled{opacity:.45;}
+
+  @media(max-width:900px){
+    .container{grid-template-columns:1fr;}
+  }
 </style>
 </head>
-<body>
 
-<div class="topbar">
-  <div class="title">Info Scan — v6.2</div>
-  <img id="rwlogo" src="logo.png" alt="ROCKWOOL logo" onerror="this.style.display='none'">
-</div>
+<body>
+<h1>Info Scan — v6.3</h1>
 
 <div class="container">
 
+  <!-- SCANNER -->
   <div class="card">
     <strong>Scanner</strong>
+
     <div id="cameraWrap">Kamera er slukket</div>
 
-    <div class="btn-row">
-      <button class="btn" id="startBtn">START SCANNING</button>
-      <button class="btn ghost" id="newBtn" style="display:none;">NY SCANNING</button>
-      <div id="scanStatus" class="status"></div>
-    </div>
+    <br />
+    <button id="startBtn" class="btn primary">START SCANNING</button>
+    <button id="newBtn" class="btn ghost" style="display:none;">NY SCANNING</button>
   </div>
 
+  <!-- RAADATA -->
   <div class="card">
     <strong>Rådata</strong>
-    <div class="raw-box" style="margin-top:10px;">
-      <div id="rawLines" class="qr-lines"></div>
 
+    <div class="raw-box" style="margin-top:10px;">
+      <div id="rawLines"></div>
+
+      <!-- Hazard icon -->
       <svg id="hazardIcon" viewBox="0 0 400 400">
-        <polygon points="200,20 380,200 200,380 20,200" fill="white" stroke="#d32f2f" stroke-width="35"/>
+        <polygon points="200,20 380,200 200,380 20,200"
+         fill="white" stroke="#d32f2f" stroke-width="35"/>
         <circle cx="200" cy="270" r="35" fill="black"/>
         <rect x="182" y="90" width="36" height="140" rx="18" fill="black"/>
       </svg>
     </div>
 
-    <div class="btn-row" style="margin-top:12px;">
-      <button class="btn ghost" id="copyBtn" disabled>KOPIER</button>
-    </div>
+    <br />
+    <button id="copyBtn" class="btn ghost disabled" disabled>KOPIER</button>
   </div>
 
 </div>
 
 <script>
-/* Info Scan v6.2 - Android & iOS compatible scanner */
-
-// DOM
 const startBtn = document.getElementById("startBtn");
-const newBtn = document.getElementById("newBtn");
-const copyBtn = document.getElementById("copyBtn");
-const scanStatus = document.getElementById("scanStatus");
-const cameraWrap = document.getElementById("cameraWrap");
+const newBtn   = document.getElementById("newBtn");
+const copyBtn  = document.getElementById("copyBtn");
 const rawLines = document.getElementById("rawLines");
 const hazardIcon = document.getElementById("hazardIcon");
+const cameraWrap = document.getElementById("cameraWrap");
 
-let videoEl=null, stream=null, canvas=null, ctx=null, rafId=null, scanning=false;
+let stream=null, video=null, canvas=null, ctx=null, scanning=false;
 
-// Helpers
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-function normalizeRawText(raw){ return String(raw||"").split(/\r?\n/).map(l=>l.trim()).filter(l=>l!=="").join("\n"); }
-function highlightUN(str){ return str.replace(/\b(UN\d+(?:,\d+)*)\b/g,'<span class="un">$1</span>'); }
-function extractWeight(line){ const m=line.match(/Vægt:\s*([\d.,]+)/i); if(!m) return null; return parseFloat(m[1].replace(",",".")); }
-function classifyWeight(kg){ if(kg<=15) return {cls:'weight-green',extra:''}; if(kg<=30) return {cls:'weight-yellow',extra:' (Pas på når du løfter)'}; return {cls:'weight-red',extra:' (Brug hjælpe værktøj til løft)'}; }
+/* HELPERS */
+function escapeHtml(txt){
+  return txt.replace(/[&<>"']/g,m=>(
+    {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]
+  ));
+}
+function normalize(raw){
+  return raw.split(/\r?\n/).map(l=>l.trim()).filter(l=>l!="");
+}
+function highlightUN(s){
+  return s.replace(/\b(UN\d+(?:,\d+)*)\b/g,'<span class="un">$1</span>');
+}
 
-// UI
-function clearRaw(){ rawLines.innerHTML=''; hazardIcon.style.display='none'; copyBtn.disabled=true; }
-function setRawData(raw){
-  clearRaw();
-  const n = normalizeRawText(raw);
-  if(!n) return;
-  const lines = n.split(/\n/);
-  if(/\bUN\d+/.test(n)) hazardIcon.style.display='block';
-  lines.forEach(line=>{
-    const div=document.createElement('div');
-    let html=escapeHtml(line);
-    html=highlightUN(html);
-    if(/^Vægt:/i.test(line)){ const kg=extractWeight(line); if(kg!==null){ const w=classifyWeight(kg); div.classList.add(w.cls); html+=escapeHtml(w.extra); } }
-    div.innerHTML=html; rawLines.appendChild(div);
+function weightClass(line){
+  const m=line.match(/Vægt:\s*([\d.,]+)/i);
+  if(!m) return {cls:"", extra:""};
+  let kg=parseFloat(m[1].replace(",","."));
+  if(isNaN(kg)) return {cls:"", extra:""};
+  if(kg<=15) return {cls:"green",extra:""};
+  if(kg<=30) return {cls:"yellow",extra:" (Pas på når du løfter)"};
+  return {cls:"red",extra:" (Brug hjælpe værktøj til løft)"};
+}
+
+/* GROUPING RULES */
+const groups = {
+  "Mål:": ["Længde","Bredde","Tykkelse"],
+  "Lagerplads:": ["Lager/Område","Reol","Hylde","Plads"]
+};
+
+/* RENDER RAW DATA */
+function setRawData(text){
+  rawLines.innerHTML="";
+  hazardIcon.style.display="none";
+  if(!text) return;
+
+  const arr = normalize(text);
+
+  let currentGroup=null;
+
+  arr.forEach((line,i)=>{
+    const clean = escapeHtml(line);
+    const html  = highlightUN(clean);
+
+    const div = document.createElement("div");
+    div.className="line";
+
+    // check group start
+    if(groups[line]){
+      currentGroup=line;
+      div.innerHTML = html;
+      rawLines.appendChild(div);
+      addDivider();
+      return;
+    }
+
+    // check if inside group
+    if(currentGroup){
+      let keys = groups[currentGroup];
+      let isSub = keys.some(k => line.startsWith(k));
+      if(isSub){
+        div.innerHTML = html;
+        rawLines.appendChild(div);
+        return; // NO divider
+      } else {
+        currentGroup=null;
+      }
+    }
+
+    // weight highlight
+    if(line.startsWith("Vægt:")){
+      let w = weightClass(line);
+      div.classList.add(w.cls);
+      div.innerHTML = html + escapeHtml(w.extra);
+    } else {
+      div.innerHTML = html;
+    }
+
+    rawLines.appendChild(div);
+    addDivider();
   });
+
+  // hazard icon?
+  if(/UN\d+/.test(text)) hazardIcon.style.display="block";
+
   copyBtn.disabled=false;
+  copyBtn.classList.remove("disabled");
 }
 
-// copy
-copyBtn.addEventListener('click', async()=>{
-  try{ await navigator.clipboard.writeText(rawLines.innerText); const prev=copyBtn.innerText; copyBtn.innerText='KOPIERET'; setTimeout(()=>copyBtn.innerText=prev,700);}catch(e){}
-});
-
-// Load jsQR
-function loadJsQr(){
-  return new Promise(res=>{
-    if(window.jsQR) return res();
-    const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
-    s.onload=res; document.head.appendChild(s);
-  });
+function addDivider(){
+  const hr=document.createElement("div");
+  hr.className="divider";
+  rawLines.appendChild(hr);
 }
 
-/* ASK PERMISSION trick (improves Android reliability)
-   Try to get a short getUserMedia stream (video:true), then stop it.
-   If permission denied, we bail early.
-*/
-async function askForPermission(){
-  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return false;
+/* COPY */
+copyBtn.onclick=()=>{
+  navigator.clipboard.writeText(rawLines.innerText);
+  copyBtn.textContent="KOPIERET";
+  setTimeout(()=>copyBtn.textContent="KOPIER",800);
+};
+
+/* CAMERA */
+async function startCamera(){
   try{
-    const tmpStream = await navigator.mediaDevices.getUserMedia({ video: true });
-    tmpStream.getTracks().forEach(t=>t.stop());
-    return true;
+    stream = await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:"environment"},
+      audio:false
+    });
   }catch(e){
+    cameraWrap.textContent="Kan ikke åbne kamera";
     return false;
   }
-}
 
-// Camera start with progressive fallbacks
-async function startCamera(){
-  if(!videoEl){ videoEl=document.createElement('video'); videoEl.setAttribute('playsinline','true'); }
-  if(!canvas){ canvas=document.createElement('canvas'); ctx=canvas.getContext('2d'); }
+  video = document.createElement("video");
+  video.setAttribute("playsinline","true");
+  video.srcObject = stream;
+  await video.play();
 
-  // Try multiple constraint levels for best compatibility
-  const attempts = [
-    { video: { facingMode: { exact: "environment" } } },  // strict
-    { video: { facingMode: { ideal: "environment" } } },  // soft
-    { video: true }                                       // general fallback
-  ];
+  cameraWrap.innerHTML="";
+  cameraWrap.appendChild(video);
 
-  for(const c of attempts){
-    try{
-      stream = await navigator.mediaDevices.getUserMedia(Object.assign({ audio:false }, c));
-      videoEl.srcObject = stream;
-      await videoEl.play();
-      cameraWrap.innerHTML=''; cameraWrap.appendChild(videoEl);
-      return true;
-    }catch(err){
-      // try next
-    }
-  }
-  return false;
+  canvas=document.createElement("canvas");
+  ctx=canvas.getContext("2d");
+  return true;
 }
 
 function stopCamera(){
-  if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
-  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
-  if(videoEl){ try{ videoEl.pause(); }catch(e){} videoEl.srcObject=null; }
-  cameraWrap.innerHTML = "Kamera er slukket";
+  if(stream){
+    stream.getTracks().forEach(t=>t.stop());
+    stream=null;
+  }
+  cameraWrap.textContent="Kamera er slukket";
 }
 
-// scan loop
+/* SCANNING */
 async function scanLoop(){
-  if(!videoEl || videoEl.readyState !== videoEl.HAVE_ENOUGH_DATA){ rafId = requestAnimationFrame(scanLoop); return; }
-  if(canvas.width !== videoEl.videoWidth){ canvas.width = videoEl.videoWidth; canvas.height = videoEl.videoHeight; }
-  ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
-  const img = ctx.getImageData(0,0,canvas.width,canvas.height);
-  let code = null;
-  if(window.jsQR) code = jsQR(img.data,img.width,img.height);
-  if(code && code.data){
-    stopCamera();
-    setRawData(code.data);
-    scanning=false;
-    startBtn.style.display='inline-flex';
-    newBtn.style.display='none';
-    scanStatus.textContent='';
+  if(!video || video.readyState !== video.HAVE_ENOUGH_DATA){
+    requestAnimationFrame(scanLoop);
     return;
   }
-  rafId = requestAnimationFrame(scanLoop);
-}
+  canvas.width=video.videoWidth;
+  canvas.height=video.videoHeight;
+  ctx.drawImage(video,0,0);
 
-// START scanning (clears raw first and requests permission on Android)
-async function startScanning(){
-  clearRaw();                  // Immediately clear raw data
-  scanning = true;
-  startBtn.style.display='none';
-  newBtn.style.display='inline-flex';
-  scanStatus.textContent = 'SCANNING…';
+  let img=ctx.getImageData(0,0,canvas.width,canvas.height);
 
-  // On Android/browsers it's sometimes necessary to trigger permissions first
-  const perm = await askForPermission();
-  if(!perm){
-    scanStatus.textContent = 'Ingen kamera-adgang eller permission nægtet';
-    scanning = false;
-    startBtn.style.display='inline-flex';
-    newBtn.style.display='none';
-    return;
+  if(window.jsQR){
+    let code = jsQR(img.data,img.width,img.height);
+    if(code){
+      stopCamera();
+      scanning=false;
+      setRawData(code.data);
+      newBtn.style.display="inline-flex";
+      startBtn.style.display="inline-flex";
+      return;
+    }
   }
-
-  await loadJsQr();
-
-  const ok = await startCamera();
-  if(!ok){
-    // fallback demo data
-    setTimeout(()=>{ setRawData("Demo\nVægt: 18 kg\nKemi: UN1209"); scanStatus.textContent=''; scanning=false; startBtn.style.display='inline-flex'; newBtn.style.display='none';},600);
-    return;
-  }
-
-  scanLoop();
+  requestAnimationFrame(scanLoop);
 }
 
-// NEW scanning: clear and restart
-async function newScanning(){
-  clearRaw();
-  stopCamera();
-  scanStatus.textContent='SCANNING…';
-  startBtn.style.display='none';
-  newBtn.style.display='inline-flex';
-  await new Promise(r=>setTimeout(r,220));
-  startScanning();
+/* BUTTONS */
+startBtn.onclick=async()=>{
+  rawLines.innerHTML="";
+  hazardIcon.style.display="none";
+  copyBtn.disabled=true;
+  copyBtn.classList.add("disabled");
+
+  newBtn.style.display="none";
+  startBtn.style.display="none";
+
+  await loadQR();
+  scanning=true;
+  if(await startCamera()) scanLoop();
+};
+
+newBtn.onclick=()=>startBtn.onclick();
+
+/* LOAD jsQR */
+function loadQR(){
+  return new Promise(res=>{
+    if(window.jsQR) return res();
+    let s=document.createElement("script");
+    s.src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
+    s.onload=res;
+    document.head.appendChild(s);
+  });
 }
-
-// Events
-startBtn.addEventListener('click', startScanning);
-newBtn.addEventListener('click', newScanning);
-
-// ensure camera off when leaving
-window.addEventListener('beforeunload', stopCamera);
 </script>
 </body>
 </html>
