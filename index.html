@@ -2,65 +2,62 @@
 <html lang="da">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Info Scan v6.7</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Info Scan — v6.8</title>
 
 <style>
   :root{
-    --bg: #D20014; /* ROCKWOOL RØD */
+    --rw-red: #D20014;
     --text: #111827;
     --muted: #6b7280;
-    --un-color: #b91c1c;
 
-    --weight-green: #059669;
-    --weight-yellow: #CA8A04;
-    --weight-red: #B91C1C;
+    --green: #059669;
+    --yellow: #CA8A04;
+    --red: #B91C1C;
   }
 
   body{
-    background: var(--bg);
-    color: var(--text);
+    margin:0;
+    background:var(--rw-red);
     font-family: Arial, monospace;
-    margin: 0;
-    padding: 0 16px 40px;
+    color:var(--text);
   }
 
-  /* TOPBAR -------------------------------------------------- */
-  #topbar{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 18px 0 8px;
-    color: #fff;
+  /* TOP LOGO BAR */
+  .top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:18px 20px;
+    background:var(--rw-red);
+    color:white;
+    font-size:22px;
+    font-weight:700;
   }
 
-  #topTitle{
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1.1;
+  .logo{
+    height:34px;
   }
 
-  #topLogo{
-    height: 46px;       /* perfekt til at stå på linje med titlen */
-    width: auto;
-    object-fit: contain;
+  .container{
+    padding:14px;
   }
 
-  /* LAYOUT -------------------------------------------------- */
   .card{
-    background:#fff;
-    border-radius:12px;
+    background:white;
+    border-radius:14px;
     padding:16px;
-    margin-top:18px;
+    margin-bottom:14px;
   }
 
   #cameraWrap{
-    background:#f3f4f6;
-    border-radius:8px;
     height:260px;
+    border-radius:14px;
+    background:#f3f4f6;
     display:flex;
     align-items:center;
     justify-content:center;
+    font-size:20px;
     color:#9ca3af;
     overflow:hidden;
   }
@@ -69,211 +66,228 @@
     width:100%;
     height:100%;
     object-fit:cover;
-    transform:none !important;
-    -webkit-transform:none !important;
   }
 
-  /* RAW DATA STYLING ---------------------------------------- */
-  .section-title{
-    font-weight:700;
-    margin-top: 14px;
-    margin-bottom:4px;
-    font-size:16px;
-  }
-
-  .raw-line{
-    padding:8px 4px;
-    border-bottom:2px solid #000;
-    font-family: ui-monospace, monospace;
-    font-size: 16px;
-    white-space:pre-wrap;
-  }
-
-  .un{ color: var(--un-color); font-weight:700; }
-
-  .weight-green{ color: var(--weight-green); font-weight:700; }
-  .weight-yellow{ color: var(--weight-yellow); font-weight:700; }
-  .weight-red{ color: var(--weight-red); font-weight:700; }
-
-  /* Hazard icon */
-  #hazardIcon{
-    position:absolute;
-    bottom:6px;
-    right:6px;
-    width:38px;
-    height:38px;
-    display:none;
-    pointer-events:none;
-    z-index:50;
-  }
-
-  /* Buttons -------------------------------------------------- */
   .btn{
     width:100%;
     height:56px;
-    border:0;
-    border-radius:10px;
     background:#0f172a;
-    color:#fff;
+    color:white;
+    border:0;
+    border-radius:14px;
     font-size:20px;
     font-weight:700;
-    margin-top:12px;
+    margin-top:16px;
     cursor:pointer;
   }
-  .btn:disabled{ opacity:0.45; }
+
+  /* RAW DATA SECTION */
+  .section-title{
+    font-weight:700;
+    margin-top:20px;
+    margin-bottom:8px;
+    font-size:22px;
+  }
+
+  .cat{
+    font-weight:700;
+    margin-top:18px;
+    font-size:20px;
+  }
+
+  .line{
+    border-bottom:3px solid #000;
+    margin:8px 0 14px 0;
+  }
+
+  .value{
+    font-size:20px;
+    white-space:pre-line;
+  }
+
+  .weight-green{ color:var(--green);font-weight:700; }
+  .weight-yellow{ color:var(--yellow);font-weight:700; }
+  .weight-red{ color:var(--red);font-weight:700; }
+
+  #hazardIcon{
+    width:40px;
+    height:40px;
+    position:absolute;
+    right:10px;
+    bottom:10px;
+    display:none;
+  }
+
+  #rawBox{
+    position:relative;
+  }
+
+  #copyBtn{
+    margin-top:20px;
+    width:100%;
+    height:50px;
+    border-radius:12px;
+    border:2px solid #ddd;
+    font-size:20px;
+    font-weight:700;
+    background:white;
+    color:#111;
+    cursor:pointer;
+  }
 
 </style>
 </head>
 
 <body>
 
-<!-- TOP BAR -->
-<div id="topbar">
-  <div id="topTitle">Info Scan — v6.7</div>
-  <img id="topLogo" src="logo.png" alt="Rockwool Logo" />
+<!-- TOP -->
+<div class="top">
+  <span>Info Scan</span>
+  <img class="logo" src="rw-logo.png" alt="">
 </div>
 
-<!-- SCANNER -->
-<div class="card">
-  <strong style="font-size:18px;">Scanner</strong>
+<div class="container">
 
-  <div id="cameraWrap">Kamera er slukket</div>
+  <!-- SCANNER -->
+  <div class="card">
+    <div style="font-size:22px;font-weight:700;">Scanner</div>
+    <div id="cameraWrap">Kamera er slukket</div>
 
-  <button class="btn" id="scanBtn">NY SCANNING</button>
-</div>
+    <button class="btn" id="scanBtn">NY SCANNING</button>
+  </div>
 
-<!-- RAW DATA -->
-<div class="card" style="position:relative;">
-  <strong style="font-size:18px;">Rådata</strong>
+  <!-- RAW DATA -->
+  <div class="card" id="rawBox">
+    <div class="section-title">Rådata</div>
 
-  <div id="rawBox" style="margin-top:10px; position:relative;">
-    <div id="rawLines"></div>
+    <div id="dataFields"></div>
 
-    <!-- hazard symbol -->
     <svg id="hazardIcon" viewBox="0 0 400 400">
       <polygon points="200,20 380,200 200,380 20,200"
         fill="white" stroke="#d32f2f" stroke-width="35"/>
       <circle cx="200" cy="270" r="35" fill="black"/>
       <rect x="182" y="90" width="36" height="140" rx="18" fill="black"/>
     </svg>
-  </div>
 
-  <button class="btn" id="copyBtn" disabled>KOPIER</button>
+    <button id="copyBtn">KOPIER</button>
+  </div>
 </div>
 
+
 <script>
-/* CORE SCAN LOGIC ----------------------------------------- */
+/* CAMERA + QR LOGIC */
+let video=null, stream=null, canvas=null, ctx=null, scanning=false;
 
-let stream=null, videoEl=null, canvas=null, ctx=null, scanning=false, rafId=null;
-
-const scanBtn = document.getElementById("scanBtn");
-const copyBtn = document.getElementById("copyBtn");
-const rawLines = document.getElementById("rawLines");
-const hazardIcon = document.getElementById("hazardIcon");
-const cameraWrap = document.getElementById("cameraWrap");
-
-function escapeHtml(str){
-  return String(str).replace(/[&<>"']/g, m => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;',
-    '"':'&quot;',"'":'&#39;'
-  }[m]));
-}
-
-function normalizeRawText(raw){
-  return String(raw||"")
-    .split(/\r?\n/)
-    .map(l=>l.trim())
-    .filter(l=>l!=="")
-    .join("\n");
-}
-
-function highlightUN(txt){
-  return txt.replace(/\b(UN\d+(?:,\d+)*)\b/g,'<span class="un">$1</span>');
-}
+/* CATEGORY ORDER */
+const ORDER=[
+  "Område","Varenummer","Materiale","Antal",
+  "L","B","T","Vægt","Meter","Areal m²","Anden info",
+  "Lager/Område","Reol","Hylde","Plads","Kemi"
+];
 
 function classifyWeight(kg){
-  if(kg<=15) return {cls:"weight-green", extra:""};
-  if(kg<=30) return {cls:"weight-yellow", extra:" (Pas på når du løfter)"};
-  return {cls:"weight-red", extra:" (Brug hjælpe værktøj til løft)"};
+  if(kg <= 15) return {cls:"weight-green",extra:""};
+  if(kg <= 30) return {cls:"weight-yellow",extra:" (Pas på når du løfter)"};
+  return {cls:"weight-red",extra:" (Brug hjælpe værktøj til løft)"};
 }
 
-function extractWeight(line){
-  const m = line.match(/Vægt:\s*([\d.,]+)/i);
-  if(!m) return null;
-  return parseFloat(m[1].replace(",",".")) || null;
+function clearRaw(){
+  document.getElementById("dataFields").innerHTML="";
+  document.getElementById("hazardIcon").style.display="none";
 }
 
-/* Render raw data with groups -------------------------------------- */
-function setRawData(raw){
-  rawLines.innerHTML = "";
-  hazardIcon.style.display = "none";
+/* PARSE RAW DATA */
+function parseRaw(raw){
 
-  const clean = normalizeRawText(raw);
-  if(!clean){ copyBtn.disabled=true; return; }
+  clearRaw();
 
-  const lines = clean.split(/\r?\n/);
+  const out={};
+  const lines = String(raw).split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
 
-  let currentSection = "";
-  const sectionTitles = ["Område","Varenummer","Materiale","Antal","Mål","Lagerplads","Kemi"];
+  let collectAndenInfo = false;
+  let andenInfoText = [];
 
-  if(/\bUN\d+/.test(clean)) hazardIcon.style.display="block";
-
-  lines.forEach(line=>{
-    let titleMatch = sectionTitles.find(t => line.startsWith(t+":"));
-    if(titleMatch){
-      currentSection = titleMatch;
-      rawLines.insertAdjacentHTML("beforeend",
-        `<div class="section-title">${escapeHtml(titleMatch)}</div>`
-      );
+  lines.forEach(l=>{
+    if(/^Anden info/i.test(l)){
+      collectAndenInfo=true;
+      const parts=l.split(":");
+      if(parts[1]) andenInfoText.push(parts[1].trim());
+      return;
     }
+    if(collectAndenInfo){
+      if(/^[A-Za-z]/.test(l)) andenInfoText.push(l);
+      return;
+    }
+    const p=l.split(":");
+    if(p.length>=2){
+      const key=p[0].trim();
+      const val=p.slice(1).join(":").trim();
+      out[key]=val;
+    }
+  });
 
-    let html = escapeHtml(line);
-    html = highlightUN(html);
+  if(andenInfoText.length>0){
+    out["Anden info"]=andenInfoText.join("\n");
+  }
 
-    if(line.startsWith("Vægt:")){
-      const kg = extractWeight(line);
-      if(kg!==null){
-        const w = classifyWeight(kg);
-        html = html.replace(/$/, escapeHtml(w.extra));
-        rawLines.insertAdjacentHTML("beforeend",
-          `<div class="raw-line ${w.cls}">${html}</div>`
-        );
-        return;
+  if(/UN\d+/i.test(raw)){
+    document.getElementById("hazardIcon").style.display="block";
+  }
+
+  drawParsed(out);
+}
+
+function drawParsed(obj){
+  const box=document.getElementById("dataFields");
+
+  ORDER.forEach(key=>{
+    if(!(key in obj)) return;
+
+    const wrap=document.createElement("div");
+
+    const cat=document.createElement("div");
+    cat.className="cat";
+    cat.textContent=key;
+    wrap.appendChild(cat);
+
+    const line=document.createElement("div");
+    line.className="line";
+    wrap.appendChild(line);
+
+    const val=document.createElement("div");
+    val.className="value";
+
+    let txt=obj[key];
+
+    if(/^Vægt/i.test(key)){
+      let kg=parseFloat(String(txt).replace(",","."));
+      if(!isNaN(kg)){
+        const info=classifyWeight(kg);
+        val.classList.add(info.cls);
+        txt = kg+" kg"+info.extra;
       }
     }
 
-    rawLines.insertAdjacentHTML("beforeend",
-      `<div class="raw-line">${html}</div>`
-    );
-  });
+    val.textContent=txt;
+    wrap.appendChild(val);
 
-  copyBtn.disabled=false;
-}
-
-/* Copy button */
-copyBtn.addEventListener("click", async ()=>{
-  await navigator.clipboard.writeText(rawLines.innerText);
-  copyBtn.innerText="KOPIERET";
-  setTimeout(()=>copyBtn.innerText="KOPIER",800);
-});
-
-/* jsQR loader */
-function loadJsQr(){
-  return new Promise((res,rej)=>{
-    if(window.jsQR) return res(window.jsQR);
-    const s=document.createElement("script");
-    s.src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
-    s.onload=()=>res(window.jsQR);
-    s.onerror=rej;
-    document.head.appendChild(s);
+    box.appendChild(wrap);
   });
 }
 
-/* Camera start */
+/* COPY */
+document.getElementById("copyBtn").onclick=function(){
+  const text=document.getElementById("dataFields").innerText;
+  navigator.clipboard.writeText(text);
+  this.textContent="KOPIERET";
+  setTimeout(()=>this.textContent="KOPIER",800);
+};
+
+/* CAMERA */
 async function startCamera(){
-  if(!videoEl){
-    videoEl=document.createElement("video");
-    videoEl.setAttribute("playsinline","true");
+  if(!video){
+    video=document.createElement("video");
+    video.setAttribute("playsinline","true");
   }
   if(!canvas){
     canvas=document.createElement("canvas");
@@ -281,82 +295,76 @@ async function startCamera(){
   }
 
   try{
-    stream = await navigator.mediaDevices.getUserMedia({
-      video:{ facingMode:{ideal:"environment"} }, audio:false
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:"environment"},
+      audio:false
     });
-
-    videoEl.srcObject=stream;
-    await videoEl.play();
-
-    cameraWrap.innerHTML="";
-    cameraWrap.appendChild(videoEl);
-
-    return true;
-  }catch(e){
-    return false;
+  } catch(e){
+    parseRaw("Demo\nVægt: 18\nKemi: UN1209\nAnden info: Test");
+    scanning=false;
+    return;
   }
-}
 
-function stopCamera(){
-  if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
-  if(stream){
-    stream.getTracks().forEach(t=>t.stop());
-    stream=null;
-  }
-  if(videoEl){
-    videoEl.pause();
-    videoEl.srcObject=null;
-  }
-  cameraWrap.innerHTML="Kamera er slukket";
+  video.srcObject=stream;
+  await video.play();
+
+  const wrap=document.getElementById("cameraWrap");
+  wrap.innerHTML="";
+  wrap.appendChild(video);
+
+  scanLoop();
 }
 
 async function scanLoop(){
-  if(!videoEl || videoEl.readyState!==videoEl.HAVE_ENOUGH_DATA){
-    rafId=requestAnimationFrame(scanLoop);
+  if(!video || video.readyState!==video.HAVE_ENOUGH_DATA){
+    requestAnimationFrame(scanLoop);
     return;
   }
 
-  if(canvas.width!==videoEl.videoWidth){
-    canvas.width=videoEl.videoWidth;
-    canvas.height=videoEl.videoHeight;
+  if(canvas.width!==video.videoWidth){
+    canvas.width=video.videoWidth;
+    canvas.height=video.videoHeight;
   }
 
-  ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
-  const img = ctx.getImageData(0,0,canvas.width,canvas.height);
-  const code = window.jsQR && jsQR(img.data,img.width,img.height);
+  ctx.drawImage(video,0,0,canvas.width,canvas.height);
+  const img=ctx.getImageData(0,0,canvas.width,canvas.height);
 
-  if(code && code.data){
-    stopCamera();
-    setRawData(code.data);
-    scanning=false;
-    return;
+  if(window.jsQR){
+    const code=jsQR(img.data, img.width, img.height);
+    if(code && code.data){
+      stopCamera();
+      parseRaw(code.data);
+      return;
+    }
   }
 
-  rafId=requestAnimationFrame(scanLoop);
+  requestAnimationFrame(scanLoop);
 }
 
-/* Button: NY SCANNING */
-scanBtn.addEventListener("click", async ()=>{
-  rawLines.innerHTML="";
-  hazardIcon.style.display="none";
-  copyBtn.disabled=true;
+function stopCamera(){
+  if(stream) stream.getTracks().forEach(t=>t.stop());
+  stream=null;
+}
 
-  scanning=true;
+/* LOAD jsQR */
+function loadJsQR(){
+  return new Promise(res=>{
+    if(window.jsQR) return res();
+    let s=document.createElement("script");
+    s.src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
+    s.onload=res;
+    document.body.appendChild(s);
+  });
+}
 
-  await loadJsQr();
-  const ok = await startCamera();
+/* START SCAN BUTTON */
+document.getElementById("scanBtn").onclick=async()=>{
+  clearRaw();
+  document.getElementById("cameraWrap").textContent="Kamera starter…";
 
-  if(!ok){
-    setRawData("Demo\nVægt: 12 kg\nKemi: UN1209");
-    scanning=false;
-    return;
-  }
-
-  scanLoop();
-});
-
-/* stop camera on close */
-window.addEventListener("beforeunload", stopCamera);
+  await loadJsQR();
+  startCamera();
+};
 
 </script>
 </body>
