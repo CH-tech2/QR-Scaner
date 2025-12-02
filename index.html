@@ -3,45 +3,53 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Info Scan — v6.5</title>
-
+<title>Info Scan — v6.6</title>
 <style>
   :root{
-    --bg: #D20014;
-    --text: #111;
-    --muted: #555;
-
-    --weight-green: #059669;
-    --weight-yellow: #CA8A04;
-    --weight-red: #B91C1C;
+    --rw-red: #D20014;
+    --text: #111827;
+    --muted:#6b7280;
+    --un: #b91c1c;
+    --green: #059669;
+    --yellow: #CA8A04;
+    --red: #B91C1C;
   }
 
+  /* Page */
   body{
-    background: var(--bg);
-    color: var(--text);
+    margin:0;
+    padding:16px;
+    background:var(--rw-red);
     font-family: Arial, monospace;
-    margin: 0;
-    padding: 16px;
+    color:var(--text);
   }
 
-  h1{
-    color: white;
-    font-size: 22px;
-    margin: 10px 0 20px 0;
-    font-weight: 900;
+  /* Top bar with logo on left */
+  .topbar{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:12px;
+  }
+  .rw-logo{
+    height:70px;        /* ~A-size as requested */
+    width:auto;
+    display:block;
+  }
+  .title{
+    color:#fff;
+    font-size:22px;
+    font-weight:900;
   }
 
-  .card{
-    background: #fff;
-    border-radius: 14px;
-    padding: 16px;
-    margin-bottom: 20px;
-  }
+  /* Cards */
+  .container{ display:grid; grid-template-columns:1fr; gap:14px; }
+  .card{ background:#fff; border-radius:12px; padding:14px; }
 
-  /* Camera preview */
+  /* Camera */
   #cameraWrap{
     background:#f3f4f6;
-    border-radius:8px;
+    border-radius:10px;
     height:260px;
     display:flex;
     align-items:center;
@@ -49,266 +57,336 @@
     color:#9ca3af;
     overflow:hidden;
   }
+  #cameraWrap video{ width:100%; height:100%; object-fit:cover; transform:none !important; -webkit-transform:none !important; }
 
-  #cameraWrap video{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-  }
-
-  /* RÅDATA BOX */
-  .raw-box{
-    background:#fff;
-    border-radius:8px;
-    border:1px solid #ccc;
-    padding: 0;
-    overflow:hidden;
-  }
-
-  .qr-line{
+  /* Raw data */
+  .raw-box{ position:relative; border-radius:8px; overflow:auto; background:#fff; }
+  #rawLines{ padding:6px 4px; }
+  .data-line{
+    font-family: ui-monospace, monospace;
+    font-size:15px;
     padding:8px 10px;
-    border-bottom:1px solid #222;
-    font-size:16px;
+    border-bottom:2px solid #000;   /* svart skillelinje mellem datafelter */
     white-space:pre-wrap;
   }
 
-  /* Kategori-overskrifter */
+  /* Section titles (bold only) */
   .section-title{
-    font-weight: 900;
-    font-size: 16px;
-    margin-top: 16px;
-    margin-bottom: 6px;
-    border-bottom: none;   /* FJERNER RØD LINJE */
+    font-weight:900;
+    font-size:16px;
+    margin:8px 0 6px 0;
+    border-bottom:none; /* REMOVE red/any underline */
+    padding:0;
   }
 
   /* UN highlight */
-  .un{
-    color:#B91C1C;
-    font-weight:900;
-  }
+  .un{ color:var(--un); font-weight:900; }
 
-  /* Vægt farver */
-  .weight-green{ color: var(--weight-green); font-weight:900; }
-  .weight-yellow{ color: var(--weight-yellow); font-weight:900; }
-  .weight-red{ color: var(--weight-red); font-weight:900; }
+  /* Weight classes */
+  .weight-green{ color:var(--green); font-weight:900; }
+  .weight-yellow{ color:var(--yellow); font-weight:900; }
+  .weight-red{ color:var(--red); font-weight:900; }
+
+  /* Hazard icon */
+  #hazardIcon{ position:absolute; right:10px; bottom:10px; width:42px; height:42px; display:none; pointer-events:none; }
 
   /* Buttons */
   .btn{
-    width: 100%;
-    background:#0A0F1A;
-    color:#fff;
-    font-size:18px;
-    padding:14px;
+    width:100%;
+    height:56px;
     border-radius:10px;
     border:0;
-    margin-top:12px;
+    background:#0d1321;
+    color:#fff;
     font-weight:900;
+    font-size:18px;
+    cursor:pointer;
+    margin-top:12px;
+  }
+  .btn.ghost{
+    background:#fff; color:#111; border:1px solid #d1d5db;
+  }
+
+  @media(max-width:900px){
+    .rw-logo{ height:56px; }
+    body{ padding:12px; }
   }
 </style>
 </head>
-
 <body>
 
-<h1>Info Scan — v6.5</h1>
-
-<!-- SCANNER KORT -->
-<div class="card">
-  <strong>Scanner</strong>
-
-  <div id="cameraWrap">Kamera er slukket</div>
-
-  <button class="btn" id="scanBtn">NY SCANNING</button>
+<!-- TOP BAR -->
+<div class="topbar">
+  <img id="rwlogo" class="rw-logo" src="logo.png" alt="ROCKWOOL logo" onerror="this.style.display='none'">
+  <div class="title">Info Scan — v6.6</div>
 </div>
 
-<!-- RÅDATA KORT -->
-<div class="card">
-  <strong>Rådata</strong>
+<div class="container">
 
-  <div class="raw-box" id="rawBox">
-    <div id="rawLines"></div>
+  <!-- SCANNER CARD -->
+  <div class="card">
+    <strong>Scanner</strong>
+    <div id="cameraWrap">Kamera er slukket</div>
+
+    <!-- Only one button, always visible -->
+    <button id="scanBtn" class="btn">NY SCANNING</button>
   </div>
 
-  <button class="btn" id="copyBtn" disabled>KOPIER</button>
+  <!-- RAW DATA CARD -->
+  <div class="card">
+    <strong>Rådata</strong>
+
+    <div class="raw-box" style="margin-top:10px;">
+      <div id="rawLines"></div>
+
+      <!-- Hazard icon (shows when UN present) -->
+      <svg id="hazardIcon" viewBox="0 0 400 400">
+        <polygon points="200,20 380,200 200,380 20,200" fill="white" stroke="#d32f2f" stroke-width="35"/>
+        <circle cx="200" cy="270" r="35" fill="black"/>
+        <rect x="182" y="90" width="36" height="140" rx="18" fill="black"/>
+      </svg>
+    </div>
+
+    <button id="copyBtn" class="btn ghost" disabled style="margin-top:12px;">KOPIER</button>
+  </div>
 </div>
 
-
 <script>
-// -----------------------------
-// HELPERS
-// -----------------------------
-function escapeHtml(str){
-  return String(str).replace(/[&<>"']/g,m=>({
-    '&':'&amp;','<':'&lt;','>':'&gt;',
-    '"':'&quot;',"'":'&#39;'
-  }[m]));
-}
+/* Info Scan v6.6 (Logo Edition)
+   - Uses file-based logo.png
+   - One button NY SCANNING that clears and starts scanning
+   - Grouping for Mål and Lagerplads
+   - Category titles bold only
+   - Weight coloring and texts restored
+   - UN highlight and hazard icon
+   - Android permission trick + fallback camera constraints
+*/
 
-function highlightUN(str){
-  return str.replace(/\b(UN[0-9]+(?:,[0-9]+)*)\b/g,
-    '<span class="un">$1</span>');
-}
+const scanBtn = document.getElementById("scanBtn");
+const copyBtn = document.getElementById("copyBtn");
+const rawLines = document.getElementById("rawLines");
+const cameraWrap = document.getElementById("cameraWrap");
+const hazardIcon = document.getElementById("hazardIcon");
+
+let videoEl = null, canvas = null, ctx = null, stream = null, rafId = null;
+
+// GROUPS config
+const SECTION_TITLES = ["Mål:", "Lagerplads:"];
+const GROUPED_FIELDS = {
+  "Mål:": ["Længde","Bredde","Tykkelse"],
+  "Lagerplads:": ["Lager/Område","Reol","Hylde","Plads"]
+};
+
+/* Helpers */
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function highlightUN(s){ return s.replace(/\b(UN\d+(?:,\d+)*)\b/g,'<span class="un">$1</span>'); }
 
 function extractWeight(line){
-  const m=line.match(/Vægt:\s*([\d.,]+)/i);
+  const m = line.match(/Vægt:\s*([\d.,]+)/i);
   if(!m) return null;
-  let kg=parseFloat(m[1].replace(",","."));
-  return isNaN(kg)?null:kg;
+  const kg = parseFloat(m[1].replace(",","."));
+  return isNaN(kg) ? null : kg;
 }
-
 function classifyWeight(kg){
-  if(kg <= 15) return { cls:"weight-green", extra:"" };
-  if(kg <= 30) return { cls:"weight-yellow", extra:" (Pas på når du løfter)" };
-  return { cls:"weight-red", extra:" (Brug hjælpe værktøj til løft)" };
+  if(kg <= 15) return {cls:"weight-green", extra:""};
+  if(kg <= 30) return {cls:"weight-yellow", extra:" (Pas på når du løfter)"};
+  return {cls:"weight-red", extra:" (Brug hjælpe værktøj til løft)"};
 }
 
-
-// -----------------------------
-// RAWDATA RENDERING
-// -----------------------------
-function renderRaw(text){
-  const box = document.getElementById("rawLines");
-  box.innerHTML = "";
-
-  if(!text.trim()){
-    document.getElementById("copyBtn").disabled = true;
-    return;
-  }
-
-  const lines = text.split(/\r?\n/);
-
-  lines.forEach((line, i)=>{
-    let clean = escapeHtml(line);
-
-    // Titellinjer
-    if(["Mål:","Lagerplads:"].includes(line.trim())){
-      box.insertAdjacentHTML("beforeend",
-        `<div class="section-title">${line.replace(":","")}</div>`);
-      return;
-    }
-
-    // UN farve
-    clean = highlightUN(clean);
-
-    // Vægtfarver
-    if(line.startsWith("Vægt:")){
-      let kg = extractWeight(line);
-      if(kg !== null){
-        const info = classifyWeight(kg);
-        clean = `<span class="${info.cls}">${clean}${info.extra}</span>`;
-      }
-    }
-
-    box.insertAdjacentHTML("beforeend",
-      `<div class="qr-line">${clean}</div>`);
-  });
-
-  document.getElementById("copyBtn").disabled = false;
+/* Clear raw area */
+function clearRaw(){
+  rawLines.innerHTML = "";
+  hazardIcon.style.display = "none";
+  copyBtn.disabled = true;
 }
 
+/* Render raw with grouping rules */
+function renderRaw(raw){
+  clearRaw();
+  if(!raw || !raw.trim()) return;
 
-// -----------------------------
-// CAMERA + SCAN
-// -----------------------------
-let videoEl=null, stream=null, canvas=null, ctx=null, raf=null;
+  const lines = raw.split(/\r?\n/).map(l=>l.trim()).filter(l=>l!=="");
+  let currentGroup = null;
 
-async function startCamera(){
-  if(!videoEl){
-    videoEl=document.createElement("video");
-    videoEl.setAttribute("playsinline","true");
+  for(const line of lines){
+    // Section title
+    if(SECTION_TITLES.includes(line)){
+      // show title as bold (without colon)
+      const titleText = line.replace(/:$/,"");
+      rawLines.insertAdjacentHTML("beforeend", `<div class="section-title">${escapeHtml(titleText)}</div>`);
+      currentGroup = line;
+      continue;
+    }
+
+    // inside group (no divider)
+    if(currentGroup && GROUPED_FIELDS[currentGroup].some(f=>line.startsWith(f))){
+      addDataLine(line, false);
+      continue;
+    }
+
+    // leaving group (no extra special divider required)
+    if(currentGroup){
+      currentGroup = null;
+    }
+
+    // normal line with divider
+    addDataLine(line, true);
   }
-  if(!canvas){
-    canvas=document.createElement("canvas");
-    ctx=canvas.getContext("2d");
+
+  // hazard if UN present
+  if(/\bUN\d+/.test(raw)) hazardIcon.style.display = "block";
+
+  copyBtn.disabled = false;
+}
+
+/* add data line; divider controls presence of black bottom border (via .data-line) */
+function addDataLine(line, divider){
+  let html = escapeHtml(line);
+  html = highlightUN(html);
+
+  if(/^Vægt:/i.test(line)){
+    const kg = extractWeight(line);
+    if(kg !== null){
+      const info = classifyWeight(kg);
+      html = `<span class="${info.cls}">${html}${escapeHtml(info.extra)}</span>`;
+    }
   }
 
+  const cls = divider ? "data-line" : "";
+  rawLines.insertAdjacentHTML("beforeend", `<div class="${cls}">${html}</div>`);
+}
+
+/* Copy */
+copyBtn.addEventListener("click", async()=>{
   try{
-    stream = await navigator.mediaDevices.getUserMedia({
-      video:{ facingMode:"environment" },
-      audio:false
-    });
-    videoEl.srcObject = stream;
-    await videoEl.play();
+    await navigator.clipboard.writeText(rawLines.innerText);
+    const prev = copyBtn.innerText;
+    copyBtn.innerText = "KOPIERET";
+    setTimeout(()=>copyBtn.innerText = prev,800);
+  }catch(e){}
+});
 
-    const wrap = document.getElementById("cameraWrap");
-    wrap.innerHTML="";
-    wrap.appendChild(videoEl);
+/* jsQR loader */
+function loadJsQr(){
+  return new Promise(res=>{
+    if(window.jsQR) return res();
+    const s=document.createElement("script");
+    s.src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
+    s.onload = res;
+    document.head.appendChild(s);
+  });
+}
 
+/* Ask permission trick to help Android */
+async function askForPermission(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return false;
+  try{
+    const tmp = await navigator.mediaDevices.getUserMedia({ video:true });
+    tmp.getTracks().forEach(t=>t.stop());
     return true;
-
   }catch(e){
     return false;
   }
 }
 
-function stopCamera(){
-  if(raf) cancelAnimationFrame(raf);
-  if(stream){
-    stream.getTracks().forEach(t=>t.stop());
-    stream=null;
+/* start camera with progressive fallbacks */
+async function startCamera(){
+  if(!videoEl){
+    videoEl = document.createElement("video");
+    videoEl.setAttribute("playsinline","true");
   }
-  document.getElementById("cameraWrap").innerHTML="Kamera er slukket";
+  if(!canvas){
+    canvas = document.createElement("canvas");
+    ctx = canvas.getContext("2d");
+  }
+
+  const attempts = [
+    { video: { facingMode: { exact: "environment" } } },
+    { video: { facingMode: { ideal: "environment" } } },
+    { video: true }
+  ];
+
+  for(const c of attempts){
+    try{
+      stream = await navigator.mediaDevices.getUserMedia(Object.assign({audio:false}, c));
+      videoEl.srcObject = stream;
+      await videoEl.play();
+      cameraWrap.innerHTML = ""; cameraWrap.appendChild(videoEl);
+      return true;
+    }catch(e){
+      // try next
+    }
+  }
+  return false;
 }
 
-// -----------------------------
-// QR SCANNING LOOP
-// -----------------------------
+/* stop camera */
+function stopCamera(){
+  if(rafId) cancelAnimationFrame(rafId);
+  if(stream){
+    stream.getTracks().forEach(t=>t.stop());
+    stream = null;
+  }
+  if(videoEl){
+    try{ videoEl.pause(); }catch(e){}
+    videoEl.srcObject = null;
+  }
+  cameraWrap.innerHTML = "Kamera er slukket";
+}
+
+/* scan loop */
 async function scanLoop(){
-  if(videoEl.readyState !== videoEl.HAVE_ENOUGH_DATA){
-    raf = requestAnimationFrame(scanLoop);
+  if(!videoEl || videoEl.readyState !== videoEl.HAVE_ENOUGH_DATA){
+    rafId = requestAnimationFrame(scanLoop);
     return;
   }
 
-  canvas.width = videoEl.videoWidth;
-  canvas.height = videoEl.videoHeight;
-  ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
-
-  let img = ctx.getImageData(0,0,canvas.width,canvas.height);
-
-  if(window.jsQR){
-    let code = jsQR(img.data, img.width, img.height);
-    if(code && code.data){
-      stopCamera();
-      renderRaw(code.data);
-      return;
-    }
+  if(canvas.width !== videoEl.videoWidth){
+    canvas.width = videoEl.videoWidth; canvas.height = videoEl.videoHeight;
   }
 
-  raf = requestAnimationFrame(scanLoop);
+  ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
+  const img = ctx.getImageData(0,0,canvas.width,canvas.height);
+  let code = window.jsQR ? jsQR(img.data,img.width,img.height) : null;
+
+  if(code && code.data){
+    stopCamera();
+    renderRaw(code.data);
+    return;
+  }
+
+  rafId = requestAnimationFrame(scanLoop);
 }
 
+/* Main single button handler: always visible */
+scanBtn.addEventListener("click", async ()=>{
+  // clear UI immediately
+  clearRaw();
 
-// -----------------------------
-// BUTTON HANDLERS
-// -----------------------------
-document.getElementById("scanBtn").onclick = async ()=>{
-  // Ryd rådata
-  document.getElementById("rawLines").innerHTML="";
-  document.getElementById("copyBtn").disabled=true;
+  // stop any running camera
+  stopCamera();
 
-  await startCamera();
+  // ask permission to improve Android reliability
+  const perm = await askForPermission();
+  if(!perm){
+    // permission not granted — show message in cameraWrap and bail
+    cameraWrap.innerHTML = "Kamera-adgang nægtet eller ikke understøttet";
+    return;
+  }
 
-  // Load jsQR
-  if(!window.jsQR){
-    await new Promise(res=>{
-      const s=document.createElement("script");
-      s.src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
-      s.onload=res;
-      document.head.appendChild(s);
-    });
+  await loadJsQr();
+
+  const ok = await startCamera();
+  if(!ok){
+    cameraWrap.innerHTML = "Kan ikke få adgang til kamera";
+    return;
   }
 
   scanLoop();
-};
+});
 
-document.getElementById("copyBtn").onclick = async ()=>{
-  await navigator.clipboard.writeText(
-    document.getElementById("rawLines").innerText
-  );
-  alert("Kopieret!");
-};
-
+/* ensure stop camera on unload */
 window.addEventListener("beforeunload", stopCamera);
 </script>
-
 </body>
 </html>
