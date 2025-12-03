@@ -1,170 +1,183 @@
 <!doctype html>
 <html lang="da">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Info Scan — v7.4</title>
-
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Info Scan — v7.5</title>
 <style>
   :root{
-    --rw-red: #D20014;
-    --text: #111827;
-    --muted: #6b7280;
-    --line: #000;
-
-    --green: #059669;
-    --yellow: #CA8A04;
-    --red: #B91C1C;
+    --rw-red:#D20014;
+    --bg:#D20014;
+    --text:#111827;
+    --black:#000;
+    --un:#b91c1c;
+    --green:#059669;
+    --yellow:#CA8A04;
+    --red:#B91C1C;
   }
 
+  /* page */
   body{
     margin:0;
+    padding:12px;
+    font-family: Arial, ui-monospace, monospace;
     background:var(--rw-red);
-    font-family: Arial, monospace;
     color:var(--text);
   }
 
-  /* TOP BAR --------------------------------------------------- */
-  .top{
+  /* topbar: logo right, title left */
+  .topbar{
     display:flex;
-    align-items:center;
     justify-content:space-between;
-    padding:16px 18px 10px;
-    background:var(--rw-red);
-    color:#fff;
+    align-items:center;
+    gap:12px;
+    margin-bottom:10px;
   }
-
-  .top-title{
-    font-size:20px;
+  .topTitle{
+    color:#fff;
     font-weight:700;
+    font-size:20px;
     line-height:1;
   }
-
   .logo{
-    height:38px;
-    object-fit:contain;
+    height:70px; /* A-size per request */
+    width:auto;
+    display:block;
   }
 
-  /* LAYOUT ---------------------------------------------------- */
-  .page{
-    padding:16px;
+  /* container */
+  .container{
+    padding:0;
   }
 
   .card{
-    background:white;
-    border-radius:14px;
-    padding:18px;
-    margin-bottom:16px;
+    background:#fff;
+    border-radius:12px;
+    padding:14px;
+    margin-bottom:14px;
   }
 
-  /* CAMERA ---------------------------------------------------- */
+  /* Scanner box */
   #cameraWrap{
-    background:#f3f4f6;
     height:260px;
-    border-radius:12px;
+    border-radius:10px;
+    background:#f3f4f6;
     display:flex;
-    justify-content:center;
     align-items:center;
+    justify-content:center;
     color:#9ca3af;
     overflow:hidden;
   }
+  #cameraWrap video{ width:100%; height:100%; object-fit:cover; transform:none !important; -webkit-transform:none !important; }
 
-  #cameraWrap video{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-  }
-
-  /* BUTTON ---------------------------------------------------- */
+  /* Button */
   .btn{
     width:100%;
     height:56px;
-    background:#111827;
-    color:white;
-    font-size:20px;
-    font-weight:700;
-    border-radius:12px;
-    border:none;
-    margin-top:16px;
+    margin-top:14px;
+    border-radius:10px;
+    border:0;
+    background:#0f172a;
+    color:#fff;
+    font-weight:900;
+    font-size:18px;
     cursor:pointer;
   }
 
-  /* RAW DATA -------------------------------------------------- */
-  .raw-title{
-    font-size:22px;
-    font-weight:700;
-    margin-bottom:12px;
+  /* RAW data boxes: each category in a bordered box (black) */
+  .box{
+    border:2px solid var(--black);
+    border-radius:6px;
+    padding:8px 10px;
+    margin-bottom:10px;
+    background:white;
   }
 
-  .cat{
-    font-size:20px;
-    font-weight:700;
-    margin-top:10px;
+  .catTitle{
+    font-weight:900;
+    font-size:16px;
+    margin-bottom:8px;
   }
 
-  .line{
-    border-bottom:2px solid #000;
-    margin:6px 0 10px;
+  .boxValue{
+    font-family: ui-monospace, monospace;
+    font-size:16px;
+    white-space:pre-wrap;
+    line-height:1.5;
+    margin-bottom:8px;
   }
 
-  .value{
-    font-size:18px;
-    white-space:pre-line;
-  }
+  /* For groups where we want no lines between subfields (B) we simply render lines one after another inside boxValue */
 
-  .w-green{ color:var(--green); font-weight:700; }
-  .w-yellow{ color:var(--yellow); font-weight:700; }
-  .w-red{ color:var(--red); font-weight:700; }
-
-  #hazardIcon{
-    width:42px;
-    position:absolute;
-    right:12px;
-    bottom:12px;
-    display:none;
-  }
-
-  #copyBtn{
+  .divider{
+    height:2px;
+    background:var(--black);
     width:100%;
+    margin:6px 0;
+  }
+
+  /* Kemi row: value left, hazard icon right */
+  .kemiRow{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+
+  .hazard{
+    width:34px;
+    height:34px;
+  }
+
+  /* weight colors */
+  .w-green{ color:var(--green); font-weight:900; }
+  .w-yellow{ color:var(--yellow); font-weight:900; }
+  .w-red{ color:var(--red); font-weight:900; }
+
+  /* copy button */
+  #copyBtn{
+    margin-top:12px;
     height:50px;
-    margin-top:16px;
-    border-radius:12px;
+    width:100%;
+    border-radius:10px;
     border:2px solid #ddd;
     background:white;
-    font-size:20px;
-    font-weight:700;
+    font-weight:900;
+    font-size:16px;
     cursor:pointer;
   }
+
+  @media (max-width:700px){
+    .logo{ height:56px; }
+    .topTitle{ font-size:18px; }
+  }
+
 </style>
 </head>
-
 <body>
 
-<!-- TOP BAR -->
-<div class="top">
-  <div class="top-title">Info Scan — v7.1.1</div>
-  <img src="logo.png" class="logo" alt="ROCKWOOL logo">
+<div class="topbar">
+  <div class="topTitle">Info Scan — v7.5</div>
+  <img class="logo" src="logo.png" alt="ROCKWOOL logo" onerror="this.style.display='none'"/>
 </div>
 
-<div class="page">
+<div class="container">
 
-  <!-- SCANNER -->
+  <!-- Scanner card -->
   <div class="card">
     <div style="font-weight:700;margin-bottom:8px;">Scanner</div>
     <div id="cameraWrap">Kamera er slukket</div>
-    <button class="btn" id="scanBtn">NY SCANNING</button>
+    <button id="scanBtn" class="btn">NY SCANNING</button>
   </div>
 
-  <!-- RAW DATA -->
+  <!-- Raw data card -->
   <div class="card" style="position:relative;">
-    <div class="raw-title">Rådata</div>
+    <div style="font-weight:700;margin-bottom:10px;font-size:18px;">Rådata</div>
 
-    <div id="raw"></div>
+    <div id="output"></div>
 
-    <!-- Hazard icon -->
-    <svg id="hazardIcon" viewBox="0 0 400 400">
-      <polygon points="200,20 380,200 200,380 20,200"
-        fill="white" stroke="#d32f2f" stroke-width="35"/>
+    <!-- hazard icon for fallback (in case needed) -->
+    <svg id="hazardFallback" class="hazard" style="display:none" viewBox="0 0 400 400">
+      <polygon points="200,20 380,200 200,380 20,200" fill="white" stroke="#d32f2f" stroke-width="35"/>
       <circle cx="200" cy="270" r="35" fill="black"/>
       <rect x="182" y="90" width="36" height="140" rx="18" fill="black"/>
     </svg>
@@ -175,170 +188,358 @@
 </div>
 
 <script>
+/* v7.1 layout A with group-style B (divider after group only)
+   - Fields with boxes/dividers as requested
+   - Hazard icon shown on same line as Kemi, right aligned
+   - Logo loaded from logo.png (must be in same folder)
+   - Single button NY SCANNING clears data and starts camera
+   - Weight coloring and texts restored
+   - UN detection shows hazard icon next to Kemi
+*/
 
-function esc(s){ return s.replace(/[&<>]/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m])) }
+const scanBtn = document.getElementById('scanBtn');
+const output = document.getElementById('output');
+const copyBtn = document.getElementById('copyBtn');
+const hazardFallback = document.getElementById('hazardFallback');
 
-function classifyWeight(kg){
-  if(kg <= 15) return {cls:"w-green", extra:""};
-  if(kg <= 30) return {cls:"w-yellow", extra:" (Pas på når du løfter)"};
-  return {cls:"w-red", extra:" (Brug hjælpe værktøj til løft)"};
+let videoEl=null, stream=null, canvas=null, ctx=null, raf=null;
+
+/* Helper: escape HTML */
+function esc(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
+
+/* Classify weight */
+function classifyWeightKg(kg){
+  if(kg <= 15) return {cls:'w-green', extra:''};
+  if(kg <= 30) return {cls:'w-yellow', extra:' (Pas på når du løfter)'};
+  return {cls:'w-red', extra:' (Brug hjælpe værktøj til løft)'};
 }
 
-function clearRaw(){
-  raw.innerHTML="";
-  hazardIcon.style.display="none";
-  copyBtn.disabled=true;
+/* Clear output area */
+function clearOutput(){
+  output.innerHTML = '';
+  hazardFallback.style.display = 'none';
+  copyBtn.disabled = true;
 }
 
-function drawLine(cat, value, cls=""){
-  raw.insertAdjacentHTML("beforeend", `
-    <div class="cat">${cat}</div>
-    <div class="line"></div>
-    <div class="value ${cls}">${value}</div>
-  `);
+/* Render a boxed category */
+function renderBox(title, valueHtml){
+  // title (bold) + box with border and content
+  const box = document.createElement('div');
+  box.className = 'box';
+  box.innerHTML = `<div class="catTitle">${esc(title)}</div>
+                   <div class="boxValue">${valueHtml}</div>`;
+  return box;
 }
 
-function parse(rawText){
-  clearRaw();
+/* Render Kemi box with hazard icon aligned right */
+function renderKemiBox(title, valueHtml){
+  const box = document.createElement('div');
+  box.className = 'box';
+  const kemRow = document.createElement('div');
+  kemRow.className = 'kemiRow';
+  const val = document.createElement('div');
+  val.innerHTML = `<div class="catTitle">${esc(title)}</div><div class="boxValue">${valueHtml}</div>`;
+  const iconWrap = document.createElement('div');
+  iconWrap.style.display='flex';
+  iconWrap.style.alignItems='center';
+  iconWrap.innerHTML = `<svg class="hazard" viewBox="0 0 400 400">
+      <polygon points="200,20 380,200 200,380 20,200" fill="white" stroke="#d32f2f" stroke-width="35"/>
+      <circle cx="200" cy="270" r="35" fill="black"/>
+      <rect x="182" y="90" width="36" height="140" rx="18" fill="black"/>
+    </svg>`;
+  // we want the hazard to be aligned to the right of the content on the same row
+  kemRow.appendChild(val);
+  kemRow.appendChild(iconWrap);
+  box.appendChild(kemRow);
+  return box;
+}
 
-  const lines = rawText.split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
-  let data = {};
-  let andenInfo = [];
+/* Parse raw QR text into keys */
+function parseRaw(raw){
+  const lines = String(raw||'').split(/\r?\n/).map(l=>l.trim()).filter(l=>l!=='');
+  const data = {};
+  // We'll collect "Anden info" lines until next recognized key; same logic as earlier
+  let collectingAnden = false;
+  let andenArr = [];
 
-  let inAnden = false;
+  // Recognized simple keys (exact start)
+  const keys = ['Område','Varenummer','Materiale','Antal','Længde','Bredde','Tykkelse','Vægt','Areal i m²','Anden info','Lagerplads','Lager/Område','Reol','Hylde','Plads','Kemi','Meter'];
 
-  lines.forEach(line=>{
+  for(let i=0;i<lines.length;i++){
+    const line = lines[i];
+
     if(/^Anden info/i.test(line)){
-      inAnden = true;
-      const p = line.split(":");
-      if(p[1]) andenInfo.push(p[1].trim());
-      return;
+      collectingAnden = true;
+      const parts = line.split(':');
+      if(parts.length>1) andenArr.push(parts.slice(1).join(':').trim());
+      continue;
     }
 
-    if(inAnden){
-      if(/^[A-Za-z].*?:/.test(line)){
-        inAnden = false;
-        // reprocess
-        const p=line.split(":");
-        data[p[0].trim()] = p.slice(1).join(":").trim();
+    if(collectingAnden){
+      // if next line looks like a new key (contains ':') and key matches known keys, we stop collecting
+      if(/^[A-Za-zæøåÆØÅ ].*?:/.test(line)){
+        // check if it's a known key
+        const maybeKey = line.split(':')[0].trim();
+        if(keys.includes(maybeKey)){
+          collectingAnden = false;
+          // reprocess this line in normal flow
+          i--; // decrement so next iteration handles it
+          continue;
+        } else {
+          andenArr.push(line);
+          continue;
+        }
       } else {
-        andenInfo.push(line);
+        andenArr.push(line);
+        continue;
       }
-      return;
     }
 
-    const p=line.split(":");
-    if(p.length>=2) data[p[0].trim()] = p.slice(1).join(":").trim();
-  });
+    // Normal key:value parsing
+    if(line.indexOf(':')>=0){
+      const parts = line.split(':');
+      const key = parts[0].trim();
+      const val = parts.slice(1).join(':').trim();
+      data[key] = val;
+    } else {
+      // no colon — treat as free data: attach to last known category or as leftover
+      // find last key in data
+      const lastKey = Object.keys(data).slice(-1)[0];
+      if(lastKey){
+        data[lastKey] = (data[lastKey] + '\n' + line).trim();
+      } else {
+        // as generic fallback
+        data['_extra'] = (data['_extra'] ? data['_extra'] + '\n' : '') + line;
+      }
+    }
+  }
 
-  if(andenInfo.length) data["Anden info"] = andenInfo.join("\n");
+  if(andenArr.length) data['Anden info'] = andenArr.join('\n');
 
-  let unFound = false;
-  Object.values(data).forEach(v=>{
-    if(/\bUN\d+/.test(v)) unFound = true;
-  });
+  return data;
+}
 
-  if(unFound) hazardIcon.style.display="block";
+/* Render according to requested order and divider rules (B) */
+function renderData(data){
+  clearOutput();
 
-  // ORDER — *Plads flyttet ind i Lagerplads gruppen*
-  const order = [
-    "Område","Varenummer","Materiale","Antal",
-    "L","B","T","Vægt","Meter","Areal m²",
-    "Anden info",
-    "Lager/Område","Reol","Hylde","Plads",
-    "Kemi"
+  // order and grouping
+  // MÅL group: Længde, Bredde, Tykkelse -> one box (no internal dividers), divider after group
+  const orderBoxes = [
+    {title:'Område', keys:['Område']},
+    {title:'Varenummer', keys:['Varenummer']},
+    {title:'Materiale', keys:['Materiale']},
+    {title:'Antal', keys:['Antal']},
+    {title:'Mål', keys:['Længde','Bredde','Tykkelse']}, // group
+    {title:'Vægt', keys:['Vægt']},
+    {title:'Areal i m²', keys:['Areal i m²']},
+    {title:'Anden info', keys:['Anden info']},
+    {title:'Lagerplads', keys:['Lagerplads','Lager/Område','Reol','Hylde','Plads']},
+    {title:'Kemi', keys:['Kemi']}
   ];
 
-  function renderCategory(cat){
-    if(!(cat in data)) return;
-    let value = esc(data[cat]);
-
-    if(cat==="Vægt"){
-      let kg=parseFloat(value.replace(",","."));
-      if(!isNaN(kg)){
-        const info=classifyWeight(kg);
-        value = `${kg} kg${esc(info.extra)}`;
-        drawLine(cat, value, info.cls);
-        return;
-      }
-    }
-
-    drawLine(cat, value);
-  }
-
-  // Main fields
-  ["Område","Varenummer","Materiale","Antal"].forEach(renderCategory);
-
-  // Mål-gruppen
-  let mål = [];
-  if("L" in data) mål.push("L: "+esc(data.L));
-  if("B" in data) mål.push("B: "+esc(data.B));
-  if("T" in data) mål.push("T: "+esc(data.T));
-  if(mål.length){
-    drawLine("Mål", mål.join("\n"));
-  }
-
-  // Vægt
-  renderCategory("Vægt");
-  // Meter
-  renderCategory("Meter");
-  // Areal
-  renderCategory("Areal m²");
-  // Anden info
-  if("Anden info" in data){
-    drawLine("Anden info", esc(data["Anden info"]));
-  }
-
-  // Lagerplads-gruppe — *Plads integreret her*
-  let lp = [];
-  ["Lager/Område","Reol","Hylde","Plads"].forEach(k=>{
-    if(k in data){
-      lp.push(`${k}: ${esc(data[k])}`);
-    }
+  let unPresent = false;
+  Object.values(data).forEach(v=>{
+    if(/\bUN\d+/.test(v)) unPresent = true;
   });
-  if(lp.length){
-    drawLine("Lagerplads", lp.join("\n"));
-  }
 
-  // Kemi
-  if("Kemi" in data){
-    drawLine("Kemi", esc(data["Kemi"]));
-  }
+  orderBoxes.forEach(boxDef=>{
+    // Build value content depending on keys present
+    const presentKeys = boxDef.keys.filter(k => (k in data) && String(data[k]).trim() !== '');
+    if(presentKeys.length === 0) return; // skip empty
 
-  copyBtn.disabled=false;
+    // special treatment for Mål group and Lagerplads group and Anden info and Vægt
+    if(boxDef.title === 'Mål'){
+      // collect sublines for Længde,Bredde,Tykkelse
+      const lines = [];
+      ['Længde','Bredde','Tykkelse'].forEach(k=>{
+        if(k in data && String(data[k]).trim()!==''){
+          lines.push(`${k}: ${esc(String(data[k]))}`);
+        }
+      });
+      // create box with these lines (no internal dividers) and then one divider after (visual handled by box borders)
+      const box = renderBox(boxDef.title, lines.join('\n'));
+      output.appendChild(box);
+      return;
+    }
+
+if(boxDef.title === 'Lagerplads'){
+  const lines = [];
+
+  if('Lagerplads' in data && data['Lagerplads'].trim() !== '')
+    lines.push(`Lagerplads: ${esc(data['Lagerplads'])}`);
+
+  ['Lager/Område','Reol','Hylde','Plads'].forEach(k=>{
+    if(k in data && String(data[k]).trim() !== '')
+      lines.push(`${k}: ${esc(String(data[k]))}`);
+  });
+
+  const box = renderBox(boxDef.title, lines.join('\n'));
+  output.appendChild(box);
+  return;
 }
 
-/* Copy */
-copyBtn.onclick = ()=>{
-  navigator.clipboard.writeText(raw.innerText);
-};
+    }
 
-/* Scan button → Simulated test for now */
-scanBtn.onclick = ()=>{
-  clearRaw();
+    if(boxDef.title === 'Anden info'){
+      const v = data['Anden info'] ? esc(String(data['Anden info'])) : '';
+      // Anden info should be one block without internal dividers
+      const box = renderBox(boxDef.title, v);
+      output.appendChild(box);
+      return;
+    }
 
-  // Simulated input (kamera virker når du hoster)
-  const simulation = `
-Område: sm
-Varenummer: 5456454
-Materiale: Test
-Antal: 9 KS på PL
-L: 1200 mm
-B: 600 mm
-T: 50 mm
-Vægt: 10
-Meter: 12
-Areal m²: 7.2
-Anden info: rør skåle 28/20
-nyt felt
-Lager/Område: sym01
-Reol: 01
-Hylde: 02
-Plads: 03
-Kemi: UN1209`;
+    if(boxDef.title === 'Vægt'){
+      const raw = data['Vægt'] ? String(data['Vægt']).trim() : '';
+      // extract number
+      const m = raw.match(/([\d\.,]+)/);
+      let kg = null;
+      if(m) kg = parseFloat(m[1].replace(',','.'));
+      let valueHtml = esc(raw);
+      let cls = '';
+      if(kg !== null && !isNaN(kg)){
+        const info = classifyWeightKg(kg);
+        cls = info.cls;
+        valueHtml = `${kg} kg${info.extra ? esc(info.extra) : ''}`;
+      }
+      const box = renderBox(boxDef.title, `<span class="${cls}">${valueHtml}</span>`);
+      output.appendChild(box);
+      return;
+    }
 
-  parse(simulation);
-};
+    if(boxDef.title === 'Kemi'){
+      const v = data['Kemi'] ? esc(String(data['Kemi'])) : '';
+      // Kemi box with hazard icon aligned to right if unPresent or Kemi contains UN
+      const box = renderKemiBox('Kemi', v || '');
+      // if this Kemi contains UN we will show hazard icon (already included visually)
+      if(unPresent || /\bUN\d+/.test(v)) {
+        // keep the box's icon visible
+        // nothing else needed (icon part of box)
+      } else {
+        // hide the icon (remove it)
+        const icon = box.querySelector('.hazard');
+        if(icon) icon.style.display='none';
+      }
+      output.appendChild(box);
+      return;
+    }
+
+    // default single-field boxes
+    const key = boxDef.keys[0];
+    const val = data[key] ? esc(String(data[key])) : '';
+    const box = renderBox(boxDef.title, val);
+    output.appendChild(box);
+  });
+
+  // enable copy
+  copyBtn.disabled = false;
+}
+
+/* Copy to clipboard */
+copyBtn.addEventListener('click', async ()=>{
+  try{
+    await navigator.clipboard.writeText(output.innerText || '');
+    const prev = copyBtn.textContent;
+    copyBtn.textContent = 'KOPIERET';
+    setTimeout(()=>copyBtn.textContent = prev,700);
+  }catch(e){}
+});
+
+/* jsQR loader */
+function loadJsQR(){
+  return new Promise(res=>{
+    if(window.jsQR) return res();
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+    s.onload = res;
+    document.head.appendChild(s);
+  });
+}
+
+/* Camera helpers */
+async function startCamera(){
+  if(!videoEl){
+    videoEl = document.createElement('video');
+    videoEl.setAttribute('playsinline','true');
+  }
+  if(!canvas){
+    canvas = document.createElement('canvas');
+    ctx = canvas.getContext('2d');
+  }
+
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode: { ideal:'environment' } }, audio:false });
+    videoEl.srcObject = stream;
+    await videoEl.play();
+    const cw = document.getElementById('cameraWrap');
+    cw.innerHTML = '';
+    cw.appendChild(videoEl);
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+function stopCamera(){
+  if(raf) cancelAnimationFrame(raf);
+  if(stream){
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+  if(videoEl){
+    try{ videoEl.pause(); }catch(e){}
+    videoEl.srcObject = null;
+  }
+  document.getElementById('cameraWrap').innerHTML = 'Kamera er slukket';
+}
+
+/* scan loop */
+async function scanLoop(){
+  if(!videoEl || videoEl.readyState !== videoEl.HAVE_ENOUGH_DATA){
+    raf = requestAnimationFrame(scanLoop);
+    return;
+  }
+
+  if(canvas.width !== videoEl.videoWidth){
+    canvas.width = videoEl.videoWidth;
+    canvas.height = videoEl.videoHeight;
+  }
+
+  ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
+  const img = ctx.getImageData(0,0,canvas.width,canvas.height);
+
+  let code = null;
+  if(window.jsQR) code = jsQR(img.data, img.width, img.height);
+
+  if(code && code.data){
+    stopCamera();
+    const parsed = parseRaw(code.data);
+    renderData(parsed);
+    return;
+  }
+
+  raf = requestAnimationFrame(scanLoop);
+}
+
+/* NY SCANNING button handler */
+scanBtn.addEventListener('click', async ()=>{
+  // always clear raw data first
+  clearOutput();
+  // start camera and scanning
+  await loadJsQR();
+  const ok = await startCamera();
+  if(!ok){
+    // fallback demo data
+    const demo = 'Område: Demo\nVarenummer: 12345\nMateriale: DemoMat\nAntal: 2 KS\nLængde: 1000 mm\nBredde: 600 mm\nTykkelse: 10 mm\nVægt: 10\nAreal i m²: 2 m²\nAnden info: Demo tekst linje1\nDemo linje2\nLager/Område: sym01\nReol: 01\nHylde: 02\nPlads: 03\nKemi: UN1234';
+    const parsed = parseRaw(demo);
+    renderData(parsed);
+    return;
+  }
+  scanLoop();
+});
+
+/* stop camera on unload */
+window.addEventListener('beforeunload', stopCamera);
 
 </script>
 </body>
