@@ -2,277 +2,343 @@
 <html lang="da">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Info Scan — v7.3</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Info Scan — v7.4</title>
 
 <style>
   :root{
     --rw-red: #D20014;
-    --text: #111;
+    --text: #111827;
+    --muted: #6b7280;
     --line: #000;
-    --weight-green:#059669;
-    --weight-yellow:#CA8A04;
-    --weight-red:#B91C1C;
-    --un-red:#b91c1c;
+
+    --green: #059669;
+    --yellow: #CA8A04;
+    --red: #B91C1C;
   }
 
   body{
-    font-family: ui-monospace, monospace;
     margin:0;
-    background: var(--rw-red);
-    padding:0;
+    background:var(--rw-red);
+    font-family: Arial, monospace;
+    color:var(--text);
   }
 
-  header{
+  /* TOP BAR --------------------------------------------------- */
+  .top{
     display:flex;
-    justify-content:space-between;
     align-items:center;
-    padding:14px 16px;
-    color:white;
+    justify-content:space-between;
+    padding:16px 18px 10px;
+    background:var(--rw-red);
+    color:#fff;
+  }
+
+  .top-title{
     font-size:20px;
     font-weight:700;
+    line-height:1;
   }
 
-  header img{
-    height:34px;
+  .logo{
+    height:38px;
+    object-fit:contain;
   }
 
-  .wrap{
+  /* LAYOUT ---------------------------------------------------- */
+  .page{
+    padding:16px;
+  }
+
+  .card{
     background:white;
     border-radius:14px;
-    padding:16px;
-    margin:16px;
+    padding:18px;
+    margin-bottom:16px;
   }
 
-  .scannerBox{
-    background:#f1f1f1;
+  /* CAMERA ---------------------------------------------------- */
+  #cameraWrap{
+    background:#f3f4f6;
     height:260px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
     border-radius:12px;
-    margin-bottom:18px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    color:#9ca3af;
+    overflow:hidden;
   }
 
+  #cameraWrap video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+
+  /* BUTTON ---------------------------------------------------- */
   .btn{
     width:100%;
-    height:54px;
-    background:#0d1526;
-    border-radius:10px;
-    border:0;
+    height:56px;
+    background:#111827;
     color:white;
     font-size:20px;
     font-weight:700;
+    border-radius:12px;
+    border:none;
+    margin-top:16px;
     cursor:pointer;
-    margin-bottom:30px;
   }
 
-  .title{
+  /* RAW DATA -------------------------------------------------- */
+  .raw-title{
     font-size:22px;
     font-weight:700;
     margin-bottom:12px;
-    color:#000;
   }
 
-  .dataBox{
-    background:white;
-    border-radius:12px;
-    padding:14px;
-    border:2px solid #000;
-    margin-bottom:14px;
-  }
-
-  .dataBox .head{
+  .cat{
+    font-size:20px;
     font-weight:700;
-    margin-bottom:6px;
-    font-size:19px;
+    margin-top:10px;
   }
 
   .line{
-    width:100%;
-    height:2px;
-    background:black;
-    margin:6px 0 10px 0;
+    border-bottom:2px solid #000;
+    margin:6px 0 10px;
   }
 
-  .row{
+  .value{
     font-size:18px;
-    margin-bottom:6px;
+    white-space:pre-line;
   }
 
-  .weight-green{ color:var(--weight-green); font-weight:700; }
-  .weight-yellow{ color:var(--weight-yellow); font-weight:700; }
-  .weight-red{ color:var(--weight-red); font-weight:700; }
-
-  .un{ color:var(--un-red); font-weight:700; }
+  .w-green{ color:var(--green); font-weight:700; }
+  .w-yellow{ color:var(--yellow); font-weight:700; }
+  .w-red{ color:var(--red); font-weight:700; }
 
   #hazardIcon{
-    width:38px;
+    width:42px;
     position:absolute;
     right:12px;
     bottom:12px;
     display:none;
   }
 
-  .copyBtn{
+  #copyBtn{
     width:100%;
-    height:54px;
+    height:50px;
+    margin-top:16px;
+    border-radius:12px;
+    border:2px solid #ddd;
     background:white;
-    border:2px solid #000;
-    border-radius:10px;
     font-size:20px;
     font-weight:700;
     cursor:pointer;
   }
-
 </style>
 </head>
 
 <body>
 
-<header>
-  <div>Info Scan — v7.3</div>
-  <img src="logo.png" alt="logo">
-</header>
-
-<div class="wrap">
-  <div class="title">Scanner</div>
-
-  <div id="camera" class="scannerBox">Kamera er slukket</div>
-
-  <button id="scanBtn" class="btn">NY SCANNING</button>
+<!-- TOP BAR -->
+<div class="top">
+  <div class="top-title">Info Scan — v7.1.1</div>
+  <img src="logo.png" class="logo" alt="ROCKWOOL logo">
 </div>
 
-<div class="wrap">
-  <div class="title">Rådata</div>
-  <div id="output"></div>
-  <img id="hazardIcon" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCA0MDAgNDAwIiBmaWxsPSJub25lIiBzdHJva2U9IiNkMzJmMmYiIHN0cm9rZS13aWR0aD0iMzUiPjxwb2x5Z29uIHBvaW50cz0iMjAwLDIwIDM4MCwyMDAgMjAwLDM4MCAyMCwyMDAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iMjAwIiBjeT0iMjcwIiByPSIzNSIgZmlsbD0iYmxhY2siLz48cmVjdCB4PSIxODIiIHk9IjkwIiB3aWR0aD0iMzYiIGhlaWdodD0iMTQwIiByeD0iMTgiIGZpbGw9ImJsYWNrIi8+PC9zdmc+" />
-  
-  <button id="copyBtn" class="copyBtn" disabled>KOPIER</button>
+<div class="page">
+
+  <!-- SCANNER -->
+  <div class="card">
+    <div style="font-weight:700;margin-bottom:8px;">Scanner</div>
+    <div id="cameraWrap">Kamera er slukket</div>
+    <button class="btn" id="scanBtn">NY SCANNING</button>
+  </div>
+
+  <!-- RAW DATA -->
+  <div class="card" style="position:relative;">
+    <div class="raw-title">Rådata</div>
+
+    <div id="raw"></div>
+
+    <!-- Hazard icon -->
+    <svg id="hazardIcon" viewBox="0 0 400 400">
+      <polygon points="200,20 380,200 200,380 20,200"
+        fill="white" stroke="#d32f2f" stroke-width="35"/>
+      <circle cx="200" cy="270" r="35" fill="black"/>
+      <rect x="182" y="90" width="36" height="140" rx="18" fill="black"/>
+    </svg>
+
+    <button id="copyBtn">KOPIER</button>
+  </div>
+
 </div>
 
 <script>
 
-function esc(str){
-  return String(str).replace(/[&<>"]/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[m]));
+function esc(s){ return s.replace(/[&<>]/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m])) }
+
+function classifyWeight(kg){
+  if(kg <= 15) return {cls:"w-green", extra:""};
+  if(kg <= 30) return {cls:"w-yellow", extra:" (Pas på når du løfter)"};
+  return {cls:"w-red", extra:" (Brug hjælpe værktøj til løft)"};
 }
 
-function colorWeight(val){
-  let kg = parseFloat(val.replace("kg","").trim());
-  if(isNaN(kg)) return val;
-  if(kg <= 15) return `<span class="weight-green">${kg} kg</span>`;
-  if(kg <= 30) return `<span class="weight-yellow">${kg} kg (Pas på når du løfter)</span>`;
-  return `<span class="weight-red">${kg} kg (Brug hjælpe værktøj til løft)</span>`;
+function clearRaw(){
+  raw.innerHTML="";
+  hazardIcon.style.display="none";
+  copyBtn.disabled=true;
 }
 
-function highlightUN(str){
-  return str.replace(/\bUN\d+(?:,\d+)*\b/g, m=>`<span class="un">${m}</span>`);
+function drawLine(cat, value, cls=""){
+  raw.insertAdjacentHTML("beforeend", `
+    <div class="cat">${cat}</div>
+    <div class="line"></div>
+    <div class="value ${cls}">${value}</div>
+  `);
 }
 
-function makeBox(title, rows){
-  let html = `<div class="dataBox"><div class="head">${title}</div><div class="line"></div>`;
-  rows.forEach(r=> html += `<div class="row">${r}</div>`);
-  html += `</div>`;
-  return html;
+function parse(rawText){
+  clearRaw();
+
+  const lines = rawText.split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
+  let data = {};
+  let andenInfo = [];
+
+  let inAnden = false;
+
+  lines.forEach(line=>{
+    if(/^Anden info/i.test(line)){
+      inAnden = true;
+      const p = line.split(":");
+      if(p[1]) andenInfo.push(p[1].trim());
+      return;
+    }
+
+    if(inAnden){
+      if(/^[A-Za-z].*?:/.test(line)){
+        inAnden = false;
+        // reprocess
+        const p=line.split(":");
+        data[p[0].trim()] = p.slice(1).join(":").trim();
+      } else {
+        andenInfo.push(line);
+      }
+      return;
+    }
+
+    const p=line.split(":");
+    if(p.length>=2) data[p[0].trim()] = p.slice(1).join(":").trim();
+  });
+
+  if(andenInfo.length) data["Anden info"] = andenInfo.join("\n");
+
+  let unFound = false;
+  Object.values(data).forEach(v=>{
+    if(/\bUN\d+/.test(v)) unFound = true;
+  });
+
+  if(unFound) hazardIcon.style.display="block";
+
+  // ORDER — *Plads flyttet ind i Lagerplads gruppen*
+  const order = [
+    "Område","Varenummer","Materiale","Antal",
+    "L","B","T","Vægt","Meter","Areal m²",
+    "Anden info",
+    "Lager/Område","Reol","Hylde","Plads",
+    "Kemi"
+  ];
+
+  function renderCategory(cat){
+    if(!(cat in data)) return;
+    let value = esc(data[cat]);
+
+    if(cat==="Vægt"){
+      let kg=parseFloat(value.replace(",","."));
+      if(!isNaN(kg)){
+        const info=classifyWeight(kg);
+        value = `${kg} kg${esc(info.extra)}`;
+        drawLine(cat, value, info.cls);
+        return;
+      }
+    }
+
+    drawLine(cat, value);
+  }
+
+  // Main fields
+  ["Område","Varenummer","Materiale","Antal"].forEach(renderCategory);
+
+  // Mål-gruppen
+  let mål = [];
+  if("L" in data) mål.push("L: "+esc(data.L));
+  if("B" in data) mål.push("B: "+esc(data.B));
+  if("T" in data) mål.push("T: "+esc(data.T));
+  if(mål.length){
+    drawLine("Mål", mål.join("\n"));
+  }
+
+  // Vægt
+  renderCategory("Vægt");
+  // Meter
+  renderCategory("Meter");
+  // Areal
+  renderCategory("Areal m²");
+  // Anden info
+  if("Anden info" in data){
+    drawLine("Anden info", esc(data["Anden info"]));
+  }
+
+  // Lagerplads-gruppe — *Plads integreret her*
+  let lp = [];
+  ["Lager/Område","Reol","Hylde","Plads"].forEach(k=>{
+    if(k in data){
+      lp.push(`${k}: ${esc(data[k])}`);
+    }
+  });
+  if(lp.length){
+    drawLine("Lagerplads", lp.join("\n"));
+  }
+
+  // Kemi
+  if("Kemi" in data){
+    drawLine("Kemi", esc(data["Kemi"]));
+  }
+
+  copyBtn.disabled=false;
 }
 
-document.getElementById("scanBtn").onclick = ()=>{
-  startScan();
+/* Copy */
+copyBtn.onclick = ()=>{
+  navigator.clipboard.writeText(raw.innerText);
 };
 
-document.getElementById("copyBtn").onclick = ()=>{
-  const text = document.getElementById("output").innerText;
-  navigator.clipboard.writeText(text);
-};
+/* Scan button → Simulated test for now */
+scanBtn.onclick = ()=>{
+  clearRaw();
 
-function startScan(){
-  // DEMO DATA – VIRKER MED KAMERA PÅ DIN SIDE
-  const raw = `
+  // Simulated input (kamera virker når du hoster)
+  const simulation = `
 Område: sm
 Varenummer: 5456454
-Materiale: TEST
+Materiale: Test
 Antal: 9 KS på PL
-Længde: 1000 mm
-Bredde: 6000 mm
-Vægt: 10 kg
-Areal i m²: 25 m²
+L: 1200 mm
+B: 600 mm
+T: 50 mm
+Vægt: 10
+Meter: 12
+Areal m²: 7.2
 Anden info: rør skåle 28/20
-htyryyt
-Lagerplads: 
+nyt felt
 Lager/Område: sym01
 Reol: 01
 Hylde: 02
 Plads: 03
-Kemi: UN78`;
+Kemi: UN1209`;
 
-  renderScan(raw);
-}
-
-function renderScan(raw){
-  const out = document.getElementById("output");
-  out.innerHTML = "";
-  document.getElementById("copyBtn").disabled = false;
-
-  let lines = raw.split("\n").map(l=>l.trim()).filter(l=>l !== "");
-
-  let data = {};
-
-  lines.forEach(l=>{
-    let p = l.split(":");
-    if(p.length >= 2){
-      let key = p[0].trim();
-      let val = p.slice(1).join(":").trim();
-      if(data[key]) data[key] += "\n" + val;
-      else data[key] = val;
-    }
-  });
-
-  let boxes = [
-
-    { title:"Område", keys:["Område"] },
-    { title:"Varenummer", keys:["Varenummer"] },
-    { title:"Materiale", keys:["Materiale"] },
-    { title:"Antal", keys:["Antal"] },
-
-    { title:"Mål", keys:["Længde","Bredde","Tykkelse"] },
-
-    { title:"Vægt", keys:["Vægt"] },
-
-    { title:"Areal i m²", keys:["Areal i m²"] },
-
-    { title:"Anden info", keys:["Anden info"] },
-
-    { title:"Lagerplads", keys:["Lagerplads","Lager/Område","Reol","Hylde","Plads"] },
-
-    { title:"Kemi", keys:["Kemi"] }
-
-  ];
-
-  let hazard = false;
-
-  boxes.forEach(box=>{
-    let rows = [];
-
-    box.keys.forEach(k=>{
-      if(data[k]){
-        let val = esc(data[k]);
-
-        if(k === "Vægt") val = colorWeight(val);
-        val = highlightUN(val);
-
-        rows.push(`${k}: ${val}`);
-
-        if(k === "Kemi" && val.includes("UN")) hazard = true;
-      }
-    });
-
-    if(rows.length){
-      out.innerHTML += makeBox(box.title, rows);
-    }
-  });
-
-  document.getElementById("hazardIcon").style.display = hazard ? "block" : "none";
-}
+  parse(simulation);
+};
 
 </script>
 </body>
