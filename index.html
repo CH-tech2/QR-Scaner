@@ -383,6 +383,31 @@ async function startCamera(){
   try{
     stream = await navigator.mediaDevices.getUserMedia(constraints);
 
+    const constraints = {
+  video: {
+    facingMode: "environment",
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+    focusMode: "continuous",
+    advanced: [
+      { zoom: 1.0 },       // MINIMUM zoom → kan scanne tæt på
+      { focusMode: "macro" } // Giver bedre nær-fokus på små QR-koder
+    ]
+  }
+};
+navigator.mediaDevices.getUserMedia(constraints)
+  .then(stream => {
+    video.srcObject = stream;
+
+    // Nogle Android-telefoner understøtter manuel zoom
+    const track = stream.getVideoTracks()[0];
+    const capabilities = track.getCapabilities();
+
+    if (capabilities.zoom) {
+      track.applyConstraints({ advanced: [{ zoom: capabilities.zoom.min }] });
+    }
+  });
+
     // try to set continuous focus and max zoom where supported
     try{
       const track = stream.getVideoTracks()[0];
