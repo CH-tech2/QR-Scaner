@@ -1,9 +1,10 @@
+
 <!doctype html>
 <html lang="da">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Info Scan — v8.6</title>
+<title>Info Scan — v7.9</title>
 <style>
   :root{
     --rw-red:#D20014;
@@ -15,7 +16,6 @@
     --red:#B91C1C;
   }
 
-  /* page */
   body{
     margin:0;
     padding:12px;
@@ -24,7 +24,6 @@
     color:var(--text);
   }
 
-  /* topbar: title left, logo right */
   .topbar{
     display:flex;
     justify-content:space-between;
@@ -38,7 +37,7 @@
     font-size:20px;
   }
   .logo{
-    height:70px; /* A-size */
+    height:70px;
     width:auto;
     display:block;
   }
@@ -60,11 +59,11 @@
     color:#9ca3af;
     overflow:hidden;
   }
-  /* ensure no accidental iOS mirror and visual layout preserved */
+
   #cameraWrap video{
     width:100%;
     height:100%;
-    object-fit:cover; /* important to preserve iPhone behavior & design */
+    object-fit:cover;
     transform:none !important;
     -webkit-transform:none !important;
   }
@@ -137,18 +136,16 @@
 <body>
 
 <div class="topbar">
-  <div class="topTitle">Info Scan — v8.6</div>
+  <div class="topTitle">Info Scan — v7.9</div>
   <img class="logo" src="logo.png" alt="ROCKWOOL logo" onerror="this.style.display='none'"/>
 </div>
 
-<!-- Scanner card -->
 <div class="card">
   <div style="font-weight:700;margin-bottom:8px;">Scanner</div>
   <div id="cameraWrap">Kamera er slukket</div>
   <button id="scanBtn" class="btn">NY SCANNING</button>
 </div>
 
-<!-- Raw data -->
 <div class="card" style="position:relative;">
   <div style="font-weight:700;margin-bottom:10px;font-size:18px;">Rådata</div>
   <div id="output"></div>
@@ -156,14 +153,6 @@
 </div>
 
 <script>
-/* Info Scan v8.6
-   - Beholder layout/design fra v7.9
-   - Kamera-fix: scanne fra rå stream for Android + iPhone kompatibilitet
-   - Fjerner første linje i Lagerplads-udskrivning
-   - Indlæser jsQR dynamisk
-*/
-
-/* Elements */
 const scanBtn = document.getElementById('scanBtn');
 const output  = document.getElementById('output');
 const copyBtn = document.getElementById('copyBtn');
@@ -175,7 +164,6 @@ let ctx = null;
 let stream = null;
 let raf = null;
 
-/* Utility */
 function esc(s){ return String(s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
 function classifyWeight(kg){
   if(kg <= 15) return {cls:'w-green', extra:''};
@@ -183,64 +171,44 @@ function classifyWeight(kg){
   return {cls:'w-red', extra:' (Brug hjælpe værktøj til løft)'};
 }
 function enableCopy(enable){ copyBtn.disabled = !enable; }
+function clearOutput(){ output.innerHTML = ''; enableCopy(false); }
 
-/* Clear output */
-function clearOutput(){
-  output.innerHTML = '';
-  enableCopy(false);
-}
-
-/* parser (same stable logic as v7.7) */
 function parseRaw(raw){
   const lines = String(raw||"").split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
   const data = {};
   let collecting=false;
   let andenArr=[];
-
   const known = ['Område','Varenummer','Materiale','Antal','Længde','Bredde','Tykkelse','Vægt',
                  'Areal i m²','Anden info','Lagerplads','Lager/Område','Reol','Hylde','Plads','Kemi','Meter'];
-
   for(let i=0;i<lines.length;i++){
     const line = lines[i];
-
     if(/^Anden info/i.test(line)){
       collecting = true;
       const parts=line.split(':');
       if(parts.length>1) andenArr.push(parts.slice(1).join(':').trim());
       continue;
     }
-
     if(collecting){
       if(/^[A-Za-z].*?:/.test(line)){
         const maybeKey = line.split(':')[0].trim();
-        if(known.includes(maybeKey)){
-          collecting = false;
-          i--; // reprocess this line as a key
-          continue;
-        }
+        if(known.includes(maybeKey)){ collecting = false; i--; continue; }
       }
       andenArr.push(line);
       continue;
     }
-
     if(line.includes(':')){
       const parts=line.split(':');
       data[parts[0].trim()] = parts.slice(1).join(':').trim();
     } else {
-      // append to last key if exists
       const lastKey = Object.keys(data).slice(-1)[0];
-      if(lastKey){
-        data[lastKey] = (data[lastKey] + '\n' + line).trim();
-      } else {
-        data['_extra'] = (data['_extra'] ? data['_extra'] + '\n' : '') + line;
-      }
+      if(lastKey){ data[lastKey] = (data[lastKey] + '\n' + line).trim(); }
+      else { data['_extra'] = (data['_extra'] ? data['_extra'] + '\n' : '') + line; }
     }
   }
   if(andenArr.length) data['Anden info'] = andenArr.join('\n');
   return data;
 }
 
-/* rendering identical to previous stable but with Lagerplads first-line removed */
 function makeBox(title, valueHtml){
   const d = document.createElement('div');
   d.className = 'box';
@@ -257,7 +225,7 @@ function makeKemiBox(title, valueHtml, showHazard){
         <polygon points="200,20 380,200 200,380 20,200" fill="white" stroke="#d32f2f" stroke-width="35"/>
         <circle cx="200" cy="270" r="35" fill="black"/>
         <rect x="182" y="90" width="36" height="140" rx="18" fill="black"/>
-      </svg>` : ''}
+      </svg>` : '' }
     </div>`;
   return d;
 }
@@ -276,21 +244,17 @@ function renderData(data){
     {title:'Lagerplads', keys:['Lagerplads','Lager/Område','Reol','Hylde','Plads']},
     {title:'Kemi', keys:['Kemi']}
   ];
-
   let unFound = false;
   Object.values(data).forEach(v => { if(/\bUN\d+/.test(v)) unFound = true; });
-
   boxes.forEach(box => {
     const present = box.keys.filter(k => (k in data) && String(data[k]).trim() !== '');
     if(!present.length) return;
-
     if(box.title === 'Mål'){
       const arr = [];
       ['Længde','Bredde','Tykkelse'].forEach(k => { if(k in data) arr.push(`${k}: ${esc(data[k])}`); });
       output.appendChild(makeBox(box.title, arr.join('\n')));
       return;
     }
-
     if(box.title === 'Vægt'){
       const raw = data['Vægt'] ? String(data['Vægt']).trim() : '';
       const m = raw.match(/([\d\.,]+)/);
@@ -305,35 +269,27 @@ function renderData(data){
       output.appendChild(makeBox(box.title, `<span class="${cls}">${txt}</span>`));
       return;
     }
-
     if(box.title === 'Anden info'){
       output.appendChild(makeBox(box.title, esc(data['Anden info'] || '')));
       return;
     }
-
     if(box.title === 'Lagerplads'){
-      // Show values only (without repeating the key as first line)
       const arr = [];
-      ['Lagerplads','Lager/Område','Reol','Hylde','Plads'].forEach(k => { if(k in data) arr.push(esc(data[k])); });
+      ['Lagerplads','Lager/Område','Reol','Hylde','Plads'].forEach(k => { if(k in data) arr.push(`${k}: ${esc(data[k])}`); });
       output.appendChild(makeBox(box.title, arr.join('\n')));
       return;
     }
-
     if(box.title === 'Kemi'){
       const v = esc(data['Kemi'] || '');
       output.appendChild(makeKemiBox('Kemi', v, unFound || /\bUN\d+/.test(v)));
       return;
     }
-
-    // default single field
     const key = present[0];
     output.appendChild(makeBox(box.title, esc(data[key])));
   });
-
   enableCopy(true);
 }
 
-/* COPY */
 copyBtn.addEventListener('click', async () => {
   try{
     await navigator.clipboard.writeText(output.innerText || '');
@@ -343,38 +299,27 @@ copyBtn.addEventListener('click', async () => {
   }catch(e){}
 });
 
-/* --- JSQR loader --- */
 function loadJsQR(){
   return new Promise(res=>{
     if(window.jsQR) return res();
     const s = document.createElement('script');
     s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
     s.onload = res;
-    s.onerror = res; // resolve anyway; fallback handled
+    s.onerror = res;
     document.head.appendChild(s);
   });
 }
 
-/* --- CAMERA IMPROVEMENTS FOR ANDROID + IPHONE --- */
 async function startCamera(){
   clearOutput();
+  if(!videoEl){ videoEl = document.createElement('video'); videoEl.setAttribute('playsinline','true'); }
+  if(!canvas){ canvas = document.createElement('canvas'); ctx = canvas.getContext('2d', { willReadFrequently: true }); }
 
-  if(!videoEl){
-    videoEl = document.createElement('video');
-    videoEl.setAttribute('playsinline','true');
-  }
-  if(!canvas){
-    canvas = document.createElement('canvas');
-    // willReadFrequently helps browsers optimize readPixels
-    ctx = canvas.getContext('2d', { willReadFrequently: true });
-  }
-
-  // flexible constraints to maximize compatibility
   const constraints = {
     video: {
       facingMode: { ideal: "environment" },
-      width: { min:640, ideal:1280, max:1920 },
-      height: { min:480, ideal:720, max:1080 }
+      width: { ideal: 1920 },
+      height: { ideal: 1080 }
     },
     audio: false
   };
@@ -382,7 +327,6 @@ async function startCamera(){
   try{
     stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-    // try to set continuous focus but DO NOT force zoom
     try{
       const track = stream.getVideoTracks()[0];
       const caps = track.getCapabilities ? track.getCapabilities() : {};
@@ -391,9 +335,15 @@ async function startCamera(){
       if(caps.focusMode && caps.focusMode.includes('continuous')){
         adv.push({ focusMode: 'continuous' });
       }
-      // intentionally do NOT set zoom here
-      if(adv.length) track.applyConstraints({ advanced: adv }).catch(()=>{ /* ignore */ });
-    }catch(e){ /* ignore capability errors */ }
+
+      // moderat zoom, så små QR-koder kan læses
+      if(caps.zoom){
+        const z = Math.min(1.2, caps.zoom.max || 1);
+        adv.push({ zoom: z });
+      }
+
+      if(adv.length) track.applyConstraints({ advanced: adv }).catch(()=>{});
+    }catch(e){}
 
     videoEl.srcObject = stream;
     await videoEl.play();
@@ -411,83 +361,53 @@ async function startCamera(){
 function stopCamera(){
   if(raf) cancelAnimationFrame(raf);
   raf = null;
-  if(stream){
-    stream.getTracks().forEach(t => t.stop());
-    stream = null;
-  }
-  if(videoEl){
-    try{ videoEl.pause(); }catch(e){}
-    videoEl.srcObject = null;
-  }
+  if(stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
+  if(videoEl){ try{ videoEl.pause(); }catch(e){} videoEl.srcObject = null; }
   cameraWrap.innerHTML = 'Kamera er slukket';
 }
 
-/* Optimized scanLoop that reads from the raw camera resolution (fixes Android cropping issue) */
 async function scanLoop(){
   if(!videoEl || videoEl.readyState !== videoEl.HAVE_ENOUGH_DATA){
     raf = requestAnimationFrame(scanLoop);
     return;
   }
 
-  // Determine raw capture size — prefer track settings, fall back to video dims
-  let capW = (stream && stream.getVideoTracks && stream.getVideoTracks()[0] && stream.getVideoTracks()[0].getSettings && stream.getVideoTracks()[0].getSettings().width) || videoEl.videoWidth || 1280;
-  let capH = (stream && stream.getVideoTracks && stream.getVideoTracks()[0] && stream.getVideoTracks()[0].getSettings && stream.getVideoTracks()[0].getSettings().height) || videoEl.videoHeight || 720;
-
-  // ensure canvas matches capture size
-  if(canvas.width !== capW || canvas.height !== capH){
-    canvas.width = capW;
-    canvas.height = capH;
+  if(canvas.width !== videoEl.videoWidth){
+    canvas.width = videoEl.videoWidth;
+    canvas.height = videoEl.videoHeight;
   }
 
   try{
-    // draw full raw frame (not the CSS-cropped presentation)
-    ctx.drawImage(videoEl, 0, 0, capW, capH);
-  }catch(e){
-    // fallback to drawing with video dimensions
+    ctx.filter = 'contrast(170%) brightness(105%)';
     ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-  }
+    ctx.filter = 'none';
+  }catch(e){ ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height); }
 
-  // read pixels
   let img;
-  try{
-    img = ctx.getImageData(0,0,canvas.width,canvas.height);
-  }catch(e){
-    // some browsers restrict getImageData while video is playing; skip frame
-    raf = requestAnimationFrame(scanLoop);
-    return;
-  }
+  try{ img = ctx.getImageData(0,0,canvas.width,canvas.height); }
+  catch(e){ raf = requestAnimationFrame(scanLoop); return; }
 
   let code = null;
   if(window.jsQR){
-    try{
-      code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'attemptBoth' });
-    }catch(e){
-      code = jsQR(img.data, img.width, img.height);
-    }
+    try{ code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'attemptBoth' }); }
+    catch(e){ code = jsQR(img.data, img.width, img.height); }
   }
 
   if(code && code.data){
     stopCamera();
-    const parsed = parseRaw(code.data);
-    renderData(parsed);
+    renderData(parseRaw(code.data));
     return;
   }
 
-  // continue scanning as fast as possible
   raf = requestAnimationFrame(scanLoop);
 }
 
-/* --- BUTTON HANDLER --- */
 scanBtn.addEventListener('click', async () => {
-  // clear previous data immediately (user wanted this)
   clearOutput();
   cameraWrap.innerHTML = 'Starter kamera…';
-
-  await loadJsQR(); // load library if not present
+  await loadJsQR();
   const ok = await startCamera();
-
   if(!ok){
-    // fallback demo if camera unavailable (still clears)
     const demo = `Område: Demo
 Varenummer: 12345
 Materiale: DemoMat
@@ -507,23 +427,10 @@ Kemi: UN1209`;
     renderData(parseRaw(demo));
     return;
   }
-
-  // begin scanning loop
   scanLoop();
 });
 
-/* cleanup on page unload */
 window.addEventListener('beforeunload', stopCamera);
-
-/* make copy button safe even if not supported */
-copyBtn.addEventListener('click', async ()=>{
-  try{
-    await navigator.clipboard.writeText(output.innerText || '');
-    const prev = copyBtn.textContent;
-    copyBtn.textContent = 'KOPIERET';
-    setTimeout(()=>copyBtn.textContent = prev,700);
-  }catch(e){}
-});
 </script>
 </body>
 </html>
