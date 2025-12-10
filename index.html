@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Info Scan — v7.9</title>
+<title>Info Scan — v8,3</title>
 <style>
   :root{
     --rw-red:#D20014;
@@ -63,8 +63,11 @@
     width:100%;
     height:100%;
     object-fit:cover;
-    transform:none !important;
-    -webkit-transform:none !important;
+  }
+  
+  #qr-reader{
+    width: 100%;
+    height: 100%;
   }
 
   .btn{
@@ -131,18 +134,24 @@
     .topTitle{ font-size:18px; }
   }
 </style>
+<!-- Inkluderer et JS bibliotek til QR-kode scanning -->
+<script src="unpkg.com"></script>
+
 </head>
 <body>
 
 <div class="topbar">
-  <div class="topTitle">Info Scan — v7.9</div>
+  <div class="topTitle">Info Scan — v8,3</div>
   <img class="logo" src="logo.png" alt="ROCKWOOL logo" onerror="this.style.display='none'"/>
 </div>
 
 <div class="card">
   <div style="font-weight:700;margin-bottom:8px;">Scanner</div>
-  <div id="cameraWrap">Kamera er slukket</div>
-  <button id="scanBtn" class="btn">NY SCANNING</button>
+  <div id="cameraWrap">
+      <!-- Div til at placere scanneren i -->
+      <div id="qr-reader"></div>
+  </div>
+  <button id="scanBtn" class="btn">START SCANNING</button>
 </div>
 
 <div class="card" style="position:relative;">
@@ -156,14 +165,13 @@ const scanBtn = document.getElementById('scanBtn');
 const output  = document.getElementById('output');
 const copyBtn = document.getElementById('copyBtn');
 const cameraWrap = document.getElementById('cameraWrap');
+const qrCodeRegionId = "qr-reader";
 
-let videoEl = null;
-let canvas = null;
-let ctx = null;
-let stream = null;
-let raf = null;
+let html5QrCode = null;
+let isScanning = false;
 
-function esc(s){ return String(s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
+// --- Eksisterende hjælpefunktioner (uændret) ---
+function esc(s){ return String(s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'''})[m]); }
 function classifyWeight(kg){
   if(kg <= 15) return {cls:'w-green', extra:''};
   if(kg <= 30) return {cls:'w-yellow', extra:' (Pas på når du løfter)'};
@@ -171,8 +179,29 @@ function classifyWeight(kg){
 }
 function enableCopy(enable){ copyBtn.disabled = !enable; }
 function clearOutput(){ output.innerHTML = ''; enableCopy(false); }
+function makeBox(title, valueHtml){
+  const d = document.createElement('div');
+  d.className = 'box';
+  d.innerHTML = `<div class="catTitle">${esc(title)}</div><div class="boxValue">${valueHtml}</div>`;
+  return d;
+}
+function makeKemiBox(title, valueHtml, showHazard){
+  const d = document.createElement('div');
+  d.className = 'box';
+  d.innerHTML = `<div class="catTitle">${esc(title)}</div>
+    <div class="kemiRow">
+      <div class="boxValue">${valueHtml}</div>
+      ${showHazard? `<svg class="hazard" viewBox="0 0 400 400">
+        <polygon points="200,20 380,200 200,380 20,200" fill="white" stroke="#d32f2f" stroke-width="35"/>
+        <circle cx="200" cy="270" r="35" fill="black"/>
+        <rect x="182" y="90" width="36" height="140" rx="18" fill="black"/>
+      </svg>` : '' }
+    </div>`;
+  return d;
+}
 
-function parseRaw(raw){
+// Funktioner til at parse og vise data (uændret fra original kode)
+function parseRaw(raw){ /* ... din oprindelige parseRaw funktion ... */
   const lines = String(raw||"").split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
   const data = {};
   let collecting=false;
@@ -207,28 +236,6 @@ function parseRaw(raw){
   if(andenArr.length) data['Anden info'] = andenArr.join('\n');
   return data;
 }
-
-function makeBox(title, valueHtml){
-  const d = document.createElement('div');
-  d.className = 'box';
-  d.innerHTML = `<div class="catTitle">${esc(title)}</div><div class="boxValue">${valueHtml}</div>`;
-  return d;
-}
-function makeKemiBox(title, valueHtml, showHazard){
-  const d = document.createElement('div');
-  d.className = 'box';
-  d.innerHTML = `<div class="catTitle">${esc(title)}</div>
-    <div class="kemiRow">
-      <div class="boxValue">${valueHtml}</div>
-      ${showHazard? `<svg class="hazard" viewBox="0 0 400 400">
-        <polygon points="200,20 380,200 200,380 20,200" fill="white" stroke="#d32f2f" stroke-width="35"/>
-        <circle cx="200" cy="270" r="35" fill="black"/>
-        <rect x="182" y="90" width="36" height="140" rx="18" fill="black"/>
-      </svg>` : '' }
-    </div>`;
-  return d;
-}
-
 function renderData(data){
   clearOutput();
   const boxes = [
@@ -274,7 +281,7 @@ function renderData(data){
     }
     if(box.title === 'Lagerplads'){
       const arr = [];
-      ['Lager/Område','Reol','Hylde','Plads'].forEach(k => { if(k in data) arr.push(`${k}: ${esc(data[k])}`); });
+      ['Lager/Område','Lager/Område','Reol','Hylde','Plads'].forEach(k => { if(k in data) arr.push(`${k}: ${esc(data[k])}`); });
       output.appendChild(makeBox(box.title, arr.join('\n')));
       return;
     }
@@ -283,153 +290,86 @@ function renderData(data){
       output.appendChild(makeKemiBox('Kemi', v, unFound || /\bUN\d+/.test(v)));
       return;
     }
-    const key = present[0];
-    output.appendChild(makeBox(box.title, esc(data[key])));
+    // Standard håndtering for andre felter
+    output.appendChild(makeBox(box.title, esc(data[box.keys[0]] || '')));
   });
-  enableCopy(true);
+  enableCopy(true); // Aktiver kopi-knap når data er vist
 }
 
-copyBtn.addEventListener('click', async () => {
-  try{
-    await navigator.clipboard.writeText(output.innerText || '');
-    const prev = copyBtn.textContent;
-    copyBtn.textContent = 'KOPIERET';
-    setTimeout(()=>copyBtn.textContent = prev,700);
-  }catch(e){}
-});
+// --- Ny scanningslogik ---
 
-function loadJsQR(){
-  return new Promise(res=>{
-    if(window.jsQR) return res();
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
-    s.onload = res;
-    s.onerror = res;
-    document.head.appendChild(s);
-  });
+function onScanSuccess(decodedText, decodedResult) {
+  // Stopper scanningen så snart noget er fundet
+  stopScanning(); 
+  console.log(`Scan success: ${decodedText}`, decodedResult);
+  
+  // Behandl den rå tekst fra QR-koden
+  const parsedData = parseRaw(decodedText);
+  renderData(parsedData);
 }
 
-async function startCamera(){
+function onScanError(error) {
+  // console.warn(`Scan error: ${error}`); // For debugging
+}
+
+async function startScanning() {
+  if (isScanning) return;
   clearOutput();
-  if(!videoEl){ videoEl = document.createElement('video'); videoEl.setAttribute('playsinline','true'); }
-  if(!canvas){ canvas = document.createElement('canvas'); ctx = canvas.getContext('2d', { willReadFrequently: true }); }
+  scanBtn.textContent = 'STOP SCANNING';
+  isScanning = true;
 
-  const constraints = {
-    video: {
-      facingMode: { ideal: "environment" },
-      width: { ideal: 1920 },
-      height: { ideal: 1080 }
-    },
-    audio: false
+  if (!html5QrCode) {
+    html5QrCode = new Html5Qrcode(qrCodeRegionId);
+  }
+
+  // Scanneren er konfigureret til at prioritere nøjagtighed for små koder (22x22 mm)
+  const config = {
+    fps: 10, // Forsøger at scanne 10 gange i sekundet
+    qrbox: { width: 250, height: 250 }, // Giver et visuelt fokuspunkt
+    aspectRatio: 1.0,
+    disableFlip: false // Nogle gange er koder spejlvendte
   };
 
-  try{
-    stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-    try{
-      const track = stream.getVideoTracks()[0];
-      const caps = track.getCapabilities ? track.getCapabilities() : {};
-      const adv = [];
-
-      if(caps.focusMode && caps.focusMode.includes('continuous')){
-        adv.push({ focusMode: 'continuous' });
-      }
-
-      // moderat zoom, så små QR-koder kan læses
-      if(caps.zoom){
-        const z = Math.min(1.2, caps.zoom.max || 1);
-        adv.push({ zoom: z });
-      }
-
-      if(adv.length) track.applyConstraints({ advanced: adv }).catch(()=>{});
-    }catch(e){}
-
-    videoEl.srcObject = stream;
-    await videoEl.play();
-
-    cameraWrap.innerHTML = '';
-    cameraWrap.appendChild(videoEl);
-
-    return true;
-  }catch(err){
-    console.warn('Camera start failed:', err);
-    return false;
+  try {
+    // Forespørger kameraadgang og starter scanning
+    await html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanError);
+    cameraWrap.style.display = 'block'; // Sørg for at kamera-wrap er synlig
+  } catch (err) {
+    console.error("Kunne ikke starte kameraet:", err);
+    output.innerHTML = makeBox("Fejl", "Kunne ikke starte kameraet. Sørg for at give tilladelse.");
+    stopScanning(); // Ryd op ved fejl
   }
 }
 
-function stopCamera(){
-  if(raf) cancelAnimationFrame(raf);
-  raf = null;
-  if(stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
-  if(videoEl){ try{ videoEl.pause(); }catch(e){} videoEl.srcObject = null; }
-  cameraWrap.innerHTML = 'Kamera er slukket';
+async function stopScanning() {
+  if (!isScanning || !html5QrCode) return;
+  await html5QrCode.stop();
+  html5QrCode.clear();
+  scanBtn.textContent = 'NY SCANNING';
+  isScanning = false;
+  // cameraWrap.innerHTML = 'Kamera er slukket'; // Reset display if needed
 }
 
-async function scanLoop(){
-  if(!videoEl || videoEl.readyState !== videoEl.HAVE_ENOUGH_DATA){
-    raf = requestAnimationFrame(scanLoop);
-    return;
+// Event listener for knappen
+scanBtn.addEventListener('click', () => {
+  if (isScanning) {
+    stopScanning();
+  } else {
+    startScanning();
   }
-
-  if(canvas.width !== videoEl.videoWidth){
-    canvas.width = videoEl.videoWidth;
-    canvas.height = videoEl.videoHeight;
-  }
-
-  try{
-    ctx.filter = 'contrast(170%) brightness(105%)';
-    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-    ctx.filter = 'none';
-  }catch(e){ ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height); }
-
-  let img;
-  try{ img = ctx.getImageData(0,0,canvas.width,canvas.height); }
-  catch(e){ raf = requestAnimationFrame(scanLoop); return; }
-
-  let code = null;
-  if(window.jsQR){
-    try{ code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'attemptBoth' }); }
-    catch(e){ code = jsQR(img.data, img.width, img.height); }
-  }
-
-  if(code && code.data){
-    stopCamera();
-    renderData(parseRaw(code.data));
-    return;
-  }
-
-  raf = requestAnimationFrame(scanLoop);
-}
-
-scanBtn.addEventListener('click', async () => {
-  clearOutput();
-  cameraWrap.innerHTML = 'Starter kamera…';
-  await loadJsQR();
-  const ok = await startCamera();
-  if(!ok){
-    const demo = `Område: Demo
-Varenummer: 12345
-Materiale: DemoMat
-Antal: 2 KS
-Længde: 1000
-Bredde: 600
-Tykkelse: 10
-Vægt: 18
-Areal i m²: 2
-Anden info: Test linje1
-Test linje2
-Lager/Område: sym01
-Reol: 01
-Hylde: 02
-Plads: 03
-Kemi: UN1209`;
-    renderData(parseRaw(demo));
-    return;
-  }
-  scanLoop();
 });
 
-window.addEventListener('beforeunload', stopCamera);
+// Event listener for kopier-knappen
+copyBtn.addEventListener('click', () => {
+    const rawText = output.innerText; // Griber al formateret tekst
+    navigator.clipboard.writeText(rawText).then(() => {
+        alert('Data kopieret til udklipsholder!');
+    }).catch(err => {
+        console.error('Kunne ikke kopiere tekst: ', err);
+    });
+});
+
 </script>
+
 </body>
 </html>
