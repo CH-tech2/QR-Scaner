@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Info Scan — v8.4</title>
+<title>Info Scan — v8.5</title>
 <style>
   :root{
     --rw-red:#D20014;
@@ -143,7 +143,7 @@
 <body>
 
 <div class="topbar">
-  <div class="topTitle">Info Scan — v8.4</div>
+  <div class="topTitle">Info Scan — v8.5</div>
   <img class="logo" src="logo.png" alt="ROCKWOOL logo" onerror="this.style.display='none'"/>
 </div>
 
@@ -201,11 +201,11 @@ function makeKemiBox(title, valueHtml, showHazard){
 }
 
 function parseRaw(raw){
+  console.log("Parsing raw data:", raw); // Debugging
   const lines = String(raw||"").split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
   const data = {};
   let collecting=false;
   let andenArr=[];
-  // Fjernet 'Lagerplads' fra known-listen for at forhindre dobbelt opsamling senere
   const known = ['Område','Varenummer','Materiale','Antal','Længde','Bredde','Tykkelse','Vægt',
                  'Areal i m²','Anden info','Lager/Område','Reol','Hylde','Plads','Kemi','Meter'];
   for(let i=0;i<lines.length;i++){
@@ -218,7 +218,7 @@ function parseRaw(raw){
     }
     if(collecting){
       if(/^[A-Za-z].*?:/.test(line)){
-        const maybeKey = line.split(':')[0].trim(); // Fixed index error
+        const maybeKey = line.split(':')[0].trim(); // Fixed index logic
         if(known.includes(maybeKey)){ collecting = false; i--; continue; }
       }
       andenArr.push(line);
@@ -226,17 +226,20 @@ function parseRaw(raw){
     }
     if(line.includes(':')){
       const parts=line.split(':');
-      data[parts[0].trim()] = parts.slice(1).join(':').trim(); // Fixed index error
+      data[parts[0].trim()] = parts.slice(1).join(':').trim(); // Fixed index logic
     } else {
-      const lastKey = Object.keys(data).slice(-1)[0]; // Fixed index error
+      const lastKey = Object.keys(data).slice(-1)[0]; // Fixed index logic
       if(lastKey){ data[lastKey] = (data[lastKey] + '\n' + line).trim(); }
       else { data['_extra'] = (data['_extra'] ? data['_extra'] + '\n' : '') + line; }
     }
   }
   if(andenArr.length) data['Anden info'] = andenArr.join('\n');
+  console.log("Parsed data object:", data); // Debugging
   return data;
 }
+
 function renderData(data){
+  console.log("Rendering data:", data); // Debugging
   clearOutput();
   const boxes = [
     {title:'Område', keys:['Område']},
@@ -247,7 +250,6 @@ function renderData(data){
     {title:'Vægt', keys:['Vægt']},
     {title:'Areal i m²', keys:['Areal i m²']},
     {title:'Anden info', keys:['Anden info']},
-    // 'Lagerplads' er fjernet fra denne liste, men vi inkluderer stadig de underliggende nøgler
     {title:'Lagerplacering', keys:['Lager/Område','Reol','Hylde','Plads']}, 
     {title:'Kemi', keys:['Kemi']}
   ];
@@ -267,7 +269,7 @@ function renderData(data){
       const raw = data['Vægt'] ? String(data['Vægt']).trim() : '';
       const m = raw.match(/([\d\.,]+)/);
       let kg = null;
-      if(m) kg = parseFloat(m[1].replace(',','.')); // Fixed index error
+      if(m) kg = parseFloat(m[1].replace(',','.')); // Fixed index logic
       let cls = '', txt = esc(raw);
       if(kg !== null && !isNaN(kg)){
         const inf = classifyWeight(kg);
@@ -281,9 +283,8 @@ function renderData(data){
       output.appendChild(makeBox(box.title, esc(data['Anden info'] || '')));
       return;
     }
-    if(box.title === 'Lagerplacering'){ // Opdateret titel fra "Lagerplads"
+    if(box.title === 'Lagerplacering'){
       const arr = [];
-      // Filtrerer specifikt 'Lagerplads' nøglen fra, hvis den skulle findes i inputtet utilsigtet
       ['Lager/Område','Reol','Hylde','Plads'].forEach(k => { 
           if(k in data && k !== 'Lagerplads') arr.push(`${k}: ${esc(data[k])}`); 
       });
@@ -297,13 +298,12 @@ function renderData(data){
       output.appendChild(makeKemiBox('Kemi', v, unFound || /\bUN\d+/.test(v)));
       return;
     }
-    // Standard håndtering for andre felter
-    output.appendChild(makeBox(box.title, esc(data[box.keys[0]] || '')));
+    output.appendChild(makeBox(box.title, esc(data[box.keys[0]] || ''))); // Fixed index logic
   });
   enableCopy(true);
 }
 
-// --- Scanningslogik (uændret fra sidste svar) ---
+// --- Scanningslogik ---
 
 function onScanSuccess(decodedText, decodedResult) {
   stopScanning(); 
@@ -317,6 +317,7 @@ function onScanError(error) {
 }
 
 async function startScanning() {
+  console.log("startScanning function called."); // Debugging
   if (isScanning) return;
   clearOutput();
   scanBtn.textContent = 'STOP SCANNING';
@@ -333,18 +334,22 @@ async function startScanning() {
   };
 
   try {
+    console.log("Attempting to start camera..."); // Debugging
     await html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanError);
+    console.log("Camera started successfully."); // Debugging
   } catch (err) {
-    console.error("Kunne ikke starte kameraet:", err);
+    console.error("Kunne ikke starte kameraet:", err); // Debugging
     output.appendChild(makeBox("Fejl", "Kunne ikke starte kameraet. Sørg for at give tilladelse."));
     stopScanning();
   }
 }
 
 async function stopScanning() {
+  console.log("stopScanning function called."); // Debugging
   if (!isScanning || !html5QrCode) return;
   try {
     await html5QrCode.stop();
+    console.log("Camera stopped successfully."); // Debugging
   } catch (err) {
     console.warn("Fejl ved stop af scanner:", err);
   }
@@ -353,7 +358,9 @@ async function stopScanning() {
   isScanning = false;
 }
 
+// Event listeners
 scanBtn.addEventListener('click', () => {
+  console.log("Scan button clicked."); // Debugging
   if (isScanning) {
     stopScanning();
   } else {
