@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Info Scan — v7.9</title>
+<title>Info Scan — v8.7</title>
 <style>
   :root{
     --rw-red:#D20014;
@@ -135,16 +135,18 @@
 <body>
 
 <div class="topbar">
-  <div class="topTitle">Info Scan — v7.9</div>
+  <div class="topTitle">Info Scan — v8.7</div>
   <img class="logo" src="logo.png" alt="ROCKWOOL logo" onerror="this.style.display='none'"/>
 </div>
 
+<!-- Scanner card -->
 <div class="card">
   <div style="font-weight:700;margin-bottom:8px;">Scanner</div>
   <div id="cameraWrap">Kamera er slukket</div>
   <button id="scanBtn" class="btn">NY SCANNING</button>
 </div>
 
+<!-- Raw data -->
 <div class="card" style="position:relative;">
   <div style="font-weight:700;margin-bottom:10px;font-size:18px;">Rådata</div>
   <div id="output"></div>
@@ -224,7 +226,7 @@ function makeKemiBox(title, valueHtml, showHazard){
         <polygon points="200,20 380,200 200,380 20,200" fill="white" stroke="#d32f2f" stroke-width="35"/>
         <circle cx="200" cy="270" r="35" fill="black"/>
         <rect x="182" y="90" width="36" height="140" rx="18" fill="black"/>
-      </svg>` : '' }
+      </svg>` : ''}
     </div>`;
   return d;
 }
@@ -243,17 +245,21 @@ function renderData(data){
     {title:'Lagerplads', keys:['Lagerplads','Lager/Område','Reol','Hylde','Plads']},
     {title:'Kemi', keys:['Kemi']}
   ];
+
   let unFound = false;
   Object.values(data).forEach(v => { if(/\bUN\d+/.test(v)) unFound = true; });
+
   boxes.forEach(box => {
     const present = box.keys.filter(k => (k in data) && String(data[k]).trim() !== '');
     if(!present.length) return;
+
     if(box.title === 'Mål'){
       const arr = [];
       ['Længde','Bredde','Tykkelse'].forEach(k => { if(k in data) arr.push(`${k}: ${esc(data[k])}`); });
       output.appendChild(makeBox(box.title, arr.join('\n')));
       return;
     }
+
     if(box.title === 'Vægt'){
       const raw = data['Vægt'] ? String(data['Vægt']).trim() : '';
       const m = raw.match(/([\d\.,]+)/);
@@ -268,24 +274,31 @@ function renderData(data){
       output.appendChild(makeBox(box.title, `<span class="${cls}">${txt}</span>`));
       return;
     }
+
     if(box.title === 'Anden info'){
       output.appendChild(makeBox(box.title, esc(data['Anden info'] || '')));
       return;
     }
+
     if(box.title === 'Lagerplads'){
+      // Show values only (without repeating the key as first line)
       const arr = [];
-      ['Lagerplads','Lager/Område','Reol','Hylde','Plads'].forEach(k => { if(k in data) arr.push(`${k}: ${esc(data[k])}`); });
+      ['Lagerplads','Lager/Område','Reol','Hylde','Plads'].forEach(k => { if(k in data) arr.push(esc(data[k])); });
       output.appendChild(makeBox(box.title, arr.join('\n')));
       return;
     }
+
     if(box.title === 'Kemi'){
       const v = esc(data['Kemi'] || '');
       output.appendChild(makeKemiBox('Kemi', v, unFound || /\bUN\d+/.test(v)));
       return;
     }
+
+    // default single field
     const key = present[0];
     output.appendChild(makeBox(box.title, esc(data[key])));
   });
+
   enableCopy(true);
 }
 
@@ -304,7 +317,7 @@ function loadJsQR(){
     const s = document.createElement('script');
     s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
     s.onload = res;
-    s.onerror = res;
+    s.onerror = res; // resolve anyway; fallback handled
     document.head.appendChild(s);
   });
 }
@@ -342,6 +355,14 @@ async function startCamera(){
       }
 
       if(adv.length) track.applyConstraints({ advanced: adv }).catch(()=>{});
+
+      // retrigger focus after short delay (Samsung workaround)
+      setTimeout(() => {
+        try{
+          track.applyConstraints({ advanced: adv }).catch(()=>{});
+        }catch(e){}
+      }, 600);
+
     }catch(e){}
 
     videoEl.srcObject = stream;
