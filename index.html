@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Info Scan — v9.3</title>
+<title>Info Scan — v9.4</title>
 <style>
 :root{
   --rw-red:#D20014;
@@ -37,7 +37,7 @@ body{ margin:0; padding:12px; font-family: Arial, ui-monospace, monospace; backg
 <body>
 
 <div class="topbar">
-  <div class="topTitle">Info Scan — v9.3</div>
+  <div class="topTitle">Info Scan — v9.4</div>
   <img class="logo" src="logo.png" alt="ROCKWOOL logo" onerror="this.style.display='none'"/>
 </div>
 
@@ -77,13 +77,37 @@ function classifyWeight(kg){
 function enableCopy(enable){ copyBtn.disabled = !enable; }
 function clearOutput(){ output.innerHTML = ''; enableCopy(false); }
 
+function normalizeKey(key){
+  const k = key.toLowerCase().trim();
+  if(k === 'l (mm)' || k === 'længde') return 'Længde';
+  if(k === 'b (mm)' || k === 'bredde') return 'Bredde';
+  if(k === 't (mm)' || k === 'tykkelse') return 'Tykkelse';
+  if(k === 'v (kg)' || k === 'vægt') return 'Vægt';
+  if(k === 'meter' || k === 'meter (m)') return 'Meter';
+  if(k === 'areal (m²)' || k === 'areal i m²' || k === 'areal (m2)') return 'Areal i m²';
+  if(k === 'område') return 'Område';
+  if(k === 'varenummer') return 'Varenummer';
+  if(k === 'materiale') return 'Materiale';
+  if(k === 'antal') return 'Antal';
+  if(k === 'anden info') return 'Anden info';
+  if(k === 'lagerplads') return 'Lagerplads';
+  if(k === 'lager/område') return 'Lager/Område';
+  if(k === 'reol') return 'Reol';
+  if(k === 'hylde') return 'Hylde';
+  if(k === 'plads') return 'Plads';
+  if(k === 'kemi') return 'Kemi';
+  return key.trim();
+}
+
 function parseRaw(raw){
   const lines = String(raw||"").split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
   const data = {};
   let collecting=false;
   let andenArr=[];
-  const known = ['Område','Varenummer','Materiale','Antal','Længde','Bredde','Tykkelse','Vægt',
-                 'Meter','Areal i m²','Anden info','Lagerplads','Lager/Område','Reol','Hylde','Plads','Kemi'];
+  const known = ['Område','Varenummer','Materiale','Antal',
+                 'Længde','L (mm)','Bredde','B (mm)','Tykkelse','T (mm)','Vægt','V (kg)',
+                 'Meter','Meter (m)','Areal i m²','Areal (m²)','Areal (m2)',
+                 'Anden info','Lagerplads','Lager/Område','Reol','Hylde','Plads','Kemi'];
   for(let i=0;i<lines.length;i++){
     const line = lines[i];
     if(/^Anden info/i.test(line)){
@@ -93,9 +117,10 @@ function parseRaw(raw){
       continue;
     }
     if(collecting){
-      if(/^[A-Za-z].*?:/.test(line)){
+      if(/^[A-Za-zÀ-ÿ].*?:/.test(line)){
         const maybeKey = line.split(':')[0].trim();
-        if(known.includes(maybeKey)){ collecting = false; i--; continue; }
+        const normalized = normalizeKey(maybeKey);
+        if(known.includes(maybeKey) || known.includes(normalized)){ collecting = false; i--; continue; }
       }
       andenArr.push(line);
       continue;
@@ -103,7 +128,7 @@ function parseRaw(raw){
     if(line.includes(':')){
       const parts=line.split(':');
       let key = parts[0].trim().replace(/\s+/g,' ');
-      if(key.toLowerCase() === 'meter') key = 'Meter';
+      key = normalizeKey(key);
       data[key] = parts.slice(1).join(':').trim();
     } else {
       const lastKey = Object.keys(data).slice(-1)[0];
@@ -146,7 +171,7 @@ function renderData(data){
     {title:'Antal', keys:['Antal']},
     {title:'Mål', keys:['Længde','Bredde','Tykkelse']},
     {title:'Vægt', keys:['Vægt']},
-    {title:'Meter', keys:['Meter']}, // ✅
+    {title:'Meter', keys:['Meter']},
     {title:'Areal i m²', keys:['Areal i m²']},
     {title:'Anden info', keys:['Anden info']},
     {title:'Lagerplads', keys:['Lagerplads','Lager/Område','Reol','Hylde','Plads']},
@@ -263,12 +288,12 @@ async function startCamera(){
 Varenummer: 12345
 Materiale: DemoMat
 Antal: 2 KS
-Længde: 1000
-Bredde: 600
-Tykkelse: 10
-Vægt: 18
-Meter: 12
-Areal i m²: 2
+L (mm): 1000
+B (mm): 600
+T (mm): 10
+V (kg): 18
+Meter (m): 12
+Areal (m²): 2
 Anden info: Test linje1
 Test linje2
 Lager/Område: sym01
