@@ -1,504 +1,386 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="da">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QR Scanner v9.5</title>
-  <script src="https://unpkg.com/html5-qrcode"></script>
-  <style>
-    :root{
-      --rw-red:#D20014;
-      --rw-darkred:#9F000F;
-      --rw-teal:#208684;
-      --rw-gray:#656565;
-      --bg:#f4f6f8;
-      --card:#ffffff;
-      --border:#d9dee5;
-      --text:#1f2937;
-    }
-
-    *{box-sizing:border-box}
-
-    body{
-      margin:0;
-      font-family:Arial, sans-serif;
-      background:var(--bg);
-      color:var(--text);
-      padding:20px;
-    }
-
-    .container{
-      max-width:900px;
-      margin:0 auto;
-    }
-
-    h1{
-      margin:0 0 6px;
-      color:var(--rw-red);
-      font-size:28px;
-    }
-
-    .sub{
-      color:var(--rw-gray);
-      margin-bottom:20px;
-    }
-
-    .panel{
-      background:var(--card);
-      border-radius:14px;
-      padding:16px;
-      box-shadow:0 6px 20px rgba(0,0,0,0.06);
-      margin-bottom:18px;
-    }
-
-    #reader{
-      width:100%;
-      max-width:520px;
-      margin:0 auto;
-      overflow:hidden;
-      border-radius:12px;
-    }
-
-    .btnrow{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top:14px;
-    }
-
-    button{
-      border:0;
-      border-radius:10px;
-      padding:11px 16px;
-      font-weight:700;
-      cursor:pointer;
-      font-size:14px;
-    }
-
-    .primary{
-      background:var(--rw-red);
-      color:white;
-    }
-
-    .secondary{
-      background:#e9eef3;
-      color:#111827;
-    }
-
-    .status{
-      margin-top:12px;
-      font-weight:700;
-      color:var(--rw-teal);
-    }
-
-    .result-wrap{
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-    }
-
-    .field-box{
-      background:#fff;
-      border-left:6px solid var(--rw-red);
-      border-radius:12px;
-      padding:14px 16px;
-      box-shadow:0 4px 14px rgba(0,0,0,0.05);
-    }
-
-    .field-title{
-      font-size:13px;
-      font-weight:700;
-      text-transform:uppercase;
-      letter-spacing:.4px;
-      color:var(--rw-gray);
-      margin-bottom:6px;
-    }
-
-    .field-value{
-      font-size:18px;
-      font-weight:700;
-      color:#111827;
-      white-space:pre-wrap;
-      word-break:break-word;
-    }
-
-    .group-box{
-      background:#fff;
-      border-left:6px solid var(--rw-teal);
-      border-radius:12px;
-      padding:14px 16px;
-      box-shadow:0 4px 14px rgba(0,0,0,0.05);
-    }
-
-    .group-title{
-      font-size:15px;
-      font-weight:800;
-      color:var(--rw-teal);
-      margin-bottom:10px;
-    }
-
-    .sub-item{
-      padding:8px 10px;
-      border:1px solid var(--border);
-      border-radius:10px;
-      margin-bottom:8px;
-      background:#fafbfc;
-    }
-
-    .sub-label{
-      font-size:12px;
-      text-transform:uppercase;
-      color:var(--rw-gray);
-      font-weight:700;
-      margin-bottom:4px;
-    }
-
-    .sub-value{
-      font-size:16px;
-      font-weight:700;
-      color:#111827;
-    }
-
-    .raw-box{
-      margin-top:16px;
-      background:#fff8db;
-      border:2px solid #f0c64b;
-      border-radius:12px;
-      padding:12px;
-    }
-
-    .raw-box pre{
-      margin:0;
-      white-space:pre-wrap;
-      word-break:break-word;
-      font-family:Consolas, monospace;
-      font-size:13px;
-    }
-
-    .hidden{
-      display:none;
-    }
-
-    .empty{
-      color:var(--rw-gray);
-      font-style:italic;
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Info Scan — v9.6</title>
+<style>
+  /* beholdt samme style fra v7.9 */
+  :root{
+    --rw-red:#D20014;
+    --text:#111827;
+    --black:#000;
+    --un:#b91c1c;
+    --green:#059669;
+    --yellow:#CA8A04;
+    --red:#B91C1C;
+  }
+  body{ margin:0; padding:12px; font-family: Arial, ui-monospace, monospace; background:var(--rw-red); color:var(--text); }
+  .topbar{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }
+  .topTitle{ color:#fff; font-weight:900; font-size:20px; }
+  .logo{ height:70px; width:auto; display:block; }
+  .card{ background:#fff; border-radius:12px; padding:14px; margin-bottom:14px; }
+  #cameraWrap{ height:260px; border-radius:10px; background:#f3f4f6; display:flex; align-items:center; justify-content:center; color:#9ca3af; overflow:hidden; }
+  #cameraWrap video{ width:100%; height:100%; object-fit:cover; transform:none !important; -webkit-transform:none !important; }
+  .btn{ width:100%; height:56px; margin-top:14px; border-radius:10px; border:0; background:#0f172a; color:#fff; font-weight:900; font-size:18px; cursor:pointer; }
+  .box{ border:2px solid var(--black); border-radius:6px; padding:10px 12px; margin-bottom:12px; background:white; }
+  .catTitle{ font-size:17px; font-weight:900; margin-bottom:8px; }
+  .boxValue{ font-family: ui-monospace, monospace; font-size:16px; white-space:pre-wrap; }
+  .w-green{ color:var(--green); font-weight:900; }
+  .w-yellow{ color:var(--yellow); font-weight:900; }
+  .w-red{ color:var(--red); font-weight:900; }
+  .kemiRow{ display:flex; justify-content:space-between; align-items:center; }
+  .hazard{ width:34px; height:34px; }
+  #copyBtn{ width:100%; height:50px; margin-top:12px; border-radius:10px; border:2px solid #ddd; background:white; font-weight:900; font-size:16px; cursor:pointer; }
+  @media (max-width:700px){ .logo{ height:56px; } .topTitle{ font-size:18px; } }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>QR Scanner v9.5</h1>
-    <div class="sub">Tilpasset QR-kode Generator v7.2 PRO</div>
 
-    <div class="panel">
-      <div id="reader"></div>
+<div class="topbar">
+  <div class="topTitle">Info Scan — v9.6</div>
+  <img class="logo" src="logo.png" alt="ROCKWOOL logo" onerror="this.style.display='none'"/>
+</div>
 
-      <div class="btnrow">
-        <button class="primary" onclick="startScanner()">Start scanning</button>
-        <button class="secondary" onclick="resetScanner()">Ny scanning</button>
-      </div>
+<div class="card">
+  <div style="font-weight:700;margin-bottom:8px;">Scanner</div>
+  <div id="cameraWrap">Kamera er slukket</div>
+  <button id="scanBtn" class="btn">NY SCANNING</button>
+</div>
 
-      <div id="status" class="status">Klar til scanning</div>
-    </div>
+<div class="card" style="position:relative;">
+  <div style="font-weight:700;margin-bottom:10px;font-size:18px;">Rådata</div>
+  <div id="output"></div>
+  <button id="copyBtn" disabled>KOPIER</button>
+</div>
 
-    <div class="panel">
-      <div id="results" class="result-wrap">
-        <div class="empty">Ingen data scannet endnu.</div>
-      </div>
+<script>
+const scanBtn = document.getElementById('scanBtn');
+const output  = document.getElementById('output');
+const copyBtn = document.getElementById('copyBtn');
+const cameraWrap = document.getElementById('cameraWrap');
 
-      <div id="rawDataBox" class="raw-box hidden">
-        <strong>Rå QR-data</strong>
-        <pre id="rawDataText"></pre>
-      </div>
-    </div>
-  </div>
+let videoEl = null;
+let canvas = null;
+let ctx = null;
+let stream = null;
+let raf = null;
+let focusInterval = null;
 
-  <script>
-    let html5QrCode = null;
-    let scannerRunning = false;
+function esc(s){ return String(s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
+function classifyWeight(kg){
+  if(kg <= 15) return {cls:'w-green', extra:''};
+  if(kg <= 30) return {cls:'w-yellow', extra:' (Pas på når du løfter)'};
+  return {cls:'w-red', extra:' (Brug hjælpe værktøj til løft)'};
+}
+function enableCopy(enable){ copyBtn.disabled = !enable; }
+function clearOutput(){ output.innerHTML = ''; enableCopy(false); }
 
-    function setStatus(msg, color){
-      const el = document.getElementById('status');
-      el.textContent = msg;
-      el.style.color = color || '#208684';
+function parseRaw(raw){
+  const lines = String(raw||"").split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
+  const data = {};
+  let collecting = false;
+  let andenArr = [];
+
+  const known = [
+    'Område','Varenummer','Materiale','Antal','Mål',
+    'Længde','Bredde','Tykkelse','Vægt',
+    'Længde i meter','Meter','Areal i m²',
+    'Anden info','Lagerplads','Lager/Område','Reol','Hylde','Plads','Kemi'
+  ];
+
+  for(let i=0;i<lines.length;i++){
+    const line = lines[i];
+
+    if(/^Anden info/i.test(line)){
+      collecting = true;
+      const parts = line.split(':');
+      if(parts.length > 1) andenArr.push(parts.slice(1).join(':').trim());
+      continue;
     }
 
-    async function startScanner(){
-      try{
-        if(scannerRunning) return;
-
-        document.getElementById('results').innerHTML = '<div class="empty">Scanner aktiv... vent på QR-kode.</div>';
-        setStatus('Starter kamera...', '#208684');
-
-        html5QrCode = new Html5Qrcode("reader");
-
-        const config = {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0
-        };
-
-        await html5QrCode.start(
-          { facingMode: "environment" },
-          config,
-          onScanSuccess,
-          onScanFailure
-        );
-
-        scannerRunning = true;
-        setStatus('Scanner kører — hold QR-koden foran kameraet', '#208684');
-      }catch(err){
-        console.error(err);
-        setStatus('Kunne ikke starte kamera: ' + err, '#9F000F');
-      }
-    }
-
-    function onScanFailure(error){
-      // Ignorer løbende scan-fejl
-    }
-
-    async function onScanSuccess(decodedText){
-      if(!scannerRunning) return;
-
-      setStatus('QR-kode læst — stopper kamera...', '#208684');
-
-      try{
-        await stopScanner();
-      }catch(e){
-        console.warn('Stopfejl:', e);
-      }
-
-      document.getElementById('rawDataText').textContent = decodedText;
-      document.getElementById('rawDataBox').classList.remove('hidden');
-
-      const parsed = parseGeneratorQR(decodedText);
-      renderParsedData(parsed);
-
-      setStatus('Scan gennemført', '#208684');
-    }
-
-    async function stopScanner(){
-      if(html5QrCode && scannerRunning){
-        await html5QrCode.stop();
-        await html5QrCode.clear();
-        scannerRunning = false;
-      }
-    }
-
-    async function resetScanner(){
-      try{
-        if(scannerRunning){
-          await stopScanner();
-        }
-      }catch(e){
-        console.warn(e);
-      }
-
-      document.getElementById('reader').innerHTML = '';
-      document.getElementById('results').innerHTML = '<div class="empty">Ingen data scannet endnu.</div>';
-      document.getElementById('rawDataText').textContent = '';
-      document.getElementById('rawDataBox').classList.add('hidden');
-      setStatus('Klar til ny scanning', '#208684');
-    }
-
-    function parseGeneratorQR(text){
-      const lines = text.split(/\r?\n/);
-
-      const data = {
-        område: '',
-        varenummer: '',
-        materiale: '',
-        antal: '',
-        mål: {
-          længde: '',
-          bredde: '',
-          tykkelse: '',
-          vægt: ''
-        },
-        meter: '',
-        areal: '',
-        andenInfo: '',
-        lagerplads: {
-          lagerområde: '',
-          reol: '',
-          hylde: '',
-          plads: ''
-        },
-        kemi: ''
-      };
-
-      let currentSection = '';
-
-      for(let rawLine of lines){
-        const line = rawLine.replace(/\t/g, '    ');
-        const trimmed = line.trim();
-
-        if(!trimmed) continue;
-
-        if(trimmed === 'Mål:'){
-          currentSection = 'mål';
-          continue;
-        }
-
-        if(trimmed === 'Lagerplads:'){
-          currentSection = 'lagerplads';
-          continue;
-        }
-
-        if(currentSection === 'mål' && /^\s+/.test(line)){
-          if(trimmed.startsWith('Længde:')){
-            data.mål.længde = trimmed.replace(/^Længde:\s*/, '').trim();
-            continue;
-          }
-          if(trimmed.startsWith('Bredde:')){
-            data.mål.bredde = trimmed.replace(/^Bredde:\s*/, '').trim();
-            continue;
-          }
-          if(trimmed.startsWith('Tykkelse:')){
-            data.mål.tykkelse = trimmed.replace(/^Tykkelse:\s*/, '').trim();
-            continue;
-          }
-          if(trimmed.startsWith('Vægt:')){
-            data.mål.vægt = trimmed.replace(/^Vægt:\s*/, '').trim();
-            continue;
-          }
-        }
-
-        if(currentSection === 'lagerplads' && /^\s+/.test(line)){
-          if(trimmed.startsWith('Lager/Område:')){
-            data.lagerplads.lagerområde = trimmed.replace(/^Lager\/Område:\s*/, '').trim();
-            continue;
-          }
-          if(trimmed.startsWith('Reol:')){
-            data.lagerplads.reol = trimmed.replace(/^Reol:\s*/, '').trim();
-            continue;
-          }
-          if(trimmed.startsWith('Hylde:')){
-            data.lagerplads.hylde = trimmed.replace(/^Hylde:\s*/, '').trim();
-            continue;
-          }
-          if(trimmed.startsWith('Plads:')){
-            data.lagerplads.plads = trimmed.replace(/^Plads:\s*/, '').trim();
-            continue;
-          }
-        }
-
-        currentSection = '';
-
-        if(trimmed.startsWith('Område:')){
-          data.område = trimmed.replace(/^Område:\s*/, '').trim();
-          continue;
-        }
-
-        if(trimmed.startsWith('Varenummer:')){
-          data.varenummer = trimmed.replace(/^Varenummer:\s*/, '').trim();
-          continue;
-        }
-
-        if(trimmed.startsWith('Materiale:')){
-          data.materiale = trimmed.replace(/^Materiale:\s*/, '').trim();
-          continue;
-        }
-
-        if(trimmed.startsWith('Antal:')){
-          data.antal = trimmed.replace(/^Antal:\s*/, '').trim();
-          continue;
-        }
-
-        if(trimmed.startsWith('Længde i meter:')){
-          data.meter = trimmed.replace(/^Længde i meter:\s*/, '').trim();
-          continue;
-        }
-
-        if(trimmed.startsWith('Areal i m²:')){
-          data.areal = trimmed.replace(/^Areal i m²:\s*/, '').trim();
-          continue;
-        }
-
-        if(trimmed.startsWith('Anden info:')){
-          data.andenInfo = trimmed.replace(/^Anden info:\s*/, '').trim();
-          continue;
-        }
-
-        if(trimmed.startsWith('Kemi:')){
-          data.kemi = trimmed.replace(/^Kemi:\s*/, '').trim();
+    if(collecting){
+      if(/^[A-Za-zÆØÅæøå].*?:/.test(line)){
+        const maybeKey = line.split(':')[0].trim();
+        if(known.includes(maybeKey)){
+          collecting = false;
+          i--;
           continue;
         }
       }
-
-      return data;
+      andenArr.push(line);
+      continue;
     }
 
-    function createFieldBox(title, value){
-      return `
-        <div class="field-box">
-          <div class="field-title">${escapeHtml(title)}</div>
-          <div class="field-value">${escapeHtml(value)}</div>
-        </div>
-      `;
-    }
+    if(line.includes(':')){
+      const parts = line.split(':');
+      const key = parts[0].trim();
+      const value = parts.slice(1).join(':').trim();
 
-    function createGroupBox(title, items){
-      const validItems = items.filter(item => item.value && item.value.trim() !== '');
-      if(validItems.length === 0) return '';
-
-      return `
-        <div class="group-box">
-          <div class="group-title">${escapeHtml(title)}</div>
-          ${validItems.map(item => `
-            <div class="sub-item">
-              <div class="sub-label">${escapeHtml(item.label)}</div>
-              <div class="sub-value">${escapeHtml(item.value)}</div>
-            </div>
-          `).join('')}
-        </div>
-      `;
-    }
-
-    function renderParsedData(data){
-      const results = document.getElementById('results');
-      let html = '';
-
-      if(data.område) html += createFieldBox('Område', data.område);
-      if(data.varenummer) html += createFieldBox('Varenummer', data.varenummer);
-      if(data.materiale) html += createFieldBox('Materiale', data.materiale);
-      if(data.antal) html += createFieldBox('Antal', data.antal);
-
-      html += createGroupBox('Mål', [
-        { label: 'Længde', value: data.mål.længde },
-        { label: 'Bredde', value: data.mål.bredde },
-        { label: 'Tykkelse', value: data.mål.tykkelse },
-        { label: 'Vægt', value: data.mål.vægt }
-      ]);
-
-      if(data.meter) html += createFieldBox('Meter', data.meter);
-      if(data.areal) html += createFieldBox('Areal', data.areal);
-      if(data.andenInfo) html += createFieldBox('Anden info', data.andenInfo);
-
-      html += createGroupBox('Lagerplads', [
-        { label: 'Lager/Område', value: data.lagerplads.lagerområde },
-        { label: 'Reol', value: data.lagerplads.reol },
-        { label: 'Hylde', value: data.lagerplads.hylde },
-        { label: 'Plads', value: data.lagerplads.plads }
-      ]);
-
-      if(data.kemi) html += createFieldBox('Kemi', data.kemi);
-
-      if(!html){
-        html = '<div class="empty">QR-koden blev læst, men ingen genkendelige lagerfelter blev fundet.</div>';
+      if(key === 'Længde i meter'){
+        data['Meter'] = value;
+      } else {
+        data[key] = value;
       }
+    } else {
+      const lastKey = Object.keys(data).slice(-1)[0];
+      if(lastKey){
+        data[lastKey] = (data[lastKey] + '\n' + line).trim();
+      } else {
+        data['_extra'] = (data['_extra'] ? data['_extra'] + '\n' : '') + line;
+      }
+    }
+  }
 
-      results.innerHTML = html;
+  if(andenArr.length) data['Anden info'] = andenArr.join('\n');
+  return data;
+}
+
+function makeBox(title, valueHtml){
+  const d = document.createElement('div');
+  d.className = 'box';
+  d.innerHTML = `<div class="catTitle">${esc(title)}</div><div class="boxValue">${valueHtml}</div>`;
+  return d;
+}
+
+function makeKemiBox(title, valueHtml, showHazard){
+  const d = document.createElement('div');
+  d.className = 'box';
+  d.innerHTML = `<div class="catTitle">${esc(title)}</div>
+    <div class="kemiRow">
+      <div class="boxValue">${valueHtml}</div>
+      ${showHazard? `<svg class="hazard" viewBox="0 0 400 400">
+        <polygon points="200,20 380,200 200,380 20,200" fill="white" stroke="#d32f2f" stroke-width="35"/>
+        <circle cx="200" cy="270" r="35" fill="black"/>
+        <rect x="182" y="90" width="36" height="140" rx="18" fill="black"/>
+      </svg>` : ''}
+    </div>`;
+  return d;
+}
+
+function renderData(data){
+  clearOutput();
+
+  const boxes = [
+    {title:'Område', keys:['Område']},
+    {title:'Varenummer', keys:['Varenummer']},
+    {title:'Materiale', keys:['Materiale']},
+    {title:'Antal', keys:['Antal']},
+    {title:'Mål', keys:['Længde','Bredde','Tykkelse']},
+    {title:'Vægt', keys:['Vægt']},
+    {title:'Meter', keys:['Meter']},
+    {title:'Areal i m²', keys:['Areal i m²']},
+    {title:'Anden info', keys:['Anden info']},
+    {title:'Lagerplads', keys:['Lagerplads','Lager/Område','Reol','Hylde','Plads']},
+    {title:'Kemi', keys:['Kemi']}
+  ];
+
+  let unFound = false;
+  Object.values(data).forEach(v => { if(/\bUN\d+/.test(v)) unFound = true; });
+
+  boxes.forEach(box => {
+    const present = box.keys.filter(k => (k in data) && String(data[k]).trim() !== '');
+    if(!present.length) return;
+
+    if(box.title === 'Mål'){
+      const arr = [];
+      ['Længde','Bredde','Tykkelse'].forEach(k => {
+        if(k in data) arr.push(`${k}: ${esc(data[k])}`);
+      });
+      output.appendChild(makeBox(box.title, arr.join('\n')));
+      return;
     }
 
-    function escapeHtml(str){
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+    if(box.title === 'Vægt'){
+      const raw = data['Vægt'] ? String(data['Vægt']).trim() : '';
+      const m = raw.match(/([\d\.,]+)/);
+      let kg = null;
+      if(m) kg = parseFloat(m[1].replace(',','.'));
+      let cls = '', txt = esc(raw);
+      if(kg !== null && !isNaN(kg)){
+        const inf = classifyWeight(kg);
+        cls = inf.cls;
+        txt = `${kg} kg${inf.extra}`;
+      }
+      output.appendChild(makeBox(box.title, `<span class="${cls}">${txt}</span>`));
+      return;
     }
-  </script>
+
+    if(box.title === 'Anden info'){
+      output.appendChild(makeBox(box.title, esc(data['Anden info'] || '')));
+      return;
+    }
+
+    if(box.title === 'Lagerplads'){
+      const arr = [];
+      ['Lagerplads','Lager/Område','Reol','Hylde','Plads'].forEach((k, i) => {
+        if(k in data){
+          if(i === 0) return;
+          arr.push(`${k}: ${esc(data[k])}`);
+        }
+      });
+      output.appendChild(makeBox(box.title, arr.join('\n')));
+      return;
+    }
+
+    if(box.title === 'Kemi'){
+      const v = esc(data['Kemi'] || '');
+      output.appendChild(makeKemiBox('Kemi', v, unFound || /\bUN\d+/.test(v)));
+      return;
+    }
+
+    const key = present[0];
+    output.appendChild(makeBox(box.title, esc(data[key])));
+  });
+
+  enableCopy(true);
+}
+
+copyBtn.addEventListener('click', async () => {
+  try{
+    await navigator.clipboard.writeText(output.innerText || '');
+    const prev = copyBtn.textContent;
+    copyBtn.textContent = 'KOPIERET';
+    setTimeout(()=>copyBtn.textContent = prev,700);
+  }catch(e){}
+});
+
+function loadJsQR(){
+  return new Promise(res=>{
+    if(window.jsQR) return res();
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+    s.onload = res;
+    s.onerror = res;
+    document.head.appendChild(s);
+  });
+}
+
+async function startCamera(){
+  clearOutput();
+  if(!videoEl){ videoEl = document.createElement('video'); videoEl.setAttribute('playsinline','true'); }
+  if(!canvas){ canvas = document.createElement('canvas'); ctx = canvas.getContext('2d', { willReadFrequently: true }); }
+
+  const constraints = {
+    video: {
+      facingMode: { ideal: "environment" },
+      width: { ideal: 1920 },
+      height: { ideal: 1080 }
+    },
+    audio: false
+  };
+
+  try{
+    stream = await navigator.mediaDevices.getUserMedia(constraints);
+    const track = stream.getVideoTracks()[0];
+    const caps = track.getCapabilities ? track.getCapabilities() : {};
+    const adv = [];
+
+    if(caps.focusMode && caps.focusMode.includes('continuous')) adv.push({ focusMode:'continuous' });
+    if(caps.zoom){ adv.push({ zoom: Math.min(1.2, caps.zoom.max||1) }); }
+
+    if(adv.length) track.applyConstraints({ advanced: adv }).catch(()=>{});
+
+    focusInterval = setInterval(()=>{
+      if(track && adv.length) track.applyConstraints({ advanced: adv }).catch(()=>{});
+    }, 1000);
+
+    videoEl.srcObject = stream;
+    await videoEl.play();
+    cameraWrap.innerHTML = '';
+    cameraWrap.appendChild(videoEl);
+    return true;
+  }catch(err){
+    console.warn('Camera start failed:', err);
+    return false;
+  }
+}
+
+function stopCamera(){
+  if(raf) cancelAnimationFrame(raf);
+  raf = null;
+  if(stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
+  if(videoEl){ try{ videoEl.pause(); }catch(e) videoEl.srcObject = null; }
+  cameraWrap.innerHTML = 'Kamera er slukket';
+  if(focusInterval){ clearInterval(focusInterval); focusInterval = null; }
+}
+
+async function scanLoop(){
+  if(!videoEl || videoEl.readyState !== videoEl.HAVE_ENOUGH_DATA){
+    raf = requestAnimationFrame(scanLoop);
+    return;
+  }
+
+  if(canvas.width !== videoEl.videoWidth){
+    canvas.width = videoEl.videoWidth;
+    canvas.height = videoEl.videoHeight;
+  }
+
+  try{
+    ctx.filter='contrast(170%) brightness(105%)';
+    ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
+    ctx.filter='none';
+  }catch(e){
+    ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
+  }
+
+  let img;
+  try{
+    img = ctx.getImageData(0,0,canvas.width,canvas.height);
+  }catch(e){
+    raf = requestAnimationFrame(scanLoop);
+    return;
+  }
+
+  let code = null;
+  if(window.jsQR){
+    try{
+      code = jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
+    }catch(e){
+      code = jsQR(img.data,img.width,img.height);
+    }
+  }
+
+  if(code && code.data){
+    stopCamera();
+    renderData(parseRaw(code.data));
+    return;
+  }
+
+  raf = requestAnimationFrame(scanLoop);
+}
+
+scanBtn.addEventListener('click', async ()=>{
+  clearOutput();
+  cameraWrap.innerHTML='Starter kamera…';
+  await loadJsQR();
+  const ok = await startCamera();
+  if(!ok){
+    const demo=`Område: Demo
+Varenummer: 12345
+Materiale: DemoMat
+Antal: 2 KS
+Længde: 1000 mm
+Bredde: 600 mm
+Tykkelse: 10 mm
+Vægt: 18 kg
+Længde i meter: 5 m
+Areal i m²: 2 m²
+Anden info: Test linje1
+Test linje2
+Lager/Område: sym01
+Reol: 01
+Hylde: 02
+Plads: 03
+Kemi: UN1209`;
+    renderData(parseRaw(demo));
+    return;
+  }
+  scanLoop();
+});
+
+window.addEventListener('beforeunload', stopCamera);
+</script>
 </body>
 </html>
+
