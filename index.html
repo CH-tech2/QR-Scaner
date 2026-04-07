@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Info Scan — v8.9</title>
+<title>Info Scan — v8.8</title>
 <style>
-  /* beholdt samme style fra v7.9 */
   :root{
     --rw-red:#D20014;
     --text:#111827;
@@ -38,7 +37,7 @@
 <body>
 
 <div class="topbar">
-  <div class="topTitle">Info Scan — v8.9</div>
+  <div class="topTitle">Info Scan — v8.8</div>
   <img class="logo" src="logo.png" alt="ROCKWOOL logo" onerror="this.style.display='none'"/>
 </div>
 
@@ -142,7 +141,7 @@ function renderData(data){
     {title:'Antal', keys:['Antal']},
     {title:'Mål', keys:['Længde','Bredde','Tykkelse']},
     {title:'Vægt', keys:['Vægt']},
-    {titel:´Meter´, keys: [´Meter´]},
+    {title:'Meter', keys:['Meter']}, // NY
     {title:'Areal i m²', keys:['Areal i m²']},
     {title:'Anden info', keys:['Anden info']},
     {title:'Lagerplads', keys:['Lagerplads','Lager/Område','Reol','Hylde','Plads']},
@@ -184,11 +183,10 @@ function renderData(data){
     }
 
     if(box.title === 'Lagerplads'){
-      // Fjern første linje "Lagerplads:" men behold de øvrige
       const arr = [];
       ['Lagerplads','Lager/Område','Reol','Hylde','Plads'].forEach((k, i) => {
         if(k in data){
-          if(i===0) return; // fjern "Lagerplads" linjen
+          if(i===0) return;
           arr.push(`${k}: ${esc(data[k])}`);
         }
       });
@@ -254,7 +252,6 @@ async function startCamera(){
 
     if(adv.length) track.applyConstraints({ advanced: adv }).catch(()=>{});
 
-    // Genstart fokus hvert sekund for Samsung enheder
     focusInterval = setInterval(()=>{
       if(track && adv.length) track.applyConstraints({ advanced: adv }).catch(()=>{});
     }, 1000);
@@ -318,7 +315,7 @@ Længde: 1000
 Bredde: 600
 Tykkelse: 10
 Vægt: 18
-Meter: 123
+Meter: 12
 Areal i m²: 2
 Anden info: Test linje1
 Test linje2
