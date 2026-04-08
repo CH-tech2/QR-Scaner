@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Info Scan — v9.6</title>
+<title>Info Scan — v9.7</title>
 <style>
-  /* beholdt samme style fra v7.9 */
   :root{
     --rw-red:#D20014;
     --text:#111827;
@@ -38,7 +37,7 @@
 <body>
 
 <div class="topbar">
-  <div class="topTitle">Info Scan — v9.6</div>
+  <div class="topTitle">Info Scan — v9.7</div>
   <img class="logo" src="logo.png" alt="ROCKWOOL logo" onerror="this.style.display='none'"/>
 </div>
 
@@ -79,44 +78,31 @@ function clearOutput(){ output.innerHTML = ''; enableCopy(false); }
 function parseRaw(raw){
   const lines = String(raw||"").split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
   const data = {};
-  let collecting = false;
-  let andenArr = [];
-
-  const known = [
-    'Område','Varenummer','Materiale','Antal','Mål',
-    'Længde','Bredde','Tykkelse','Vægt',
-    'Længde i meter','Meter','Areal i m²',
-    'Anden info','Lagerplads','Lager/Område','Reol','Hylde','Plads','Kemi'
-  ];
-
+  let collecting=false;
+  let andenArr=[];
+  const known = ['Område','Varenummer','Materiale','Antal','Længde','Bredde','Tykkelse','Vægt',
+                 'Længde i meter','Meter','Areal i m²','Anden info','Lagerplads','Lager/Område','Reol','Hylde','Plads','Kemi'];
   for(let i=0;i<lines.length;i++){
     const line = lines[i];
-
     if(/^Anden info/i.test(line)){
       collecting = true;
-      const parts = line.split(':');
-      if(parts.length > 1) andenArr.push(parts.slice(1).join(':').trim());
+      const parts=line.split(':');
+      if(parts.length>1) andenArr.push(parts.slice(1).join(':').trim());
       continue;
     }
-
     if(collecting){
       if(/^[A-Za-zÆØÅæøå].*?:/.test(line)){
         const maybeKey = line.split(':')[0].trim();
-        if(known.includes(maybeKey)){
-          collecting = false;
-          i--;
-          continue;
-        }
+        if(known.includes(maybeKey)){ collecting = false; i--; continue; }
       }
       andenArr.push(line);
       continue;
     }
-
     if(line.includes(':')){
-      const parts = line.split(':');
+      const parts=line.split(':');
       const key = parts[0].trim();
       const value = parts.slice(1).join(':').trim();
-
+      // Map "Længde i meter" til "Meter"
       if(key === 'Længde i meter'){
         data['Meter'] = value;
       } else {
@@ -124,14 +110,10 @@ function parseRaw(raw){
       }
     } else {
       const lastKey = Object.keys(data).slice(-1)[0];
-      if(lastKey){
-        data[lastKey] = (data[lastKey] + '\n' + line).trim();
-      } else {
-        data['_extra'] = (data['_extra'] ? data['_extra'] + '\n' : '') + line;
-      }
+      if(lastKey){ data[lastKey] = (data[lastKey] + '\n' + line).trim(); }
+      else { data['_extra'] = (data['_extra'] ? data['_extra'] + '\n' : '') + line; }
     }
   }
-
   if(andenArr.length) data['Anden info'] = andenArr.join('\n');
   return data;
 }
@@ -142,7 +124,6 @@ function makeBox(title, valueHtml){
   d.innerHTML = `<div class="catTitle">${esc(title)}</div><div class="boxValue">${valueHtml}</div>`;
   return d;
 }
-
 function makeKemiBox(title, valueHtml, showHazard){
   const d = document.createElement('div');
   d.className = 'box';
@@ -160,7 +141,6 @@ function makeKemiBox(title, valueHtml, showHazard){
 
 function renderData(data){
   clearOutput();
-
   const boxes = [
     {title:'Område', keys:['Område']},
     {title:'Varenummer', keys:['Varenummer']},
@@ -184,9 +164,7 @@ function renderData(data){
 
     if(box.title === 'Mål'){
       const arr = [];
-      ['Længde','Bredde','Tykkelse'].forEach(k => {
-        if(k in data) arr.push(`${k}: ${esc(data[k])}`);
-      });
+      ['Længde','Bredde','Tykkelse'].forEach(k => { if(k in data) arr.push(`${k}: ${esc(data[k])}`); });
       output.appendChild(makeBox(box.title, arr.join('\n')));
       return;
     }
@@ -215,7 +193,7 @@ function renderData(data){
       const arr = [];
       ['Lagerplads','Lager/Område','Reol','Hylde','Plads'].forEach((k, i) => {
         if(k in data){
-          if(i === 0) return;
+          if(i===0) return;
           arr.push(`${k}: ${esc(data[k])}`);
         }
       });
@@ -300,9 +278,9 @@ function stopCamera(){
   if(raf) cancelAnimationFrame(raf);
   raf = null;
   if(stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
-  if(videoEl){ try{ videoEl.pause(); }catch(e) videoEl.srcObject = null; }
+  if(videoEl){ try{ videoEl.pause(); }catch(e){} videoEl.srcObject = null; }
   cameraWrap.innerHTML = 'Kamera er slukket';
-  if(focusInterval){ clearInterval(focusInterval); focusInterval = null; }
+  if(focusInterval){ clearInterval(focusInterval); focusInterval=null; }
 }
 
 async function scanLoop(){
@@ -311,43 +289,23 @@ async function scanLoop(){
     return;
   }
 
-  if(canvas.width !== videoEl.videoWidth){
-    canvas.width = videoEl.videoWidth;
-    canvas.height = videoEl.videoHeight;
-  }
+  if(canvas.width !== videoEl.videoWidth){ canvas.width = videoEl.videoWidth; canvas.height = videoEl.videoHeight; }
 
-  try{
-    ctx.filter='contrast(170%) brightness(105%)';
-    ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
-    ctx.filter='none';
-  }catch(e){
-    ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
-  }
+  try{ ctx.filter='contrast(170%) brightness(105%)'; ctx.drawImage(videoEl,0,0,canvas.width,canvas.height); ctx.filter='none'; }
+  catch(e){ ctx.drawImage(videoEl,0,0,canvas.width,canvas.height); }
 
   let img;
-  try{
-    img = ctx.getImageData(0,0,canvas.width,canvas.height);
-  }catch(e){
-    raf = requestAnimationFrame(scanLoop);
-    return;
-  }
+  try{ img=ctx.getImageData(0,0,canvas.width,canvas.height); }
+  catch(e){ raf=requestAnimationFrame(scanLoop); return; }
 
-  let code = null;
+  let code=null;
   if(window.jsQR){
-    try{
-      code = jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
-    }catch(e){
-      code = jsQR(img.data,img.width,img.height);
-    }
+    try{ code=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'}); }
+    catch(e){ code=jsQR(img.data,img.width,img.height); }
   }
 
-  if(code && code.data){
-    stopCamera();
-    renderData(parseRaw(code.data));
-    return;
-  }
-
-  raf = requestAnimationFrame(scanLoop);
+  if(code && code.data){ stopCamera(); renderData(parseRaw(code.data)); return; }
+  raf=requestAnimationFrame(scanLoop);
 }
 
 scanBtn.addEventListener('click', async ()=>{
