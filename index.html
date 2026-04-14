@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Info Scan — v9.8</title>
+<title>Info Scan — v9.9</title>
 <style>
   :root{
     --rw-red:#D20014;
@@ -37,7 +37,7 @@
 <body>
 
 <div class="topbar">
-  <div class="topTitle">Info Scan — v9.8</div>
+  <div class="topTitle">Info Scan — v9.9</div>
   <img class="logo" src="logo.png" alt="ROCKWOOL logo" onerror="this.style.display='none'"/>
 </div>
 
@@ -80,7 +80,7 @@ function parseRaw(raw){
   const data = {};
   let collecting=false;
   let andenArr=[];
-  const known = ['Område','Varenummer','Materiale','Antal','Længde','Bredde','Tykkelse','Vægt',
+  const known = ['Område','Varenummer','Operatør','Antal','Længde','Bredde','Tykkelse','Vægt',
                  'Længde i meter','Meter','Areal i m²','Anden info','Lagerplads','Lager/Område','Reol','Hylde','Plads','Kemi'];
   for(let i=0;i<lines.length;i++){
     const line = lines[i];
@@ -144,7 +144,7 @@ function renderData(data){
   const boxes = [
     {title:'Område', keys:['Område']},
     {title:'Varenummer', keys:['Varenummer']},
-    {title:'Materiale', keys:['Materiale']},
+    {title:'Operatør', keys:['Operatør']},
     {title:'Antal', keys:['Antal']},
     {title:'Mål', keys:['Længde','Bredde','Tykkelse']},
     {title:'Vægt', keys:['Vægt']},
@@ -164,7 +164,14 @@ function renderData(data){
 
     if(box.title === 'Mål'){
       const arr = [];
-      ['Længde','Bredde','Tykkelse'].forEach(k => { if(k in data) arr.push(`${k}: ${esc(data[k])}`); });
+      ['Længde','Bredde','Tykkelse'].forEach(k => {
+        if(k in data){
+          let val = esc(data[k]);
+          // Konverter "mm" til "my" for Tykkelse
+          if(k === 'Tykkelse') val = val.replace(/mm/g, 'my');
+          arr.push(`${k}: ${val}`);
+        }
+      });
       output.appendChild(makeBox(box.title, arr.join('\n')));
       return;
     }
@@ -316,11 +323,11 @@ scanBtn.addEventListener('click', async ()=>{
   if(!ok){
     const demo=`Område: Demo
 Varenummer: 12345
-Materiale: DemoMat
+Operatør: John Doe
 Antal: 2 KS
 Længde: 1000 mm
 Bredde: 600 mm
-Tykkelse: 10 my
+Tykkelse: 10 mm
 Vægt: 18 kg
 Længde i meter: 5 M
 Areal i m²: 2 m²
@@ -341,4 +348,3 @@ window.addEventListener('beforeunload', stopCamera);
 </script>
 </body>
 </html>
-
