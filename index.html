@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Info Scan — v10.4</title>
+<title>Info Scan — v10.5</title>
 <style>
   :root{
     --rw-red:#D20014;
@@ -37,7 +37,7 @@
 <body>
 
 <div class="topbar">
-  <div class="topTitle">Info Scan — v10.4</div>
+  <div class="topTitle">Info Scan — v10.5</div>
   <img class="logo" src="logo.png" alt="ROCKWOOL logo" onerror="this.style.display='none'"/>
 </div>
 
@@ -279,11 +279,12 @@ async function startCamera(){
   }
 }
 
+/* ── FIX 1: rettet catch(e) syntaksfejl ── */
 function stopCamera(){
   if(raf) cancelAnimationFrame(raf);
   raf = null;
   if(stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
-  if(videoEl){ try{ videoEl.pause(); }catch(e) videoEl.srcObject = null; }
+  if(videoEl){ try{ videoEl.pause(); }catch(e){} videoEl.srcObject = null; }
   cameraWrap.innerHTML = 'Kamera er slukket';
   if(focusInterval){ clearInterval(focusInterval); focusInterval=null; }
 }
@@ -296,8 +297,8 @@ async function scanLoop(){
 
   if(canvas.width !== videoEl.videoWidth){ canvas.width = videoEl.videoWidth; canvas.height = videoEl.videoHeight; }
 
-  try{ ctx.filter='contrast(170%) brightness(105%)'; ctx.drawImage(videoEl,0,0,canvas.width,canvas.height); ctx.filter='none'; }
-  catch(e){ ctx.drawImage(videoEl,0,0,canvas.width,canvas.height); }
+  /* ── FIX 2: fjernet ctx.filter — crasher stille på Samsung Chrome ── */
+  ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
 
   let img;
   try{ img=ctx.getImageData(0,0,canvas.width,canvas.height); }
