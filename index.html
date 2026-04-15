@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Info Scan — v10,0</title>
+<title>Info Scan — v10.1</title>
 <style>
   :root{
     --rw-red:#D20014;
@@ -19,8 +19,16 @@
   .topTitle{ color:#fff; font-weight:900; font-size:20px; }
   .logo{ height:70px; width:auto; display:block; }
   .card{ background:#fff; border-radius:12px; padding:14px; margin-bottom:14px; }
-  #cameraWrap{ height:260px; border-radius:10px; background:#f3f4f6; display:flex; align-items:center; justify-content:center; color:#9ca3af; overflow:hidden; }
+  #cameraWrap{ height:260px; border-radius:10px; background:#f3f4f6; display:flex; align-items:center; justify-content:center; color:#9ca3af; overflow:hidden; position:relative; }
   #cameraWrap video{ width:100%; height:100%; object-fit:cover; transform:none !important; -webkit-transform:none !important; }
+  #reader{ width:100%; height:100%; }
+  #reader video{ object-fit:cover !important; }
+  /* Skjul html5-qrcode's egen UI */
+  #reader__scan_region{ background:transparent !important; }
+  #reader__dashboard{ display:none !important; }
+  #reader__header_message{ display:none !important; }
+  #reader img[alt="Info icon"]{ display:none !important; }
+  #reader__dashboard_section_csr, #reader__dashboard_section_fsr{ display:none !important; }
   .btn{ width:100%; height:56px; margin-top:14px; border-radius:10px; border:0; background:#0f172a; color:#fff; font-weight:900; font-size:18px; cursor:pointer; }
   .box{ border:2px solid var(--black); border-radius:6px; padding:10px 12px; margin-bottom:12px; background:white; }
   .catTitle{ font-size:17px; font-weight:900; margin-bottom:8px; }
@@ -37,13 +45,15 @@
 <body>
 
 <div class="topbar">
-  <div class="topTitle">Info Scan — v10,0</div>
+  <div class="topTitle">Info Scan — v10.1</div>
   <img class="logo" src="logo.png" alt="ROCKWOOL logo" onerror="this.style.display='none'"/>
 </div>
 
 <div class="card">
   <div style="font-weight:700;margin-bottom:8px;">Scanner</div>
-  <div id="cameraWrap">Kamera er slukket</div>
+  <div id="cameraWrap">
+    <div id="reader"></div>
+  </div>
   <button id="scanBtn" class="btn">NY SCANNING</button>
 </div>
 
@@ -58,13 +68,10 @@ const scanBtn = document.getElementById('scanBtn');
 const output  = document.getElementById('output');
 const copyBtn = document.getElementById('copyBtn');
 const cameraWrap = document.getElementById('cameraWrap');
+const readerEl = document.getElementById('reader');
 
-let videoEl = null;
-let canvas = null;
-let ctx = null;
-let stream = null;
-let raf = null;
-let focusInterval = null;
+let html5QrCode = null;
+let scanning = false;
 
 function esc(s){ return String(s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
 function classifyWeight(kg){
@@ -228,152 +235,36 @@ copyBtn.addEventListener('click', async () => {
   }catch(e){}
 });
 
-function loadJsQR(){
+/* ── Load html5-qrcode bibliotek ── */
+function loadLib(){
   return new Promise(res=>{
-    if(window.jsQR) return res();
+    if(window.Html5Qrcode) return res();
     const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+    s.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
     s.onload = res;
-    s.onerror = res;
+    s.onerror = ()=>{ console.warn('html5-qrcode load failed'); res(); };
     document.head.appendChild(s);
   });
 }
 
-async function startCamera(){
+async function stopCamera(){
+  if(html5QrCode && scanning){
+    try{ await html5QrCode.stop(); }catch(e){}
+    scanning = false;
+  }
+  /* Ryd reader-elementet og genskab det */
+  readerEl.innerHTML = '';
+  cameraWrap.innerHTML = '';
+  const newReader = document.createElement('div');
+  newReader.id = 'reader';
+  cameraWrap.appendChild(newReader);
+}
+
+async function startScanning(){
   clearOutput();
-  if(!videoEl){ videoEl = document.createElement('video'); videoEl.setAttribute('playsinline','true'); }
-  if(!canvas){ canvas = document.createElement('canvas'); ctx = canvas.getContext('2d', { willReadFrequently: true }); }
 
-  /* ── Samsung Chrome fix: prøv flere constraint-sæt ── */
-  const constraintsList = [
-    {
-      video: {
-        facingMode: { exact: "environment" },
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-      },
-      audio: false
-    },
-    {
-      video: {
-        facingMode: "environment",
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-      },
-      audio: false
-    },
-    {
-      video: {
-        facingMode: "environment"
-      },
-      audio: false
-    },
-    {
-      video: true,
-      audio: false
-    }
-  ];
-
-  let lastErr = null;
-  for(const constraints of constraintsList){
-    try{
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
-      break;
-    }catch(err){
-      lastErr = err;
-      stream = null;
-    }
-  }
-
-  if(!stream){
-    console.warn('Camera start failed after all attempts:', lastErr);
-    return false;
-  }
-
-  try{
-    const track = stream.getVideoTracks()[0];
-    const caps = track.getCapabilities ? track.getCapabilities() : {};
-
-    /* Kun autofokus — ingen zoom (Samsung Chrome problem) */
-    if(caps.focusMode && caps.focusMode.includes('continuous')){
-      track.applyConstraints({ advanced: [{ focusMode:'continuous' }] }).catch(()=>{});
-      focusInterval = setInterval(()=>{
-        try{ track.applyConstraints({ advanced: [{ focusMode:'continuous' }] }).catch(()=>{}); }catch(e){}
-      }, 2000);
-    }
-
-    videoEl.srcObject = stream;
-    await videoEl.play();
-    cameraWrap.innerHTML = '';
-    cameraWrap.appendChild(videoEl);
-    return true;
-  }catch(err){
-    console.warn('Camera setup failed:', err);
-    if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
-    return false;
-  }
-}
-
-function stopCamera(){
-  if(raf) cancelAnimationFrame(raf);
-  raf = null;
-  if(focusInterval){ clearInterval(focusInterval); focusInterval=null; }
-  if(stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
-  if(videoEl){ try{ videoEl.pause(); }catch(e){} videoEl.srcObject = null; }
-  cameraWrap.innerHTML = 'Kamera er slukket';
-}
-
-/* ── Scan loop: Samsung Chrome fix — ingen ctx.filter, throttled ── */
-let lastScanTime = 0;
-
-async function scanLoop(){
-  if(!videoEl || videoEl.readyState !== videoEl.HAVE_ENOUGH_DATA){
-    raf = requestAnimationFrame(scanLoop);
-    return;
-  }
-
-  /* Throttle: maks 10 scans/sek i stedet for 60 — sparer batteri + CPU */
-  const now = performance.now();
-  if(now - lastScanTime < 100){
-    raf = requestAnimationFrame(scanLoop);
-    return;
-  }
-  lastScanTime = now;
-
-  const vw = videoEl.videoWidth;
-  const vh = videoEl.videoHeight;
-  if(!vw || !vh){ raf = requestAnimationFrame(scanLoop); return; }
-  if(canvas.width !== vw){ canvas.width = vw; canvas.height = vh; }
-
-  /* Tegn UDEN filter — ctx.filter crasher Samsung Chrome stille */
-  ctx.drawImage(videoEl, 0, 0, vw, vh);
-
-  let img;
-  try{ img = ctx.getImageData(0, 0, vw, vh); }
-  catch(e){ raf = requestAnimationFrame(scanLoop); return; }
-
-  let code = null;
-  if(window.jsQR){
-    try{ code = jsQR(img.data, img.width, img.height, {inversionAttempts:'attemptBoth'}); }
-    catch(e){
-      try{ code = jsQR(img.data, img.width, img.height); }catch(e2){}
-    }
-  }
-
-  if(code && code.data){
-    stopCamera();
-    renderData(parseRaw(code.data));
-    return;
-  }
-  raf = requestAnimationFrame(scanLoop);
-}
-
-scanBtn.addEventListener('click', async ()=>{
-  clearOutput();
-  cameraWrap.innerHTML='Starter kamera…';
-  await loadJsQR();
-  const ok = await startCamera();
-  if(!ok){
+  if(!window.Html5Qrcode){
+    /* Fallback demo hvis bibliotek ikke loadede */
     const demo=`Område: Demo
 Varenummer: 12345
 Operatør: John Doe
@@ -394,11 +285,107 @@ Kemi: UN1209`;
     renderData(parseRaw(demo));
     return;
   }
-  scanLoop();
+
+  /* Stop eventuel tidligere scanning */
+  if(html5QrCode && scanning){
+    try{ await html5QrCode.stop(); }catch(e){}
+    scanning = false;
+  }
+
+  /* Sørg for reader-elementet eksisterer */
+  let rd = document.getElementById('reader');
+  if(!rd){
+    rd = document.createElement('div');
+    rd.id = 'reader';
+    cameraWrap.innerHTML = '';
+    cameraWrap.appendChild(rd);
+  }
+
+  html5QrCode = new Html5Qrcode("reader");
+
+  const onSuccess = async (decodedText) => {
+    /* Stop med det samme så vi ikke scanner igen */
+    if(!scanning) return;
+    scanning = false;
+    try{ await html5QrCode.stop(); }catch(e){}
+    cameraWrap.innerHTML = '<div id="reader"></div>';
+    renderData(parseRaw(decodedText));
+  };
+
+  const onError = (err) => {
+    /* Ignorér — dette fyrer ved hver frame uden QR */
+  };
+
+  /* Find bagkamera */
+  let cameraId = null;
+  try{
+    const devices = await Html5Qrcode.getCameras();
+    if(devices && devices.length){
+      /* Foretruk bagkamera */
+      const back = devices.find(d => /back|rear|environment|bag/i.test(d.label));
+      cameraId = back ? back.id : devices[devices.length - 1].id;
+    }
+  }catch(e){
+    console.warn('getCameras failed:', e);
+  }
+
+  const config = {
+    fps: 10,
+    qrbox: { width: 220, height: 220 },
+    aspectRatio: 1.0,
+    formatsToSupport: [ 0 ] /* 0 = QR_CODE */
+  };
+
+  try{
+    if(cameraId){
+      await html5QrCode.start(cameraId, config, onSuccess, onError);
+    } else {
+      await html5QrCode.start({ facingMode: "environment" }, config, onSuccess, onError);
+    }
+    scanning = true;
+  }catch(err){
+    console.warn('Scanner start failed:', err);
+    /* Fallback: prøv uden specifikt kamera */
+    try{
+      await html5QrCode.start({ facingMode: "user" }, config, onSuccess, onError);
+      scanning = true;
+    }catch(err2){
+      console.warn('Scanner fallback also failed:', err2);
+      cameraWrap.innerHTML = 'Kan ikke starte kamera';
+      /* Vis demo-data */
+      const demo=`Område: Demo
+Varenummer: 12345
+Operatør: John Doe
+Antal: 2 KS
+Længde: 1000 mm
+Bredde: 600 mm
+Tykkelse: 10 mm
+Vægt: 18 kg
+Længde i meter: 5 M
+Areal i m²: 2 m²
+Anden info: Test linje1
+Test linje2
+Lager/Område: sym01
+Reol: 01
+Hylde: 02
+Plads: 03
+Kemi: UN1209`;
+      renderData(parseRaw(demo));
+    }
+  }
+}
+
+scanBtn.addEventListener('click', async ()=>{
+  cameraWrap.innerHTML='<div id="reader">Starter kamera…</div>';
+  await loadLib();
+  await startScanning();
 });
 
-window.addEventListener('beforeunload', stopCamera);
+window.addEventListener('beforeunload', async ()=>{
+  if(html5QrCode && scanning){
+    try{ await html5QrCode.stop(); }catch(e){}
+  }
+});
 </script>
 </body>
 </html>
-
