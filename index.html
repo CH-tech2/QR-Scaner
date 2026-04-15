@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Info Scan — v9.9</title>
+<title>Info Scan — v10,0</title>
 <style>
   :root{
     --rw-red:#D20014;
@@ -37,7 +37,7 @@
 <body>
 
 <div class="topbar">
-  <div class="topTitle">Info Scan — v9.9</div>
+  <div class="topTitle">Info Scan — v10,0</div>
   <img class="logo" src="logo.png" alt="ROCKWOOL logo" onerror="this.style.display='none'"/>
 </div>
 
@@ -102,7 +102,6 @@ function parseRaw(raw){
       const parts=line.split(':');
       const key = parts[0].trim();
       const value = parts.slice(1).join(':').trim();
-      // Map "Længde i meter" til "Meter"
       if(key === 'Længde i meter'){
         data['Meter'] = value;
       } else {
@@ -167,7 +166,6 @@ function renderData(data){
       ['Længde','Bredde','Tykkelse'].forEach(k => {
         if(k in data){
           let val = esc(data[k]);
-          // Konverter "mm" til "my" for Tykkelse
           if(k === 'Tykkelse') val = val.replace(/mm/g, 'my');
           arr.push(`${k}: ${val}`);
         }
@@ -246,29 +244,63 @@ async function startCamera(){
   if(!videoEl){ videoEl = document.createElement('video'); videoEl.setAttribute('playsinline','true'); }
   if(!canvas){ canvas = document.createElement('canvas'); ctx = canvas.getContext('2d', { willReadFrequently: true }); }
 
-  const constraints = {
-    video: {
-      facingMode: { ideal: "environment" },
-      width: { ideal: 1920 },
-      height: { ideal: 1080 }
+  /* ── Samsung Chrome fix: prøv flere constraint-sæt ── */
+  const constraintsList = [
+    {
+      video: {
+        facingMode: { exact: "environment" },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      },
+      audio: false
     },
-    audio: false
-  };
+    {
+      video: {
+        facingMode: "environment",
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      },
+      audio: false
+    },
+    {
+      video: {
+        facingMode: "environment"
+      },
+      audio: false
+    },
+    {
+      video: true,
+      audio: false
+    }
+  ];
+
+  let lastErr = null;
+  for(const constraints of constraintsList){
+    try{
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      break;
+    }catch(err){
+      lastErr = err;
+      stream = null;
+    }
+  }
+
+  if(!stream){
+    console.warn('Camera start failed after all attempts:', lastErr);
+    return false;
+  }
 
   try{
-    stream = await navigator.mediaDevices.getUserMedia(constraints);
     const track = stream.getVideoTracks()[0];
     const caps = track.getCapabilities ? track.getCapabilities() : {};
-    const adv = [];
 
-    if(caps.focusMode && caps.focusMode.includes('continuous')) adv.push({ focusMode:'continuous' });
-    if(caps.zoom){ adv.push({ zoom: Math.min(1.2, caps.zoom.max||1) }); }
-
-    if(adv.length) track.applyConstraints({ advanced: adv }).catch(()=>{});
-
-    focusInterval = setInterval(()=>{
-      if(track && adv.length) track.applyConstraints({ advanced: adv }).catch(()=>{});
-    }, 1000);
+    /* Kun autofokus — ingen zoom (Samsung Chrome problem) */
+    if(caps.focusMode && caps.focusMode.includes('continuous')){
+      track.applyConstraints({ advanced: [{ focusMode:'continuous' }] }).catch(()=>{});
+      focusInterval = setInterval(()=>{
+        try{ track.applyConstraints({ advanced: [{ focusMode:'continuous' }] }).catch(()=>{}); }catch(e){}
+      }, 2000);
+    }
 
     videoEl.srcObject = stream;
     await videoEl.play();
@@ -276,7 +308,8 @@ async function startCamera(){
     cameraWrap.appendChild(videoEl);
     return true;
   }catch(err){
-    console.warn('Camera start failed:', err);
+    console.warn('Camera setup failed:', err);
+    if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
     return false;
   }
 }
@@ -284,11 +317,14 @@ async function startCamera(){
 function stopCamera(){
   if(raf) cancelAnimationFrame(raf);
   raf = null;
+  if(focusInterval){ clearInterval(focusInterval); focusInterval=null; }
   if(stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
   if(videoEl){ try{ videoEl.pause(); }catch(e){} videoEl.srcObject = null; }
   cameraWrap.innerHTML = 'Kamera er slukket';
-  if(focusInterval){ clearInterval(focusInterval); focusInterval=null; }
 }
+
+/* ── Scan loop: Samsung Chrome fix — ingen ctx.filter, throttled ── */
+let lastScanTime = 0;
 
 async function scanLoop(){
   if(!videoEl || videoEl.readyState !== videoEl.HAVE_ENOUGH_DATA){
@@ -296,23 +332,40 @@ async function scanLoop(){
     return;
   }
 
-  if(canvas.width !== videoEl.videoWidth){ canvas.width = videoEl.videoWidth; canvas.height = videoEl.videoHeight; }
+  /* Throttle: maks 10 scans/sek i stedet for 60 — sparer batteri + CPU */
+  const now = performance.now();
+  if(now - lastScanTime < 100){
+    raf = requestAnimationFrame(scanLoop);
+    return;
+  }
+  lastScanTime = now;
 
-  try{ ctx.filter='contrast(170%) brightness(105%)'; ctx.drawImage(videoEl,0,0,canvas.width,canvas.height); ctx.filter='none'; }
-  catch(e){ ctx.drawImage(videoEl,0,0,canvas.width,canvas.height); }
+  const vw = videoEl.videoWidth;
+  const vh = videoEl.videoHeight;
+  if(!vw || !vh){ raf = requestAnimationFrame(scanLoop); return; }
+  if(canvas.width !== vw){ canvas.width = vw; canvas.height = vh; }
+
+  /* Tegn UDEN filter — ctx.filter crasher Samsung Chrome stille */
+  ctx.drawImage(videoEl, 0, 0, vw, vh);
 
   let img;
-  try{ img=ctx.getImageData(0,0,canvas.width,canvas.height); }
-  catch(e){ raf=requestAnimationFrame(scanLoop); return; }
+  try{ img = ctx.getImageData(0, 0, vw, vh); }
+  catch(e){ raf = requestAnimationFrame(scanLoop); return; }
 
-  let code=null;
+  let code = null;
   if(window.jsQR){
-    try{ code=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'}); }
-    catch(e){ code=jsQR(img.data,img.width,img.height); }
+    try{ code = jsQR(img.data, img.width, img.height, {inversionAttempts:'attemptBoth'}); }
+    catch(e){
+      try{ code = jsQR(img.data, img.width, img.height); }catch(e2){}
+    }
   }
 
-  if(code && code.data){ stopCamera(); renderData(parseRaw(code.data)); return; }
-  raf=requestAnimationFrame(scanLoop);
+  if(code && code.data){
+    stopCamera();
+    renderData(parseRaw(code.data));
+    return;
+  }
+  raf = requestAnimationFrame(scanLoop);
 }
 
 scanBtn.addEventListener('click', async ()=>{
@@ -348,3 +401,4 @@ window.addEventListener('beforeunload', stopCamera);
 </script>
 </body>
 </html>
+
