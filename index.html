@@ -2,8 +2,8 @@
 <html lang="da">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Info Scan — v10.1</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Info Scan — v10.3</title>
 <style>
   :root{
     --rw-red:#D20014;
@@ -23,7 +23,6 @@
   #cameraWrap video{ width:100%; height:100%; object-fit:cover; transform:none !important; -webkit-transform:none !important; }
   #reader{ width:100%; height:100%; }
   #reader video{ object-fit:cover !important; }
-  /* Skjul html5-qrcode's egen UI */
   #reader__scan_region{ background:transparent !important; }
   #reader__dashboard{ display:none !important; }
   #reader__header_message{ display:none !important; }
@@ -45,7 +44,7 @@
 <body>
 
 <div class="topbar">
-  <div class="topTitle">Info Scan — v10.1</div>
+  <div class="topTitle">Info Scan — v10.3</div>
   <img class="logo" src="logo.png" alt="ROCKWOOL logo" onerror="this.style.display='none'"/>
 </div>
 
@@ -68,7 +67,6 @@ const scanBtn = document.getElementById('scanBtn');
 const output  = document.getElementById('output');
 const copyBtn = document.getElementById('copyBtn');
 const cameraWrap = document.getElementById('cameraWrap');
-const readerEl = document.getElementById('reader');
 
 let html5QrCode = null;
 let scanning = false;
@@ -235,7 +233,6 @@ copyBtn.addEventListener('click', async () => {
   }catch(e){}
 });
 
-/* ── Load html5-qrcode bibliotek ── */
 function loadLib(){
   return new Promise(res=>{
     if(window.Html5Qrcode) return res();
@@ -247,24 +244,66 @@ function loadLib(){
   });
 }
 
-async function stopCamera(){
-  if(html5QrCode && scanning){
-    try{ await html5QrCode.stop(); }catch(e){}
-    scanning = false;
+function isIOS(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function isSamsung(){
+  return /SamsungBrowser|SM-|Galaxy|Android/i.test(navigator.userAgent);
+}
+
+async function applyBestFocus(){
+  try{
+    const video = cameraWrap.querySelector('video');
+    if(!video || !video.srcObject) return;
+
+    const stream = video.srcObject;
+    const track = stream.getVideoTracks && stream.getVideoTracks()[0];
+    if(!track) return;
+
+    const caps = track.getCapabilities ? track.getCapabilities() : {};
+    const settings = track.getSettings ? track.getSettings() : {};
+    console.log('Camera capabilities:', caps);
+    console.log('Camera settings:', settings);
+
+    const advanced = [];
+
+    if(caps.focusMode && Array.isArray(caps.focusMode)){
+      if(caps.focusMode.includes('continuous')) advanced.push({ focusMode: 'continuous' });
+      else if(caps.focusMode.includes('single-shot')) advanced.push({ focusMode: 'single-shot' });
+      else if(caps.focusMode.includes('auto')) advanced.push({ focusMode: 'auto' });
+    }
+
+    if('sharpness' in caps && typeof caps.sharpness === 'object'){
+      advanced.push({ sharpness: caps.sharpness.max });
+    }
+
+    const constraints = {
+      advanced
+    };
+
+    if(advanced.length){
+      await track.applyConstraints(constraints);
+      console.log('Applied focus constraints:', constraints);
+    }
+  }catch(e){
+    console.warn('applyBestFocus failed:', e);
   }
-  /* Ryd reader-elementet og genskab det */
-  readerEl.innerHTML = '';
-  cameraWrap.innerHTML = '';
-  const newReader = document.createElement('div');
-  newReader.id = 'reader';
-  cameraWrap.appendChild(newReader);
+}
+
+async function stopCamera(){
+  if(html5QrCode){
+    try{ await html5QrCode.stop(); }catch(e){}
+  }
+  scanning = false;
+  cameraWrap.innerHTML = '<div id="reader"></div>';
 }
 
 async function startScanning(){
   clearOutput();
 
   if(!window.Html5Qrcode){
-    /* Fallback demo hvis bibliotek ikke loadede */
     const demo=`Område: Demo
 Varenummer: 12345
 Operatør: John Doe
@@ -286,25 +325,17 @@ Kemi: UN1209`;
     return;
   }
 
-  /* Stop eventuel tidligere scanning */
-  if(html5QrCode && scanning){
-    try{ await html5QrCode.stop(); }catch(e){}
-    scanning = false;
-  }
+  await stopCamera();
 
-  /* Sørg for reader-elementet eksisterer */
   let rd = document.getElementById('reader');
   if(!rd){
-    rd = document.createElement('div');
-    rd.id = 'reader';
-    cameraWrap.innerHTML = '';
-    cameraWrap.appendChild(rd);
+    cameraWrap.innerHTML = '<div id="reader"></div>';
+    rd = document.getElementById('reader');
   }
 
   html5QrCode = new Html5Qrcode("reader");
 
   const onSuccess = async (decodedText) => {
-    /* Stop med det samme så vi ikke scanner igen */
     if(!scanning) return;
     scanning = false;
     try{ await html5QrCode.stop(); }catch(e){}
@@ -312,77 +343,67 @@ Kemi: UN1209`;
     renderData(parseRaw(decodedText));
   };
 
-  const onError = (err) => {
-    /* Ignorér — dette fyrer ved hver frame uden QR */
-  };
+  const onError = () => {};
 
-  /* Find bagkamera */
   let cameraId = null;
+  let devices = [];
+
   try{
-    const devices = await Html5Qrcode.getCameras();
+    devices = await Html5Qrcode.getCameras();
     if(devices && devices.length){
-      /* Foretruk bagkamera */
-      const back = devices.find(d => /back|rear|environment|bag/i.test(d.label));
-      cameraId = back ? back.id : devices[devices.length - 1].id;
+      const preferred = devices.find(d => /back|rear|environment|bag|wide/i.test(d.label));
+      cameraId = preferred ? preferred.id : devices[devices.length - 1].id;
     }
   }catch(e){
     console.warn('getCameras failed:', e);
   }
 
-  const config = {
-    fps: 10,
-    qrbox: { width: 220, height: 220 },
-    aspectRatio: 1.0,
-    formatsToSupport: [ 0 ] /* 0 = QR_CODE */
+  const mobileConfig = {
+    fps: isIOS() ? 8 : 10,
+    qrbox: { width: 240, height: 240 },
+    rememberLastUsedCamera: true,
+    supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+    formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
   };
 
-  try{
-    if(cameraId){
-      await html5QrCode.start(cameraId, config, onSuccess, onError);
-    } else {
-      await html5QrCode.start({ facingMode: "environment" }, config, onSuccess, onError);
-    }
-    scanning = true;
-  }catch(err){
-    console.warn('Scanner start failed:', err);
-    /* Fallback: prøv uden specifikt kamera */
+  const cameraModes = [];
+
+  if(cameraId) cameraModes.push(cameraId);
+  cameraModes.push({
+    facingMode: { ideal: "environment" },
+    width: { ideal: isIOS() ? 640 : 1280 },
+    height: { ideal: isIOS() ? 480 : 720 }
+  });
+  cameraModes.push({
+    facingMode: "environment"
+  });
+
+  for(const mode of cameraModes){
     try{
-      await html5QrCode.start({ facingMode: "user" }, config, onSuccess, onError);
+      await html5QrCode.start(mode, mobileConfig, onSuccess, onError);
       scanning = true;
-    }catch(err2){
-      console.warn('Scanner fallback also failed:', err2);
-      cameraWrap.innerHTML = 'Kan ikke starte kamera';
-      /* Vis demo-data */
-      const demo=`Område: Demo
-Varenummer: 12345
-Operatør: John Doe
-Antal: 2 KS
-Længde: 1000 mm
-Bredde: 600 mm
-Tykkelse: 10 mm
-Vægt: 18 kg
-Længde i meter: 5 M
-Areal i m²: 2 m²
-Anden info: Test linje1
-Test linje2
-Lager/Område: sym01
-Reol: 01
-Hylde: 02
-Plads: 03
-Kemi: UN1209`;
-      renderData(parseRaw(demo));
+
+      setTimeout(async ()=>{ await applyBestFocus(); }, 500);
+      setTimeout(async ()=>{ await applyBestFocus(); }, 1500);
+
+      return;
+    }catch(err){
+      console.warn('Scanner mode failed:', mode, err);
+      try{ await html5QrCode.stop(); }catch(e){}
     }
   }
+
+  cameraWrap.innerHTML = 'Kan ikke starte kamera';
 }
 
 scanBtn.addEventListener('click', async ()=>{
-  cameraWrap.innerHTML='<div id="reader">Starter kamera…</div>';
+  cameraWrap.innerHTML = '<div id="reader">Starter kamera…</div>';
   await loadLib();
   await startScanning();
 });
 
 window.addEventListener('beforeunload', async ()=>{
-  if(html5QrCode && scanning){
+  if(html5QrCode){
     try{ await html5QrCode.stop(); }catch(e){}
   }
 });
