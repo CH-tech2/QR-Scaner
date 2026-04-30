@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Info Scan — v10.6</title>
+<title>Info Scan — v11.1</title>
 <style>
   :root{
     --rw-red:#D20014;
@@ -37,7 +37,7 @@
 <body>
 
 <div class="topbar">
-  <div class="topTitle">Info Scan — v10.6</div>
+  <div class="topTitle">Info Scan — v11.1</div>
   <img class="logo" src="logo.png" alt="ROCKWOOL logo" onerror="this.style.display='none'"/>
 </div>
 
@@ -75,92 +75,125 @@ function classifyWeight(kg){
 function enableCopy(enable){ copyBtn.disabled = !enable; }
 function clearOutput(){ output.innerHTML = ''; enableCopy(false); }
 
-/* ── Forkortelsesmap: kompakt kode → fuldt nøglenavn ── */
-const ABBREV = {
-  'O':  'Område',
-  'VN': 'Varenummer',
-  'MA': 'Materiale',
-  'OP': 'Operatør',
-  'A':  'Antal',
-  'L':  'Længde',
-  'B':  'Bredde',
-  'T':  'Tykkelse',
-  'V':  'Vægt',
-  'M':  'Meter',
-  'A2': 'Areal i m²',
-  'AI': 'Anden info',
-  'LO': 'Lager/Område',
-  'RE': 'Reol',
-  'HY': 'Hylde',
-  'PL': 'Plads',
-  'KE': 'Kemi'
-};
+/* ── Kompakt forkortelser → fuldt navn ── */
+/* VIGTIGT: rækkefølgen i COMPACT_KEYS bruges til at matche linjer top-til-bund.
+   Længere koder SKAL stå FØR kortere, så "A2" matches før "A", "PL" før "P" osv. */
+const COMPACT_KEYS = [
+  ['VN', 'Varenummer'],
+  ['MA', 'Materiale'],
+  ['OP', 'Operatør'],
+  ['A2', 'Areal i m²'],
+  ['AI', 'Anden info'],
+  ['LO', 'Lager/Område'],
+  ['RE', 'Reol'],
+  ['HY', 'Hylde'],
+  ['PL', 'Plads'],
+  ['KE', 'Kemi'],
+  ['O',  'Område'],
+  ['A',  'Antal'],
+  ['L',  'Længde'],
+  ['B',  'Bredde'],
+  ['T',  'Tykkelse'],
+  ['V',  'Vægt'],
+  ['M',  'Meter']
+];
 
-/* Forsøg at ekspandere en forkortet nøgle til det fulde navn */
-function expandKey(key){
-  return ABBREV[key] || key;
+/* Byg regex der matcher starten af en linje: ^(VN|MA|OP|A2|…):
+   Sorteret med længste kode først for korrekt greedy-match */
+const COMPACT_RE = new RegExp('^(' + COMPACT_KEYS.map(k=>k[0]).join('|') + '):(.*)$');
+const COMPACT_MAP = Object.fromEntries(COMPACT_KEYS);
+
+/* Detektér kompakt format */
+function isCompact(lines){
+  let hits=0;
+  for(const line of lines){ if(COMPACT_RE.test(line)) hits++; }
+  return hits >= 3;
 }
 
-/* Detektér om rå QR-data er i kompakt format (flertallet af linjer bruger forkortelser) */
-function isCompactFormat(lines){
-  let hits = 0;
-  for(const line of lines){
-    const m = line.match(/^([A-Za-z0-9]+):/);
-    if(m && ABBREV[m[1]]) hits++;
+/* ── Gammelt format: fulde nøglenavne ── */
+const KNOWN_FULL = ['Område','Varenummer','Materiale','Operatør','Antal','Længde','Bredde','Tykkelse','Vægt',
+                    'Længde i meter','Meter','Areal i m²','Anden info','Lagerplads','Lager/Område','Reol','Hylde','Plads','Kemi'];
+
+function parseCompact(lines){
+  const data = {};
+  let collectAI = false;
+  let aiArr = [];
+
+  for(let i=0; i<lines.length; i++){
+    const line = lines[i];
+    const m = line.match(COMPACT_RE);
+
+    if(m){
+      const fullKey = COMPACT_MAP[m[1]];
+      const value   = m[2].trim();
+
+      if(fullKey === 'Anden info'){
+        collectAI = true;
+        if(value) aiArr.push(value);
+        continue;
+      }
+      if(collectAI){
+        /* Ny kendt nøgle → stop AI-indsamling */
+        collectAI = false;
+      }
+      data[fullKey] = value;
+    } else {
+      /* Linje uden nøgle-match */
+      if(collectAI){
+        aiArr.push(line);
+      } else {
+        const lastKey = Object.keys(data).slice(-1)[0];
+        if(lastKey) data[lastKey] = (data[lastKey]+'\n'+line).trim();
+      }
+    }
   }
-  return hits >= 3;                 // 3+ kendte forkortelser → kompakt
+  if(aiArr.length) data['Anden info'] = aiArr.join('\n');
+  return data;
+}
+
+function parseFull(lines){
+  const data = {};
+  let collecting=false;
+  let andenArr=[];
+
+  for(let i=0;i<lines.length;i++){
+    const line = lines[i];
+    if(/^Anden info/i.test(line)){
+      collecting = true;
+      const parts=line.split(':');
+      if(parts.length>1) andenArr.push(parts.slice(1).join(':').trim());
+      continue;
+    }
+    if(collecting){
+      if(/^[A-Za-zÆØÅæøå].*?:/.test(line)){
+        const maybeKey = line.split(':')[0].trim();
+        if(KNOWN_FULL.includes(maybeKey)){ collecting = false; i--; continue; }
+      }
+      andenArr.push(line);
+      continue;
+    }
+    if(line.includes(':')){
+      const parts=line.split(':');
+      const key = parts[0].trim();
+      const value = parts.slice(1).join(':').trim();
+      if(key === 'Længde i meter'){
+        data['Meter'] = value;
+      } else {
+        data[key] = value;
+      }
+    } else {
+      const lastKey = Object.keys(data).slice(-1)[0];
+      if(lastKey){ data[lastKey] = (data[lastKey] + '\n' + line).trim(); }
+      else { data['_extra'] = (data['_extra'] ? data['_extra'] + '\n' : '') + line; }
+    }
+  }
+  if(andenArr.length) data['Anden info'] = andenArr.join('\n');
+  return data;
 }
 
 function parseRaw(raw){
   const lines = String(raw||"").split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
-  const data = {};
-
-  const compact = isCompactFormat(lines);
-
-  let collecting=false;
-  let andenArr=[];
-  const known = ['Område','Varenummer','Materiale','Operatør','Antal','Længde','Bredde','Tykkelse','Vægt',
-                 'Længde i meter','Meter','Areal i m²','Anden info','Lagerplads','Lager/Område','Reol','Hylde','Plads','Kemi'];
-
-  for(let i=0;i<lines.length;i++){
-    const line = lines[i];
-
-    /* ── Split på første ":" ── */
-    const colonIdx = line.indexOf(':');
-    if(colonIdx === -1){
-      /* Linje uden kolon — tilføj til sidst-kendte nøgle */
-      if(collecting){ andenArr.push(line); continue; }
-      const lastKey = Object.keys(data).slice(-1)[0];
-      if(lastKey){ data[lastKey] = (data[lastKey] + '\n' + line).trim(); }
-      else { data['_extra'] = (data['_extra'] ? data['_extra'] + '\n' : '') + line; }
-      continue;
-    }
-
-    let rawKey = line.substring(0, colonIdx).trim();
-    let value  = line.substring(colonIdx + 1).trim();
-
-    /* Ekspandér forkortelse hvis kompakt format */
-    if(compact) rawKey = expandKey(rawKey);
-
-    /* ── "Anden info" samler flere linjer ── */
-    if(/^Anden info$/i.test(rawKey)){
-      collecting = true;
-      if(value) andenArr.push(value);
-      continue;
-    }
-    if(collecting){
-      if(known.includes(rawKey)){ collecting = false; /* fall through til normal nøgle */ }
-      else { andenArr.push(line); continue; }
-    }
-
-    /* ── Normalisér aliaser ── */
-    if(rawKey === 'Længde i meter') rawKey = 'Meter';
-
-    data[rawKey] = value;
-  }
-
-  if(andenArr.length) data['Anden info'] = andenArr.join('\n');
-  return data;
+  return isCompact(lines) ? parseCompact(lines) : parseFull(lines);
 }
 
 function makeBox(title, valueHtml){
@@ -243,11 +276,8 @@ function renderData(data){
 
     if(box.title === 'Lagerplads'){
       const arr = [];
-      ['Lagerplads','Lager/Område','Reol','Hylde','Plads'].forEach((k, i) => {
-        if(k in data){
-          if(i===0) return;
-          arr.push(`${k}: ${esc(data[k])}`);
-        }
+      ['Lagerplads','Lager/Område','Reol','Hylde','Plads'].forEach(k => {
+        if(k in data) arr.push(`${k}: ${esc(data[k])}`);
       });
       output.appendChild(makeBox(box.title, arr.join('\n')));
       return;
@@ -393,4 +423,3 @@ window.addEventListener('beforeunload', stopCamera);
 </script>
 </body>
 </html>
-
