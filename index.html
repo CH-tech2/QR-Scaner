@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Info Scan v11.2</title>
+<title>Info Scan v11.4</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -15,17 +15,32 @@
     align-items: center;
     padding: 10px;
   }
+  .header {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin: 10px 0;
+  }
   h1 {
     color: #fff;
     font-size: 1.4em;
-    margin: 10px 0;
     text-align: center;
   }
   .version {
     color: rgba(255,255,255,0.6);
     font-size: 0.7em;
   }
-  #camera-container {
+  .logo {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 40px;
+  }
+  #camera-wrapper {
     width: 100%;
     max-width: 500px;
     background: #eee;
@@ -33,20 +48,20 @@
     overflow: hidden;
     margin-bottom: 15px;
     position: relative;
-    aspect-ratio: 4/3;
+    min-height: 280px;
   }
-  #camera-container video {
+  #camera-container {
     width: 100%;
-    height: 100%;
-    object-fit: cover;
+    min-height: 280px;
   }
-  #camera-container .off-label {
+  .off-label {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     color: #999;
     font-size: 1.1em;
+    pointer-events: none;
   }
   .btn {
     width: 100%;
@@ -74,8 +89,6 @@
     background: #D20014;
     color: #fff;
   }
-
-  /* Result cards */
   #results {
     width: 100%;
     max-width: 500px;
@@ -110,16 +123,6 @@
     font-weight: bold;
     font-size: 1.1em;
   }
-
-  /* Hazard icon */
-  .hazard-icon {
-    display: inline-block;
-    width: 28px;
-    height: 28px;
-    vertical-align: middle;
-    margin-right: 6px;
-  }
-
   .footer-link {
     margin-top: auto;
     padding: 12px 24px;
@@ -131,8 +134,6 @@
     text-decoration: none;
     margin-bottom: 10px;
   }
-
-  /* Copy toast */
   .toast {
     position: fixed;
     bottom: 30px;
@@ -150,10 +151,17 @@
 </head>
 <body>
 
-<h1>ROCKWOOL Info Scan <span class="version">v11.2</span></h1>
+<div class="header">
+  <h1>ROCKWOOL Info Scan <span class="version">v11.4</span></h1>
+  <svg class="logo" viewBox="0 0 200 50" width="120" height="30">
+    <rect x="0" y="0" width="200" height="50" rx="6" fill="#fff"/>
+    <text x="100" y="33" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="22" fill="#D20014" letter-spacing="1">ROCKWOOL</text>
+    <rect x="4" y="42" width="192" height="4" rx="2" fill="#D20014"/>
+  </svg>
+</div>
 
-<div id="camera-container">
-  <video id="video" playsinline></video>
+<div id="camera-wrapper">
+  <div id="camera-container"></div>
   <span class="off-label" id="cam-off-label">Kamera er slukket</span>
 </div>
 
@@ -167,7 +175,6 @@
 
 <a class="footer-link" href="https://ch-tech2.github.io" target="_blank">ch-tech2.github.io</a>
 
-<!-- QR Scanner library -->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <script>
@@ -192,43 +199,28 @@ const ABBREV_MAP = {
   'KE': 'Kemi'
 };
 
-/* Full-name keys (for old format) */
-const FULL_KEYS = [
-  'Område', 'Varenummer', 'Materiale', 'Operatør', 'Antal',
-  'Længde', 'Bredde', 'Tykkelse', 'Vægt', 'Længde i meter',
-  'Areal i m²', 'Anden info', 'Lager/Område', 'Reol', 'Hylde',
-  'Plads', 'Kemi'
-];
-
-/* Sort abbreviation keys longest-first to avoid partial matches */
+const HIDDEN_FIELDS = ['Materiale'];
+const FULL_KEYS = Object.values(ABBREV_MAP);
 const ABBREV_KEYS_SORTED = Object.keys(ABBREV_MAP).sort((a, b) => b.length - a.length);
 
-/* Build regex for compact format: keys separated by | */
-/* Pattern: capture KEY:VALUE pairs separated by | */
 function parseCompact(raw) {
   const data = {};
-  /* Try pipe-separated first */
   const parts = raw.split('|');
   if (parts.length > 1) {
     for (const part of parts) {
       const trimmed = part.trim();
-      /* Match against known abbreviations */
       let matched = false;
       for (const key of ABBREV_KEYS_SORTED) {
         if (trimmed.startsWith(key + ':')) {
-          const value = trimmed.substring(key.length + 1).trim();
-          const fullName = ABBREV_MAP[key];
-          data[fullName] = value;
+          data[ABBREV_MAP[key]] = trimmed.substring(key.length + 1).trim();
           matched = true;
           break;
         }
       }
-      /* Also try full-name keys */
       if (!matched) {
         for (const fk of FULL_KEYS) {
           if (trimmed.startsWith(fk + ':')) {
-            const value = trimmed.substring(fk.length + 1).trim();
-            data[fk] = value;
+            data[fk] = trimmed.substring(fk.length + 1).trim();
             break;
           }
         }
@@ -244,12 +236,10 @@ function parseNewline(raw) {
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
-    /* Try abbreviations first (longest-first) */
     let matched = false;
     for (const key of ABBREV_KEYS_SORTED) {
       if (trimmed.startsWith(key + ':')) {
-        const value = trimmed.substring(key.length + 1).trim();
-        data[ABBREV_MAP[key]] = value;
+        data[ABBREV_MAP[key]] = trimmed.substring(key.length + 1).trim();
         matched = true;
         break;
       }
@@ -257,8 +247,7 @@ function parseNewline(raw) {
     if (!matched) {
       for (const fk of FULL_KEYS) {
         if (trimmed.toLowerCase().startsWith(fk.toLowerCase() + ':')) {
-          const value = trimmed.substring(fk.length + 1).trim();
-          data[fk] = value;
+          data[fk] = trimmed.substring(fk.length + 1).trim();
           break;
         }
       }
@@ -268,16 +257,12 @@ function parseNewline(raw) {
 }
 
 function parseRaw(raw) {
-  /* Try pipe-separated compact format first */
   let data = parseCompact(raw);
   if (Object.keys(data).length >= 2) return data;
 
-  /* Try newline-separated */
   data = parseNewline(raw);
   if (Object.keys(data).length >= 2) return data;
 
-  /* Fallback: try to parse as a single compact string without pipes
-     (keys smashed together) using regex */
   data = {};
   const regexParts = ABBREV_KEYS_SORTED.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   const pattern = new RegExp('(' + regexParts.join('|') + '):', 'g');
@@ -286,8 +271,7 @@ function parseRaw(raw) {
     const key = matches[i][1];
     const start = matches[i].index + matches[i][0].length;
     const end = (i + 1 < matches.length) ? matches[i + 1].index : raw.length;
-    const value = raw.substring(start, end).replace(/\|/g, '').trim();
-    data[ABBREV_MAP[key]] = value;
+    data[ABBREV_MAP[key]] = raw.substring(start, end).replace(/\|/g, '').trim();
   }
   return data;
 }
@@ -298,15 +282,18 @@ function renderResults(data) {
   container.innerHTML = '';
   container.style.display = 'flex';
 
-  const HEAVY_THRESHOLD = 25; /* kg — show warning above this */
+  const HEAVY_THRESHOLD = 25;
 
-  /* Define display order and grouping */
   const displayConfig = [
     { key: 'Område', title: 'Område' },
     { key: 'Varenummer', title: 'Varenummer' },
-    { key: 'Materiale', title: 'Materiale' },
     { key: 'Operatør', title: 'Operatør' },
-    { key: 'Antal', title: 'Antal', format: (v) => v + ' på PL' },
+    {
+      key: 'Antal', title: 'Antal', format: (v) => {
+        if (v.match(/PL|pPL|RULL|stk/i)) return v;
+        return v + ' på PL';
+      }
+    },
     {
       key: '_maal_', title: 'Mål', multi: true,
       build: () => {
@@ -337,15 +324,12 @@ function renderResults(data) {
         if (data['Reol']) parts.push('Reol: ' + data['Reol']);
         if (data['Hylde']) parts.push('Hylde: ' + data['Hylde']);
         if (data['Plads']) parts.push('Plads: ' + data['Plads']);
-        /* If only Plads exists without LO, show it standalone */
-        if (parts.length === 0 && data['Plads']) parts.push('Plads: ' + data['Plads']);
         return parts.join('\n');
       }
     },
     {
       key: 'Kemi', title: 'Kemi / Farligt stof', format: (v) => {
         const val = v.trim();
-        /* Check if UN-number */
         const unMatch = val.match(/^(UN?\s*)?(\d{4})$/i);
         if (unMatch) {
           return { text: '⚠️ UN' + unMatch[2] + ' — Farligt stof', hazard: true };
@@ -367,8 +351,8 @@ function renderResults(data) {
       if (!value) continue;
     } else {
       if (!data[cfg.key]) continue;
+      if (HIDDEN_FIELDS.includes(cfg.key)) continue;
       let raw = data[cfg.key];
-
       if (cfg.format) {
         const result = cfg.format(raw);
         if (typeof result === 'object') {
@@ -383,32 +367,19 @@ function renderResults(data) {
       }
     }
 
-    /* Skip "Antal" format suffix if value already contains descriptive text */
-    if (cfg.key === 'Antal') {
-      const rawAntal = data['Antal'];
-      /* If the value already has descriptive text like "8 RULL/PL", don't add "på PL" */
-      if (rawAntal.match(/PL|pPL|RULL|stk/i)) {
-        value = rawAntal;
-      }
-    }
-
     const card = document.createElement('div');
     card.className = 'card';
-
     const title = document.createElement('div');
     title.className = 'card-title';
     title.textContent = cfg.title;
-
     const val = document.createElement('div');
     val.className = 'card-value';
     if (isHeavy) val.classList.add('heavy');
     if (isHazard) val.classList.add('hazard');
     val.textContent = value;
-
     card.appendChild(title);
     card.appendChild(val);
     container.appendChild(card);
-
     copyText += cfg.title + ': ' + value + '\n';
   }
 
@@ -421,36 +392,42 @@ let scanner = null;
 let scanning = false;
 
 function toggleScan() {
-  if (scanning) {
-    stopScan();
-  } else {
-    startScan();
-  }
+  if (scanning) { stopScan(); } else { startScan(); }
+}
+
+/* KEY FIX: Recreate the scanner container fresh each time */
+function resetCameraContainer() {
+  const wrapper = document.getElementById('camera-wrapper');
+  const oldContainer = document.getElementById('camera-container');
+  if (oldContainer) oldContainer.remove();
+
+  const newContainer = document.createElement('div');
+  newContainer.id = 'camera-container';
+  newContainer.style.width = '100%';
+  newContainer.style.minHeight = '280px';
+  wrapper.insertBefore(newContainer, wrapper.firstChild);
 }
 
 function startScan() {
+  /* Reset everything */
+  resetCameraContainer();
+
   const camLabel = document.getElementById('cam-off-label');
   camLabel.style.display = 'none';
-
   document.getElementById('results').style.display = 'none';
   document.getElementById('results').innerHTML = '';
   document.getElementById('copyBtn').style.display = 'none';
   document.getElementById('scanBtn').textContent = 'STOP SCANNING';
 
+  /* Create a fresh scanner instance every time */
   scanner = new Html5Qrcode('camera-container');
   scanning = true;
 
   scanner.start(
     { facingMode: 'environment' },
     { fps: 10, qrbox: { width: 250, height: 250 } },
-    (decodedText) => {
-      /* Success */
-      stopScan();
-      processQR(decodedText);
-    },
-    (errorMessage) => {
-      /* Ignore scan errors */
-    }
+    (decodedText) => { stopScan(); processQR(decodedText); },
+    (errorMessage) => {}
   ).catch(err => {
     console.error('Camera error:', err);
     camLabel.textContent = 'Kan ikke åbne kamera';
@@ -461,16 +438,18 @@ function startScan() {
 }
 
 function stopScan() {
-  if (scanner) {
+  if (scanner && scanning) {
+    scanning = false;
     scanner.stop().then(() => {
-      scanner.clear();
-      scanning = false;
+      try { scanner.clear(); } catch(e) {}
+      scanner = null;
       document.getElementById('scanBtn').textContent = 'NY SCANNING';
       document.getElementById('cam-off-label').style.display = 'block';
     }).catch(err => {
       console.error('Stop error:', err);
-      scanning = false;
+      scanner = null;
       document.getElementById('scanBtn').textContent = 'NY SCANNING';
+      document.getElementById('cam-off-label').style.display = 'block';
     });
   }
 }
@@ -480,7 +459,6 @@ function processQR(raw) {
   if (Object.keys(data).length > 0) {
     renderResults(data);
   } else {
-    /* Fallback: show raw data if parsing fails */
     const container = document.getElementById('results');
     container.innerHTML = '';
     container.style.display = 'flex';
@@ -500,7 +478,6 @@ function copyResults() {
     navigator.clipboard.writeText(window._copyText).then(() => {
       showToast();
     }).catch(() => {
-      /* Fallback */
       const ta = document.createElement('textarea');
       ta.value = window._copyText;
       document.body.appendChild(ta);
