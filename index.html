@@ -1,418 +1,522 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="da">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Info Scan — v11.1</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Info Scan v11.2</title>
 <style>
-  :root{
-    --rw-red:#D20014;
-    --text:#111827;
-    --black:#000;
-    --un:#b91c1c;
-    --green:#059669;
-    --yellow:#CA8A04;
-    --red:#B91C1C;
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Courier New', monospace;
+    background: #D20014;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
   }
-  body{ margin:0; padding:12px; font-family: Arial, ui-monospace, monospace; background:var(--rw-red); color:var(--text); }
-  .topbar{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }
-  .topTitle{ color:#fff; font-weight:900; font-size:20px; }
-  .logo{ height:70px; width:auto; display:block; }
-  .card{ background:#fff; border-radius:12px; padding:14px; margin-bottom:14px; }
-  #cameraWrap{ height:260px; border-radius:10px; background:#f3f4f6; display:flex; align-items:center; justify-content:center; color:#9ca3af; overflow:hidden; }
-  #cameraWrap video{ width:100%; height:100%; object-fit:cover; transform:none !important; -webkit-transform:none !important; }
-  .btn{ width:100%; height:56px; margin-top:14px; border-radius:10px; border:0; background:#0f172a; color:#fff; font-weight:900; font-size:18px; cursor:pointer; }
-  .box{ border:2px solid var(--black); border-radius:6px; padding:10px 12px; margin-bottom:12px; background:white; }
-  .catTitle{ font-size:17px; font-weight:900; margin-bottom:8px; }
-  .boxValue{ font-family: ui-monospace, monospace; font-size:16px; white-space:pre-wrap; }
-  .w-green{ color:var(--green); font-weight:900; }
-  .w-yellow{ color:var(--yellow); font-weight:900; }
-  .w-red{ color:var(--red); font-weight:900; }
-  .kemiRow{ display:flex; justify-content:space-between; align-items:center; }
-  .hazard{ width:34px; height:34px; }
-  #copyBtn{ width:100%; height:50px; margin-top:12px; border-radius:10px; border:2px solid #ddd; background:white; font-weight:900; font-size:16px; cursor:pointer; }
-  .debugBox{ border:2px dashed #CA8A04; border-radius:6px; padding:10px 12px; margin-bottom:12px; background:#FFFBEB; }
-  .debugTitle{ font-size:14px; font-weight:900; color:#CA8A04; margin-bottom:6px; }
-  .debugText{ font-family: ui-monospace, monospace; font-size:13px; white-space:pre-wrap; word-break:break-all; color:#111; }
-  #copyDebugBtn{ width:100%; height:40px; margin-top:8px; border-radius:8px; border:2px solid #CA8A04; background:#FFFBEB; font-weight:900; font-size:14px; cursor:pointer; color:#CA8A04; }
-  @media (max-width:700px){ .logo{ height:56px; } .topTitle{ font-size:18px; } }
+  h1 {
+    color: #fff;
+    font-size: 1.4em;
+    margin: 10px 0;
+    text-align: center;
+  }
+  .version {
+    color: rgba(255,255,255,0.6);
+    font-size: 0.7em;
+  }
+  #camera-container {
+    width: 100%;
+    max-width: 500px;
+    background: #eee;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 15px;
+    position: relative;
+    aspect-ratio: 4/3;
+  }
+  #camera-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  #camera-container .off-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #999;
+    font-size: 1.1em;
+  }
+  .btn {
+    width: 100%;
+    max-width: 500px;
+    padding: 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 1.1em;
+    font-weight: bold;
+    border: 3px solid #000;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .btn-scan {
+    background: #fff;
+    color: #000;
+  }
+  .btn-copy {
+    background: #fff;
+    color: #D20014;
+    border-color: #D20014;
+  }
+  .btn-copy:active {
+    background: #D20014;
+    color: #fff;
+  }
+
+  /* Result cards */
+  #results {
+    width: 100%;
+    max-width: 500px;
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .card {
+    background: #fff;
+    border: 2px solid #000;
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .card-title {
+    font-weight: bold;
+    font-size: 1.05em;
+    margin-bottom: 6px;
+  }
+  .card-value {
+    font-size: 1.0em;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .card-value.heavy {
+    color: #D20014;
+    font-weight: bold;
+    font-size: 1.15em;
+  }
+  .card-value.hazard {
+    color: #D20014;
+    font-weight: bold;
+    font-size: 1.1em;
+  }
+
+  /* Hazard icon */
+  .hazard-icon {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  .footer-link {
+    margin-top: auto;
+    padding: 12px 24px;
+    background: #D20014;
+    color: #fff;
+    border-radius: 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8em;
+    text-decoration: none;
+    margin-bottom: 10px;
+  }
+
+  /* Copy toast */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    display: none;
+    z-index: 999;
+  }
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <div class="topTitle">Info Scan — v11.1</div>
-  <img class="logo" src="logo.png" alt="ROCKWOOL logo" onerror="this.style.display='none'"/>
+<h1>ROCKWOOL Info Scan <span class="version">v11.2</span></h1>
+
+<div id="camera-container">
+  <video id="video" playsinline></video>
+  <span class="off-label" id="cam-off-label">Kamera er slukket</span>
 </div>
 
-<div class="card">
-  <div style="font-weight:700;margin-bottom:8px;">Scanner</div>
-  <div id="cameraWrap">Kamera er slukket</div>
-  <button id="scanBtn" class="btn">NY SCANNING</button>
-</div>
+<button class="btn btn-scan" id="scanBtn" onclick="toggleScan()">NY SCANNING</button>
 
-<div class="card" style="position:relative;">
-  <div style="font-weight:700;margin-bottom:10px;font-size:18px;">Rådata</div>
-  <div id="debugWrap"></div>
-  <div id="output"></div>
-  <button id="copyBtn" disabled>KOPIER</button>
-</div>
+<div id="results"></div>
+
+<button class="btn btn-copy" id="copyBtn" style="display:none;" onclick="copyResults()">KOPIER</button>
+
+<div class="toast" id="toast">Kopieret ✓</div>
+
+<a class="footer-link" href="https://ch-tech2.github.io" target="_blank">ch-tech2.github.io</a>
+
+<!-- QR Scanner library -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <script>
-const scanBtn = document.getElementById('scanBtn');
-const output  = document.getElementById('output');
-const copyBtn = document.getElementById('copyBtn');
-const cameraWrap = document.getElementById('cameraWrap');
-const debugWrap = document.getElementById('debugWrap');
-
-let videoEl = null;
-let canvas = null;
-let ctx = null;
-let stream = null;
-let raf = null;
-let focusInterval = null;
-let lastRawQR = '';
-
-function esc(s){ return String(s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
-function classifyWeight(kg){
-  if(kg <= 15) return {cls:'w-green', extra:''};
-  if(kg <= 30) return {cls:'w-yellow', extra:' (Pas på når du løfter)'};
-  return {cls:'w-red', extra:' (Brug hjælpe værktøj til løft)'};
-}
-function enableCopy(enable){ copyBtn.disabled = !enable; }
-function clearOutput(){ output.innerHTML = ''; debugWrap.innerHTML = ''; enableCopy(false); lastRawQR = ''; }
-
-/* ── Debug-boks: viser rå QR-data så vi kan fejlfinde ── */
-function showDebug(rawText){
-  lastRawQR = rawText;
-  debugWrap.innerHTML = `
-    <div class="debugBox">
-      <div class="debugTitle">⚙ DEBUG — Rå QR-data (kopiér og send til fejlfinding)</div>
-      <div class="debugText">${esc(rawText)}</div>
-      <button id="copyDebugBtn" onclick="copyDebug()">KOPIÉR RÅ DATA</button>
-    </div>`;
-}
-
-window.copyDebug = async function(){
-  try{
-    await navigator.clipboard.writeText(lastRawQR);
-    const btn = document.getElementById('copyDebugBtn');
-    btn.textContent = 'KOPIERET!';
-    setTimeout(()=> btn.textContent = 'KOPIÉR RÅ DATA', 700);
-  }catch(e){}
+/* ===== ABBREVIATION MAP ===== */
+const ABBREV_MAP = {
+  'O':  'Område',
+  'VN': 'Varenummer',
+  'MA': 'Materiale',
+  'OP': 'Operatør',
+  'A':  'Antal',
+  'L':  'Længde',
+  'B':  'Bredde',
+  'T':  'Tykkelse',
+  'V':  'Vægt',
+  'M':  'Længde i meter',
+  'A2': 'Areal i m²',
+  'AI': 'Anden info',
+  'LO': 'Lager/Område',
+  'RE': 'Reol',
+  'HY': 'Hylde',
+  'PL': 'Plads',
+  'KE': 'Kemi'
 };
 
-/* ── Forkortelsesmap: kompakt → fuldt navn ── */
-const ABBREV_LIST = [
-  ['VN', 'Varenummer'],
-  ['MA', 'Materiale'],
-  ['OP', 'Operatør'],
-  ['A2', 'Areal i m²'],
-  ['AI', 'Anden info'],
-  ['LO', 'Lager/Område'],
-  ['RE', 'Reol'],
-  ['HY', 'Hylde'],
-  ['PL', 'Plads'],
-  ['KE', 'Kemi'],
-  ['O',  'Område'],
-  ['A',  'Antal'],
-  ['L',  'Længde'],
-  ['B',  'Bredde'],
-  ['T',  'Tykkelse'],
-  ['V',  'Vægt'],
-  ['M',  'Meter']
+/* Full-name keys (for old format) */
+const FULL_KEYS = [
+  'Område', 'Varenummer', 'Materiale', 'Operatør', 'Antal',
+  'Længde', 'Bredde', 'Tykkelse', 'Vægt', 'Længde i meter',
+  'Areal i m²', 'Anden info', 'Lager/Område', 'Reol', 'Hylde',
+  'Plads', 'Kemi'
 ];
-const ABBREV_MAP = Object.fromEntries(ABBREV_LIST);
-const ABBREV_RE  = new RegExp('^(' + ABBREV_LIST.map(k=>k[0]).join('|') + '):(.*)$');
 
-const KNOWN_FULL = ['Område','Varenummer','Materiale','Operatør','Antal','Længde','Bredde','Tykkelse','Vægt',
-                    'Længde i meter','Meter','Areal i m²','Anden info','Lagerplads','Lager/Område','Reol','Hylde','Plads','Kemi'];
+/* Sort abbreviation keys longest-first to avoid partial matches */
+const ABBREV_KEYS_SORTED = Object.keys(ABBREV_MAP).sort((a, b) => b.length - a.length);
 
-function parseRaw(raw){
-  const lines = String(raw||"").split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
+/* Build regex for compact format: keys separated by | */
+/* Pattern: capture KEY:VALUE pairs separated by | */
+function parseCompact(raw) {
   const data = {};
-  let collecting = false;
-  let andenArr = [];
-
-  for(let i=0; i<lines.length; i++){
-    let line = lines[i];
-    let key = null;
-    let value = null;
-
-    /* Forsøg kompakt match først */
-    const cm = line.match(ABBREV_RE);
-    if(cm){
-      key   = ABBREV_MAP[cm[1]];
-      value = cm[2].trim();
-    }
-    /* Ellers forsøg fuldt-navn match */
-    else if(line.includes(':')){
-      const colonIdx = line.indexOf(':');
-      const rawKey = line.substring(0, colonIdx).trim();
-      value = line.substring(colonIdx + 1).trim();
-      if(rawKey === 'Længde i meter') key = 'Meter';
-      else key = rawKey;
-    }
-
-    /* Håndtér "Anden info" multi-linje */
-    if(key === 'Anden info'){
-      collecting = true;
-      if(value) andenArr.push(value);
-      continue;
-    }
-
-    if(collecting){
-      if(key && KNOWN_FULL.includes(key)){
-        collecting = false;
-      } else {
-        andenArr.push(line);
-        continue;
+  /* Try pipe-separated first */
+  const parts = raw.split('|');
+  if (parts.length > 1) {
+    for (const part of parts) {
+      const trimmed = part.trim();
+      /* Match against known abbreviations */
+      let matched = false;
+      for (const key of ABBREV_KEYS_SORTED) {
+        if (trimmed.startsWith(key + ':')) {
+          const value = trimmed.substring(key.length + 1).trim();
+          const fullName = ABBREV_MAP[key];
+          data[fullName] = value;
+          matched = true;
+          break;
+        }
+      }
+      /* Also try full-name keys */
+      if (!matched) {
+        for (const fk of FULL_KEYS) {
+          if (trimmed.startsWith(fk + ':')) {
+            const value = trimmed.substring(fk.length + 1).trim();
+            data[fk] = value;
+            break;
+          }
+        }
       }
     }
-
-    if(key !== null){
-      data[key] = value;
-    } else {
-      const lastKey = Object.keys(data).slice(-1)[0];
-      if(lastKey){ data[lastKey] = (data[lastKey] + '\n' + line).trim(); }
-      else { data['_extra'] = (data['_extra'] ? data['_extra'] + '\n' : '') + line; }
-    }
   }
-
-  if(andenArr.length) data['Anden info'] = andenArr.join('\n');
   return data;
 }
 
-function makeBox(title, valueHtml){
-  const d = document.createElement('div');
-  d.className = 'box';
-  d.innerHTML = `<div class="catTitle">${esc(title)}</div><div class="boxValue">${valueHtml}</div>`;
-  return d;
-}
-function makeKemiBox(title, valueHtml, showHazard){
-  const d = document.createElement('div');
-  d.className = 'box';
-  d.innerHTML = `<div class="catTitle">${esc(title)}</div>
-    <div class="kemiRow">
-      <div class="boxValue">${valueHtml}</div>
-      ${showHazard? `<svg class="hazard" viewBox="0 0 400 400">
-        <polygon points="200,20 380,200 200,380 20,200" fill="white" stroke="#d32f2f" stroke-width="35"/>
-        <circle cx="200" cy="270" r="35" fill="black"/>
-        <rect x="182" y="90" width="36" height="140" rx="18" fill="black"/>
-      </svg>` : ''}
-    </div>`;
-  return d;
+function parseNewline(raw) {
+  const data = {};
+  const lines = raw.split('\n');
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    /* Try abbreviations first (longest-first) */
+    let matched = false;
+    for (const key of ABBREV_KEYS_SORTED) {
+      if (trimmed.startsWith(key + ':')) {
+        const value = trimmed.substring(key.length + 1).trim();
+        data[ABBREV_MAP[key]] = value;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      for (const fk of FULL_KEYS) {
+        if (trimmed.toLowerCase().startsWith(fk.toLowerCase() + ':')) {
+          const value = trimmed.substring(fk.length + 1).trim();
+          data[fk] = value;
+          break;
+        }
+      }
+    }
+  }
+  return data;
 }
 
-function renderData(data){
-  output.innerHTML = '';
-  const boxes = [
-    {title:'Område', keys:['Område']},
-    {title:'Varenummer', keys:['Varenummer']},
-    {title:'Materiale', keys:['Materiale']},
-    {title:'Operatør', keys:['Operatør']},
-    {title:'Antal', keys:['Antal']},
-    {title:'Mål', keys:['Længde','Bredde','Tykkelse']},
-    {title:'Vægt', keys:['Vægt']},
-    {title:'Meter', keys:['Meter']},
-    {title:'Areal i m²', keys:['Areal i m²']},
-    {title:'Anden info', keys:['Anden info']},
-    {title:'Lagerplads', keys:['Lagerplads','Lager/Område','Reol','Hylde','Plads']},
-    {title:'Kemi', keys:['Kemi']}
+function parseRaw(raw) {
+  /* Try pipe-separated compact format first */
+  let data = parseCompact(raw);
+  if (Object.keys(data).length >= 2) return data;
+
+  /* Try newline-separated */
+  data = parseNewline(raw);
+  if (Object.keys(data).length >= 2) return data;
+
+  /* Fallback: try to parse as a single compact string without pipes
+     (keys smashed together) using regex */
+  data = {};
+  const regexParts = ABBREV_KEYS_SORTED.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const pattern = new RegExp('(' + regexParts.join('|') + '):', 'g');
+  const matches = [...raw.matchAll(pattern)];
+  for (let i = 0; i < matches.length; i++) {
+    const key = matches[i][1];
+    const start = matches[i].index + matches[i][0].length;
+    const end = (i + 1 < matches.length) ? matches[i + 1].index : raw.length;
+    const value = raw.substring(start, end).replace(/\|/g, '').trim();
+    data[ABBREV_MAP[key]] = value;
+  }
+  return data;
+}
+
+/* ===== RENDER RESULTS ===== */
+function renderResults(data) {
+  const container = document.getElementById('results');
+  container.innerHTML = '';
+  container.style.display = 'flex';
+
+  const HEAVY_THRESHOLD = 25; /* kg — show warning above this */
+
+  /* Define display order and grouping */
+  const displayConfig = [
+    { key: 'Område', title: 'Område' },
+    { key: 'Varenummer', title: 'Varenummer' },
+    { key: 'Materiale', title: 'Materiale' },
+    { key: 'Operatør', title: 'Operatør' },
+    { key: 'Antal', title: 'Antal', format: (v) => v + ' på PL' },
+    {
+      key: '_maal_', title: 'Mål', multi: true,
+      build: () => {
+        const parts = [];
+        if (data['Længde']) parts.push('Længde: ' + data['Længde'] + (data['Længde'].match(/mm|m/) ? '' : ' mm'));
+        if (data['Bredde']) parts.push('Bredde: ' + data['Bredde'] + (data['Bredde'].match(/mm|m/) ? '' : ' mm'));
+        if (data['Tykkelse']) parts.push('Tykkelse: ' + data['Tykkelse'] + (data['Tykkelse'].match(/mm|m/) ? '' : ' mm'));
+        if (data['Længde i meter']) parts.push('Længde i meter: ' + data['Længde i meter'] + ' m');
+        if (data['Areal i m²']) parts.push('Areal: ' + data['Areal i m²'] + ' m²');
+        return parts.join('\n');
+      }
+    },
+    {
+      key: 'Vægt', title: 'Vægt', format: (v) => {
+        const num = parseFloat(v);
+        if (!isNaN(num) && num > HEAVY_THRESHOLD) {
+          return { text: num + ' kg (Brug hjælpe værktøj til løft)', heavy: true };
+        }
+        return v + ' kg';
+      }
+    },
+    { key: 'Anden info', title: 'Anden info' },
+    {
+      key: '_lager_', title: 'Lagerplads', multi: true,
+      build: () => {
+        const parts = [];
+        if (data['Lager/Område']) parts.push('Lager/Område: ' + data['Lager/Område']);
+        if (data['Reol']) parts.push('Reol: ' + data['Reol']);
+        if (data['Hylde']) parts.push('Hylde: ' + data['Hylde']);
+        if (data['Plads']) parts.push('Plads: ' + data['Plads']);
+        /* If only Plads exists without LO, show it standalone */
+        if (parts.length === 0 && data['Plads']) parts.push('Plads: ' + data['Plads']);
+        return parts.join('\n');
+      }
+    },
+    {
+      key: 'Kemi', title: 'Kemi / Farligt stof', format: (v) => {
+        const val = v.trim();
+        /* Check if UN-number */
+        const unMatch = val.match(/^(UN?\s*)?(\d{4})$/i);
+        if (unMatch) {
+          return { text: '⚠️ UN' + unMatch[2] + ' — Farligt stof', hazard: true };
+        }
+        return val;
+      }
+    }
   ];
 
-  let unFound = false;
-  Object.values(data).forEach(v => { if(/\bUN\d+/.test(v)) unFound = true; });
+  let copyText = '';
 
-  boxes.forEach(box => {
-    const present = box.keys.filter(k => (k in data) && String(data[k]).trim() !== '');
-    if(!present.length) return;
+  for (const cfg of displayConfig) {
+    let value = null;
+    let isHeavy = false;
+    let isHazard = false;
 
-    if(box.title === 'Mål'){
-      const arr = [];
-      ['Længde','Bredde','Tykkelse'].forEach(k => {
-        if(k in data){
-          let val = esc(data[k]);
-          if(k === 'Tykkelse') val = val.replace(/mm/g, 'my');
-          arr.push(`${k}: ${val}`);
+    if (cfg.multi && cfg.build) {
+      value = cfg.build();
+      if (!value) continue;
+    } else {
+      if (!data[cfg.key]) continue;
+      let raw = data[cfg.key];
+
+      if (cfg.format) {
+        const result = cfg.format(raw);
+        if (typeof result === 'object') {
+          value = result.text;
+          isHeavy = result.heavy || false;
+          isHazard = result.hazard || false;
+        } else {
+          value = result;
         }
-      });
-      output.appendChild(makeBox(box.title, arr.join('\n')));
-      return;
-    }
-
-    if(box.title === 'Vægt'){
-      const raw = data['Vægt'] ? String(data['Vægt']).trim() : '';
-      const m = raw.match(/([\d\.,]+)/);
-      let kg = null;
-      if(m) kg = parseFloat(m[1].replace(',','.'));
-      let cls = '', txt = esc(raw);
-      if(kg !== null && !isNaN(kg)){
-        const inf = classifyWeight(kg);
-        cls = inf.cls;
-        txt = `${kg} kg${inf.extra}`;
+      } else {
+        value = raw;
       }
-      output.appendChild(makeBox(box.title, `<span class="${cls}">${txt}</span>`));
-      return;
     }
 
-    if(box.title === 'Anden info'){
-      output.appendChild(makeBox(box.title, esc(data['Anden info'] || '')));
-      return;
+    /* Skip "Antal" format suffix if value already contains descriptive text */
+    if (cfg.key === 'Antal') {
+      const rawAntal = data['Antal'];
+      /* If the value already has descriptive text like "8 RULL/PL", don't add "på PL" */
+      if (rawAntal.match(/PL|pPL|RULL|stk/i)) {
+        value = rawAntal;
+      }
     }
 
-    if(box.title === 'Lagerplads'){
-      const arr = [];
-      ['Lagerplads','Lager/Område','Reol','Hylde','Plads'].forEach(k => {
-        if(k in data) arr.push(`${k}: ${esc(data[k])}`);
-      });
-      output.appendChild(makeBox(box.title, arr.join('\n')));
-      return;
-    }
+    const card = document.createElement('div');
+    card.className = 'card';
 
-    if(box.title === 'Kemi'){
-      const v = esc(data['Kemi'] || '');
-      output.appendChild(makeKemiBox('Kemi', v, unFound || /\bUN\d+/.test(v)));
-      return;
-    }
+    const title = document.createElement('div');
+    title.className = 'card-title';
+    title.textContent = cfg.title;
 
-    const key = present[0];
-    output.appendChild(makeBox(box.title, esc(data[key])));
-  });
+    const val = document.createElement('div');
+    val.className = 'card-value';
+    if (isHeavy) val.classList.add('heavy');
+    if (isHazard) val.classList.add('hazard');
+    val.textContent = value;
 
-  enableCopy(true);
+    card.appendChild(title);
+    card.appendChild(val);
+    container.appendChild(card);
+
+    copyText += cfg.title + ': ' + value + '\n';
+  }
+
+  window._copyText = copyText;
+  document.getElementById('copyBtn').style.display = 'block';
 }
 
-copyBtn.addEventListener('click', async () => {
-  try{
-    await navigator.clipboard.writeText(output.innerText || '');
-    const prev = copyBtn.textContent;
-    copyBtn.textContent = 'KOPIERET';
-    setTimeout(()=>copyBtn.textContent = prev,700);
-  }catch(e){}
-});
+/* ===== QR SCANNING ===== */
+let scanner = null;
+let scanning = false;
 
-function loadJsQR(){
-  return new Promise(res=>{
-    if(window.jsQR) return res();
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
-    s.onload = res;
-    s.onerror = res;
-    document.head.appendChild(s);
-  });
+function toggleScan() {
+  if (scanning) {
+    stopScan();
+  } else {
+    startScan();
+  }
 }
 
-async function startCamera(){
-  clearOutput();
-  if(!videoEl){ videoEl = document.createElement('video'); videoEl.setAttribute('playsinline','true'); }
-  if(!canvas){ canvas = document.createElement('canvas'); ctx = canvas.getContext('2d', { willReadFrequently: true }); }
+function startScan() {
+  const camLabel = document.getElementById('cam-off-label');
+  camLabel.style.display = 'none';
 
-  const constraints = {
-    video: {
-      facingMode: { ideal: "environment" },
-      width: { ideal: 1920 },
-      height: { ideal: 1080 }
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('copyBtn').style.display = 'none';
+  document.getElementById('scanBtn').textContent = 'STOP SCANNING';
+
+  scanner = new Html5Qrcode('camera-container');
+  scanning = true;
+
+  scanner.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: { width: 250, height: 250 } },
+    (decodedText) => {
+      /* Success */
+      stopScan();
+      processQR(decodedText);
     },
-    audio: false
-  };
+    (errorMessage) => {
+      /* Ignore scan errors */
+    }
+  ).catch(err => {
+    console.error('Camera error:', err);
+    camLabel.textContent = 'Kan ikke åbne kamera';
+    camLabel.style.display = 'block';
+    scanning = false;
+    document.getElementById('scanBtn').textContent = 'NY SCANNING';
+  });
+}
 
-  try{
-    stream = await navigator.mediaDevices.getUserMedia(constraints);
-    const track = stream.getVideoTracks()[0];
-    const caps = track.getCapabilities ? track.getCapabilities() : {};
-    const adv = [];
-
-    if(caps.focusMode && caps.focusMode.includes('continuous')) adv.push({ focusMode:'continuous' });
-    if(caps.zoom){ adv.push({ zoom: Math.min(1.2, caps.zoom.max||1) }); }
-
-    if(adv.length) track.applyConstraints({ advanced: adv }).catch(()=>{});
-
-    focusInterval = setInterval(()=>{
-      if(track && adv.length) track.applyConstraints({ advanced: adv }).catch(()=>{});
-    }, 1000);
-
-    videoEl.srcObject = stream;
-    await videoEl.play();
-    cameraWrap.innerHTML = '';
-    cameraWrap.appendChild(videoEl);
-    return true;
-  }catch(err){
-    console.warn('Camera start failed:', err);
-    return false;
+function stopScan() {
+  if (scanner) {
+    scanner.stop().then(() => {
+      scanner.clear();
+      scanning = false;
+      document.getElementById('scanBtn').textContent = 'NY SCANNING';
+      document.getElementById('cam-off-label').style.display = 'block';
+    }).catch(err => {
+      console.error('Stop error:', err);
+      scanning = false;
+      document.getElementById('scanBtn').textContent = 'NY SCANNING';
+    });
   }
 }
 
-function stopCamera(){
-  if(raf) cancelAnimationFrame(raf);
-  raf = null;
-  if(stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
-  if(videoEl){ try{ videoEl.pause(); }catch(e){} videoEl.srcObject = null; }
-  cameraWrap.innerHTML = 'Kamera er slukket';
-  if(focusInterval){ clearInterval(focusInterval); focusInterval=null; }
+function processQR(raw) {
+  const data = parseRaw(raw);
+  if (Object.keys(data).length > 0) {
+    renderResults(data);
+  } else {
+    /* Fallback: show raw data if parsing fails */
+    const container = document.getElementById('results');
+    container.innerHTML = '';
+    container.style.display = 'flex';
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = '<div class="card-title">Rå data</div><div class="card-value">' +
+      raw.replace(/</g, '&lt;') + '</div>';
+    container.appendChild(card);
+    window._copyText = raw;
+    document.getElementById('copyBtn').style.display = 'block';
+  }
 }
 
-async function scanLoop(){
-  if(!videoEl || videoEl.readyState !== videoEl.HAVE_ENOUGH_DATA){
-    raf = requestAnimationFrame(scanLoop);
-    return;
+/* ===== COPY ===== */
+function copyResults() {
+  if (window._copyText) {
+    navigator.clipboard.writeText(window._copyText).then(() => {
+      showToast();
+    }).catch(() => {
+      /* Fallback */
+      const ta = document.createElement('textarea');
+      ta.value = window._copyText;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast();
+    });
   }
-
-  if(canvas.width !== videoEl.videoWidth){ canvas.width = videoEl.videoWidth; canvas.height = videoEl.videoHeight; }
-
-  ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-
-  let img;
-  try{ img=ctx.getImageData(0,0,canvas.width,canvas.height); }
-  catch(e){ raf=requestAnimationFrame(scanLoop); return; }
-
-  let code=null;
-  if(window.jsQR){
-    try{ code=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'}); }
-    catch(e){ code=jsQR(img.data,img.width,img.height); }
-  }
-
-  if(code && code.data){
-    stopCamera();
-    showDebug(code.data);
-    renderData(parseRaw(code.data));
-    return;
-  }
-  raf=requestAnimationFrame(scanLoop);
 }
 
-scanBtn.addEventListener('click', async ()=>{
-  clearOutput();
-  cameraWrap.innerHTML='Starter kamera…';
-  await loadJsQR();
-  const ok = await startCamera();
-  if(!ok){
-    const demo=`O:Produktion
-VN:12345678
-MA:Stenuld
-OP:Chris
-A:10 PL pPL
-L:1200
-B:600
-T:50
-V:8.5
-M:4.2
-A2:2.88
-AI:Test linje1
-Test linje2
-LO:Hal 3
-RE:R5
-HY:H2
-PL:P1
-KE:UN1209`;
-    showDebug(demo);
-    renderData(parseRaw(demo));
-    return;
-  }
-  scanLoop();
-});
-
-window.addEventListener('beforeunload', stopCamera);
+function showToast() {
+  const t = document.getElementById('toast');
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 1500);
+}
 </script>
 </body>
 </html>
