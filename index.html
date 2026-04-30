@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Info Scan — v10.5</title>
+<title>Info Scan — v10.6</title>
 <style>
   :root{
     --rw-red:#D20014;
@@ -37,7 +37,7 @@
 <body>
 
 <div class="topbar">
-  <div class="topTitle">Info Scan — v10.5</div>
+  <div class="topTitle">Info Scan — v10.6</div>
   <img class="logo" src="logo.png" alt="ROCKWOOL logo" onerror="this.style.display='none'"/>
 </div>
 
@@ -75,44 +75,90 @@ function classifyWeight(kg){
 function enableCopy(enable){ copyBtn.disabled = !enable; }
 function clearOutput(){ output.innerHTML = ''; enableCopy(false); }
 
+/* ── Forkortelsesmap: kompakt kode → fuldt nøglenavn ── */
+const ABBREV = {
+  'O':  'Område',
+  'VN': 'Varenummer',
+  'MA': 'Materiale',
+  'OP': 'Operatør',
+  'A':  'Antal',
+  'L':  'Længde',
+  'B':  'Bredde',
+  'T':  'Tykkelse',
+  'V':  'Vægt',
+  'M':  'Meter',
+  'A2': 'Areal i m²',
+  'AI': 'Anden info',
+  'LO': 'Lager/Område',
+  'RE': 'Reol',
+  'HY': 'Hylde',
+  'PL': 'Plads',
+  'KE': 'Kemi'
+};
+
+/* Forsøg at ekspandere en forkortet nøgle til det fulde navn */
+function expandKey(key){
+  return ABBREV[key] || key;
+}
+
+/* Detektér om rå QR-data er i kompakt format (flertallet af linjer bruger forkortelser) */
+function isCompactFormat(lines){
+  let hits = 0;
+  for(const line of lines){
+    const m = line.match(/^([A-Za-z0-9]+):/);
+    if(m && ABBREV[m[1]]) hits++;
+  }
+  return hits >= 3;                 // 3+ kendte forkortelser → kompakt
+}
+
 function parseRaw(raw){
   const lines = String(raw||"").split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
   const data = {};
+
+  const compact = isCompactFormat(lines);
+
   let collecting=false;
   let andenArr=[];
-  const known = ['Område','Varenummer','Operatør','Antal','Længde','Bredde','Tykkelse','Vægt',
+  const known = ['Område','Varenummer','Materiale','Operatør','Antal','Længde','Bredde','Tykkelse','Vægt',
                  'Længde i meter','Meter','Areal i m²','Anden info','Lagerplads','Lager/Område','Reol','Hylde','Plads','Kemi'];
+
   for(let i=0;i<lines.length;i++){
     const line = lines[i];
-    if(/^Anden info/i.test(line)){
-      collecting = true;
-      const parts=line.split(':');
-      if(parts.length>1) andenArr.push(parts.slice(1).join(':').trim());
-      continue;
-    }
-    if(collecting){
-      if(/^[A-Za-zÆØÅæøå].*?:/.test(line)){
-        const maybeKey = line.split(':')[0].trim();
-        if(known.includes(maybeKey)){ collecting = false; i--; continue; }
-      }
-      andenArr.push(line);
-      continue;
-    }
-    if(line.includes(':')){
-      const parts=line.split(':');
-      const key = parts[0].trim();
-      const value = parts.slice(1).join(':').trim();
-      if(key === 'Længde i meter'){
-        data['Meter'] = value;
-      } else {
-        data[key] = value;
-      }
-    } else {
+
+    /* ── Split på første ":" ── */
+    const colonIdx = line.indexOf(':');
+    if(colonIdx === -1){
+      /* Linje uden kolon — tilføj til sidst-kendte nøgle */
+      if(collecting){ andenArr.push(line); continue; }
       const lastKey = Object.keys(data).slice(-1)[0];
       if(lastKey){ data[lastKey] = (data[lastKey] + '\n' + line).trim(); }
       else { data['_extra'] = (data['_extra'] ? data['_extra'] + '\n' : '') + line; }
+      continue;
     }
+
+    let rawKey = line.substring(0, colonIdx).trim();
+    let value  = line.substring(colonIdx + 1).trim();
+
+    /* Ekspandér forkortelse hvis kompakt format */
+    if(compact) rawKey = expandKey(rawKey);
+
+    /* ── "Anden info" samler flere linjer ── */
+    if(/^Anden info$/i.test(rawKey)){
+      collecting = true;
+      if(value) andenArr.push(value);
+      continue;
+    }
+    if(collecting){
+      if(known.includes(rawKey)){ collecting = false; /* fall through til normal nøgle */ }
+      else { andenArr.push(line); continue; }
+    }
+
+    /* ── Normalisér aliaser ── */
+    if(rawKey === 'Længde i meter') rawKey = 'Meter';
+
+    data[rawKey] = value;
   }
+
   if(andenArr.length) data['Anden info'] = andenArr.join('\n');
   return data;
 }
@@ -143,6 +189,7 @@ function renderData(data){
   const boxes = [
     {title:'Område', keys:['Område']},
     {title:'Varenummer', keys:['Varenummer']},
+    {title:'Materiale', keys:['Materiale']},
     {title:'Operatør', keys:['Operatør']},
     {title:'Antal', keys:['Antal']},
     {title:'Mål', keys:['Længde','Bredde','Tykkelse']},
@@ -279,7 +326,6 @@ async function startCamera(){
   }
 }
 
-/* ── FIX 1: rettet catch(e) syntaksfejl ── */
 function stopCamera(){
   if(raf) cancelAnimationFrame(raf);
   raf = null;
@@ -297,7 +343,6 @@ async function scanLoop(){
 
   if(canvas.width !== videoEl.videoWidth){ canvas.width = videoEl.videoWidth; canvas.height = videoEl.videoHeight; }
 
-  /* ── FIX 2: fjernet ctx.filter — crasher stille på Samsung Chrome ── */
   ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
 
   let img;
@@ -320,23 +365,24 @@ scanBtn.addEventListener('click', async ()=>{
   await loadJsQR();
   const ok = await startCamera();
   if(!ok){
-    const demo=`Område: Demo
-Varenummer: 12345
-Operatør: DemoBruger
-Antal: 2 KS
-Længde: 1000 mm
-Bredde: 600 mm
-Tykkelse: 10 mm
-Vægt: 18 kg
-Længde i meter: 5 M
-Areal i m²: 2 m²
-Anden info: Test linje1
+    const demo=`O:Produktion
+VN:12345678
+MA:Stenuld
+OP:Chris
+A:10 PL pPL
+L:1200
+B:600
+T:50
+V:8.5
+M:4.2
+A2:2.88
+AI:Test linje1
 Test linje2
-Lager/Område: sym01
-Reol: 01
-Hylde: 02
-Plads: 03
-Kemi: UN1209`;
+LO:Hal 3
+RE:R5
+HY:H2
+PL:P1
+KE:UN1209`;
     renderData(parseRaw(demo));
     return;
   }
@@ -347,3 +393,4 @@ window.addEventListener('beforeunload', stopCamera);
 </script>
 </body>
 </html>
+
