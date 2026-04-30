@@ -31,6 +31,10 @@
   .kemiRow{ display:flex; justify-content:space-between; align-items:center; }
   .hazard{ width:34px; height:34px; }
   #copyBtn{ width:100%; height:50px; margin-top:12px; border-radius:10px; border:2px solid #ddd; background:white; font-weight:900; font-size:16px; cursor:pointer; }
+  .debugBox{ border:2px dashed #CA8A04; border-radius:6px; padding:10px 12px; margin-bottom:12px; background:#FFFBEB; }
+  .debugTitle{ font-size:14px; font-weight:900; color:#CA8A04; margin-bottom:6px; }
+  .debugText{ font-family: ui-monospace, monospace; font-size:13px; white-space:pre-wrap; word-break:break-all; color:#111; }
+  #copyDebugBtn{ width:100%; height:40px; margin-top:8px; border-radius:8px; border:2px solid #CA8A04; background:#FFFBEB; font-weight:900; font-size:14px; cursor:pointer; color:#CA8A04; }
   @media (max-width:700px){ .logo{ height:56px; } .topTitle{ font-size:18px; } }
 </style>
 </head>
@@ -49,6 +53,7 @@
 
 <div class="card" style="position:relative;">
   <div style="font-weight:700;margin-bottom:10px;font-size:18px;">Rådata</div>
+  <div id="debugWrap"></div>
   <div id="output"></div>
   <button id="copyBtn" disabled>KOPIER</button>
 </div>
@@ -58,6 +63,7 @@ const scanBtn = document.getElementById('scanBtn');
 const output  = document.getElementById('output');
 const copyBtn = document.getElementById('copyBtn');
 const cameraWrap = document.getElementById('cameraWrap');
+const debugWrap = document.getElementById('debugWrap');
 
 let videoEl = null;
 let canvas = null;
@@ -65,6 +71,7 @@ let ctx = null;
 let stream = null;
 let raf = null;
 let focusInterval = null;
+let lastRawQR = '';
 
 function esc(s){ return String(s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
 function classifyWeight(kg){
@@ -73,12 +80,30 @@ function classifyWeight(kg){
   return {cls:'w-red', extra:' (Brug hjælpe værktøj til løft)'};
 }
 function enableCopy(enable){ copyBtn.disabled = !enable; }
-function clearOutput(){ output.innerHTML = ''; enableCopy(false); }
+function clearOutput(){ output.innerHTML = ''; debugWrap.innerHTML = ''; enableCopy(false); lastRawQR = ''; }
 
-/* ── Kompakt forkortelser → fuldt navn ── */
-/* VIGTIGT: rækkefølgen i COMPACT_KEYS bruges til at matche linjer top-til-bund.
-   Længere koder SKAL stå FØR kortere, så "A2" matches før "A", "PL" før "P" osv. */
-const COMPACT_KEYS = [
+/* ── Debug-boks: viser rå QR-data så vi kan fejlfinde ── */
+function showDebug(rawText){
+  lastRawQR = rawText;
+  debugWrap.innerHTML = `
+    <div class="debugBox">
+      <div class="debugTitle">⚙ DEBUG — Rå QR-data (kopiér og send til fejlfinding)</div>
+      <div class="debugText">${esc(rawText)}</div>
+      <button id="copyDebugBtn" onclick="copyDebug()">KOPIÉR RÅ DATA</button>
+    </div>`;
+}
+
+window.copyDebug = async function(){
+  try{
+    await navigator.clipboard.writeText(lastRawQR);
+    const btn = document.getElementById('copyDebugBtn');
+    btn.textContent = 'KOPIERET!';
+    setTimeout(()=> btn.textContent = 'KOPIÉR RÅ DATA', 700);
+  }catch(e){}
+};
+
+/* ── Forkortelsesmap: kompakt → fuldt navn ── */
+const ABBREV_LIST = [
   ['VN', 'Varenummer'],
   ['MA', 'Materiale'],
   ['OP', 'Operatør'],
@@ -97,103 +122,65 @@ const COMPACT_KEYS = [
   ['V',  'Vægt'],
   ['M',  'Meter']
 ];
+const ABBREV_MAP = Object.fromEntries(ABBREV_LIST);
+const ABBREV_RE  = new RegExp('^(' + ABBREV_LIST.map(k=>k[0]).join('|') + '):(.*)$');
 
-/* Byg regex der matcher starten af en linje: ^(VN|MA|OP|A2|…):
-   Sorteret med længste kode først for korrekt greedy-match */
-const COMPACT_RE = new RegExp('^(' + COMPACT_KEYS.map(k=>k[0]).join('|') + '):(.*)$');
-const COMPACT_MAP = Object.fromEntries(COMPACT_KEYS);
-
-/* Detektér kompakt format */
-function isCompact(lines){
-  let hits=0;
-  for(const line of lines){ if(COMPACT_RE.test(line)) hits++; }
-  return hits >= 3;
-}
-
-/* ── Gammelt format: fulde nøglenavne ── */
 const KNOWN_FULL = ['Område','Varenummer','Materiale','Operatør','Antal','Længde','Bredde','Tykkelse','Vægt',
                     'Længde i meter','Meter','Areal i m²','Anden info','Lagerplads','Lager/Område','Reol','Hylde','Plads','Kemi'];
 
-function parseCompact(lines){
+function parseRaw(raw){
+  const lines = String(raw||"").split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
   const data = {};
-  let collectAI = false;
-  let aiArr = [];
+  let collecting = false;
+  let andenArr = [];
 
   for(let i=0; i<lines.length; i++){
-    const line = lines[i];
-    const m = line.match(COMPACT_RE);
+    let line = lines[i];
+    let key = null;
+    let value = null;
 
-    if(m){
-      const fullKey = COMPACT_MAP[m[1]];
-      const value   = m[2].trim();
+    /* Forsøg kompakt match først */
+    const cm = line.match(ABBREV_RE);
+    if(cm){
+      key   = ABBREV_MAP[cm[1]];
+      value = cm[2].trim();
+    }
+    /* Ellers forsøg fuldt-navn match */
+    else if(line.includes(':')){
+      const colonIdx = line.indexOf(':');
+      const rawKey = line.substring(0, colonIdx).trim();
+      value = line.substring(colonIdx + 1).trim();
+      if(rawKey === 'Længde i meter') key = 'Meter';
+      else key = rawKey;
+    }
 
-      if(fullKey === 'Anden info'){
-        collectAI = true;
-        if(value) aiArr.push(value);
+    /* Håndtér "Anden info" multi-linje */
+    if(key === 'Anden info'){
+      collecting = true;
+      if(value) andenArr.push(value);
+      continue;
+    }
+
+    if(collecting){
+      if(key && KNOWN_FULL.includes(key)){
+        collecting = false;
+      } else {
+        andenArr.push(line);
         continue;
       }
-      if(collectAI){
-        /* Ny kendt nøgle → stop AI-indsamling */
-        collectAI = false;
-      }
-      data[fullKey] = value;
-    } else {
-      /* Linje uden nøgle-match */
-      if(collectAI){
-        aiArr.push(line);
-      } else {
-        const lastKey = Object.keys(data).slice(-1)[0];
-        if(lastKey) data[lastKey] = (data[lastKey]+'\n'+line).trim();
-      }
     }
-  }
-  if(aiArr.length) data['Anden info'] = aiArr.join('\n');
-  return data;
-}
 
-function parseFull(lines){
-  const data = {};
-  let collecting=false;
-  let andenArr=[];
-
-  for(let i=0;i<lines.length;i++){
-    const line = lines[i];
-    if(/^Anden info/i.test(line)){
-      collecting = true;
-      const parts=line.split(':');
-      if(parts.length>1) andenArr.push(parts.slice(1).join(':').trim());
-      continue;
-    }
-    if(collecting){
-      if(/^[A-Za-zÆØÅæøå].*?:/.test(line)){
-        const maybeKey = line.split(':')[0].trim();
-        if(KNOWN_FULL.includes(maybeKey)){ collecting = false; i--; continue; }
-      }
-      andenArr.push(line);
-      continue;
-    }
-    if(line.includes(':')){
-      const parts=line.split(':');
-      const key = parts[0].trim();
-      const value = parts.slice(1).join(':').trim();
-      if(key === 'Længde i meter'){
-        data['Meter'] = value;
-      } else {
-        data[key] = value;
-      }
+    if(key !== null){
+      data[key] = value;
     } else {
       const lastKey = Object.keys(data).slice(-1)[0];
       if(lastKey){ data[lastKey] = (data[lastKey] + '\n' + line).trim(); }
       else { data['_extra'] = (data['_extra'] ? data['_extra'] + '\n' : '') + line; }
     }
   }
+
   if(andenArr.length) data['Anden info'] = andenArr.join('\n');
   return data;
-}
-
-function parseRaw(raw){
-  const lines = String(raw||"").split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
-  return isCompact(lines) ? parseCompact(lines) : parseFull(lines);
 }
 
 function makeBox(title, valueHtml){
@@ -218,7 +205,7 @@ function makeKemiBox(title, valueHtml, showHazard){
 }
 
 function renderData(data){
-  clearOutput();
+  output.innerHTML = '';
   const boxes = [
     {title:'Område', keys:['Område']},
     {title:'Varenummer', keys:['Varenummer']},
@@ -385,7 +372,12 @@ async function scanLoop(){
     catch(e){ code=jsQR(img.data,img.width,img.height); }
   }
 
-  if(code && code.data){ stopCamera(); renderData(parseRaw(code.data)); return; }
+  if(code && code.data){
+    stopCamera();
+    showDebug(code.data);
+    renderData(parseRaw(code.data));
+    return;
+  }
   raf=requestAnimationFrame(scanLoop);
 }
 
@@ -413,6 +405,7 @@ RE:R5
 HY:H2
 PL:P1
 KE:UN1209`;
+    showDebug(demo);
     renderData(parseRaw(demo));
     return;
   }
